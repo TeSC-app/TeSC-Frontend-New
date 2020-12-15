@@ -1,0 +1,128 @@
+$sidebar-bg-color: #1d1d1d;
+$submenu-bg-color: rgba(255, 255, 255, 0.05);
+$submenu-bg-color-collapsed: rgba(29, 29, 29, 0.95);
+$sidebar-color: #adadad;
+$highlight-color: #d8d8d8;
+$icon-bg-color: rgba(255, 255, 255, 0.05);
+$icon-size: 35px;
+
+$s-size: 1.2rem;
+$m-size: 1.6rem;
+$l-size: 3.2rem;
+$xl-size: 4.8rem;
+
+$navbar-height: 48.563px;
+
+@import "~react-pro-sidebar/dist/scss/styles.scss";
+
+// body {
+//   height: 100vh;
+// }
+
+.root-container {
+  height: 100vh;
+}
+
+.navbar {
+  margin-bottom: 0;
+  border-radius: 0px;
+  height: $navbar-height;
+}
+
+.layout {
+  height: calc(100vh - 48.563px);
+  width: 100vw;
+  display: flex;
+  position: relative;
+
+  .btn-toggle {
+    cursor: pointer;
+    width: 35px;
+    height: 35px;
+    background: #353535;
+    color: #fff;
+    text-align: center;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    display: none;
+  }
+
+  // .sidebar-btn-wrapper {
+  //   display: flex;
+  //   align-items: center;
+  //   justify-content: center;
+  //   .sidebar-btn {
+  //     padding: 1px 1px;
+  //     border-radius: 40px;
+  //     background: rgba(255, 255, 255, 0.05);
+  //     color: #adadad;
+  //     text-decoration: none;
+  //     margin: 0 auto;
+  //     height: 35px;
+  //     display: flex;
+  //     align-items: center;
+  //     justify-content: center;
+  //     text-overflow: ellipsis;
+  //     overflow: hidden;
+  //     span {
+  //       margin-left: 5px;
+  //       font-size: 13px;
+  //     }
+  //     &:hover {
+  //       color: $highlight-color;
+  //     }
+  //   }
+  // }
+
+
+  .collapsed {
+    width: 60px;
+    min-width: 60px;
+    // .sidebar-btn {
+    //   display: inline-block;
+    //   border-radius: 50%;
+    //   width: 35px;
+    //   height: 35px;
+    //   line-height: 40px;
+    //   padding: 0;
+    // }
+  }
+
+  .pro-sidebar {
+    .pro-menu {
+      .pro-menu-item > .pro-inner-item {
+          padding: 15px 25px 15px 10px;
+      }
+    }
+  }
+
+  .content {
+    padding: $l-size;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+}
+
+.badge {
+  padding: 3px 6px;
+  font-size: 9px;
+  letter-spacing: 1px;
+  border-radius: 15px;
+  &.red {
+    color: #ffffff;
+    background: #d63030;
+  }
+  &.gray {
+    color: #ffffff;
+    background: #777777;
+  }
+  &.yellow {
+    color: #000000;
+    background: #ffd331;
+  }
+}
