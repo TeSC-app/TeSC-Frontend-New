@@ -8,7 +8,7 @@ import { Container } from 'semantic-ui-react';
 
 import Dashboard from '../pages/Dashboard';
 import TeSCNew from '../pages/TescNew';
-import TeSCVerify from '../pages/TescVerify';
+import TeSCDetail from '../pages/TescDetail';
 
 const Layout = () => {
     const [collapsed, setCollapsed] = useState(false);
@@ -20,8 +20,6 @@ const Layout = () => {
         setToggled(!toggled);
     };
 
-
-
     return (
         <React.Fragment>
             <Navbar handleCollapseSidebar={handleCollapseSidebar} />
@@ -30,7 +28,7 @@ const Layout = () => {
                 <Container className="content">
                     <Route path="/" component={Dashboard} exact />
                     <Route path="/tesc/new" component={TeSCNew} exact />
-                    <Route path="/tesc/verify" component={TeSCVerify} exact />
+                    <Route path="/tesc/detail" component={TeSCDetail} exact />
                 </Container>
             </div>
         </React.Fragment>

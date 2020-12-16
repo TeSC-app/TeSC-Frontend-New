@@ -2,38 +2,18 @@ import RLP from 'rlp-browser';
 import { PrivateKey } from '@fidm/x509';
 import BitSet from 'bitset'
 
-// function isFlagSet(value, flagIndex) {
-//     return (value & (1 << flagIndex)) !== 0;
-// }
 
-// function convertFlags(flags_hex) {
-//     const flags_dec = parseInt(flags_hex, 16);
+export const FLAG_POSITIONS = {
+    DOMAIN_HASHED: 0,
+    ALLOW_SUBENDORSEMENT: 1,
+    EXCLUSIVE: 2,
+    PAYABLE: 3,
+    ALLOW_SUBDOMAIN: 4,
+    ALLOW_ALTERNATIVEDOMAIN: 5,
+    TRUST_AFTER_EXPIRY: 6,
+};
 
-//     const flag_keys = {
-//         "0": "test1",
-//         "1": "test2",
-//         "2": "DOMAIN_HASHED",
-//         "3": "ALLOW_SUBENDORSEMENT",
-//         "4": "EXCLUSIVE",
-//         "5": "PAYABLE",
-//         "6": "ALLOW_SUBDOMAIN",
-//         "7": "ALLOW_ALTERNATIVEDOMAIN",
-//         "8": "TRUST_AFTER_EXPIRY",
-//         "191": "test3"
-//     };
-
-//     const readible_flags = {};
-//     for (const flag_index of flag_keys) {
-//         readible_flags[flag_keys[flag_index]] = isFlagSet(flags_dec, flag_index);
-//     }
-//     return readible_flags;
-
-// }
-
-// console.log(new BitSet)
-
-
-const predictContractAddress = async (web3) => {
+export const predictContractAddress = async (web3) => {
     const senderAddress = (await web3.eth.getAccounts())[0];
     console.log("Sender address:", senderAddress);
 
@@ -62,5 +42,9 @@ export const flags2Hex = (flagArray) => {
             bs.set(i, 1)    
         }
     }
-    return bs.slice(0, 191).toString(16)
+    let hex = bs.slice(0, 191).toString(16)
+    if(hex.length < 48) {
+        hex = '0'.repeat(48 - hex.length) + hex;
+    }
+    return '0x' + hex;
 }   

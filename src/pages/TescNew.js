@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Input, Form, Label, TextArea, Checkbox, Button } from 'semantic-ui-react';
+import { Input, Form, Label, Button } from 'semantic-ui-react';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { formatDate, parseDate } from 'react-day-picker/moment';
@@ -8,24 +8,16 @@ import moment from 'moment';
 import 'react-day-picker/lib/style.css';
 
 import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
-import { generateSignature, flags2Hex } from '../utils/tescUtils';
+import { predictContractAddress, generateSignature, flags2Hex, FLAG_POSITIONS } from '../utils/tesc';
 import getWeb3 from '../ethereum/web3-config';
 
 let web3;
 getWeb3().then(web3_ => web3 = web3_);
 
-const FLAG_POSITIONS = {
-    DOMAIN_HASHED: 0,
-    ALLOW_SUBENDORSEMENT: 1,
-    EXCLUSIVE: 2,
-    PAYABLE: 3,
-    ALLOW_SUBDOMAIN: 4,
-    ALLOW_ALTERNATIVEDOMAIN: 5,
-    TRUST_AFTER_EXPIRY: 6,
-};
-
 
 const TeSCNew = () => {
+    const [contractAddress, setContractAddress] = useState('');
+
     const [domain, setDomain] = useState('');
     const [expiry, setExpiry] = useState(null);
     const [signature, setSignature] = useState('');
@@ -39,17 +31,18 @@ const TeSCNew = () => {
     const [flagTrustAfterExpiry, setFlagTrustAfterExpiry] = useState(false);
 
     const [privateKeyFileName, setPrivateKeyFileName] = useState('');
+    const [deployDone, setDeployDone] = useState(false);
 
     const fileInputRef = React.createRef();
 
     const flags = [flagDomainHashed, flagAllowSubendorsement, flagExclusive, flagPayable,
         flagAllowSubdomain, flagAllowAlternativeDomain, flagTrustAfterExpiry];
 
-    let flagHex = '0x' + flags2Hex(flags);
+    let flagHex = flags2Hex(flags);
 
     const handleFlagsChange = (i) => {
         flags[i] = !flags[i];
-        flagHex = '0x' + flags2Hex(flags);
+        flagHex = flags2Hex(flags);
     };
 
     /* https://stackoverflow.com/a/56377153 */
@@ -62,9 +55,9 @@ const TeSCNew = () => {
             const reader = new FileReader();
             reader.onload = async (e) => {
                 console.log("E", e);
+                setContractAddress(await predictContractAddress(web3));
                 const payload = { domain, expiry, flagHex };
                 const privateKeyPem = e.target.result;
-                console.log("WEB3 ONLOAD ", web3);
                 const signature = await generateSignature(web3, payload, privateKeyPem);
                 setSignature(signature);
             };
@@ -81,6 +74,7 @@ const TeSCNew = () => {
         console.log("FLAGHEX", flagHex);
         if (domain && expiry && signature) {
             console.log("deploying");
+
             try {
                 const accounts = await web3.eth.getAccounts();
                 const contract = new web3.eth.Contract(TeSC.abi);
@@ -90,8 +84,23 @@ const TeSCNew = () => {
                     data: TeSC.bytecode,
                     arguments: [domain, expiry, flagHex, signature]
                 }).send({ from: accounts[0], gas: '2000000' });
+                setDeployDone(true);
                 console.log("DEPLOY DONE");
 
+
+                let tescs = JSON.parse(localStorage.getItem('tescs')).tescs;
+                console.log("LS GET NEW 1", tescs);
+                if (!tescs) {
+                    tescs = [];
+                }
+                console.log("LS GET NEW 2", tescs);
+                // tescs = [];
+
+                tescs.push({ contractAddress, domain, expiry });
+                localStorage.setItem('tescs', JSON.stringify({ tescs }));
+
+                console.log("LS GET NEW 3", tescs);
+                console.log("LS GET NEW 4", JSON.parse(localStorage.getItem('tescs')));
             } catch (err) {
                 console.log(err);
             }
@@ -101,12 +110,14 @@ const TeSCNew = () => {
 
     const handleExpiryChange = (date) => {
         const mDate = moment.utc(date);
-        mDate.set({ hour: 23, minute: 59, second: 59, millisecond: 0 });
+        // mDate.set({ hour: 23, minute: 59, second: 59, millisecond: 0 });
+        mDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
         setExpiry(mDate.unix());
     };
 
     return (
         <Form>
+            <h2>Create & Deploy TeSC</h2>
             <Form.Group widths='equal'>
                 <Form.Field>
                     <label>Domain</label>
@@ -176,7 +187,7 @@ const TeSCNew = () => {
 
             <Form.Group grouped>
                 <label>Signature</label>
-                <div style={{paddingTop: '5px'}}>
+                <div style={{ paddingTop: '5px' }}>
                     <Button
                         content="Choose certificate private key"
                         labelPosition="left"
@@ -202,7 +213,7 @@ const TeSCNew = () => {
                     onChange={e => setSignature(e.target.value)}
                 />
             </Form.Group>
-
+            {deployDone && (<span><b>Contract address:</b>  <Label basic color='green' style={{ marginLeft: '5px' }}> {contractAddress}</Label></span>)}
             <Button onClick={handleSubmit} floated='right' positive>Deploy</Button>
         </Form>
 

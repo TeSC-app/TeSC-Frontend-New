@@ -35,11 +35,11 @@ const Navbar = ({ handleCollapseSidebar }) => {
                     <Dropdown item text='TeSC'>
                         <Dropdown.Menu>
                             <Dropdown.Item onClick={(e) => handlePageNavigation(e, '/tesc/new')}>
-                                Deploy
+                                Create & Deploy
                             </Dropdown.Item>
 
                             <Dropdown.Item onClick={(e) => handlePageNavigation(e, '/tesc/verify')}>
-                                Verify
+                                Lookup
                             </Dropdown.Item>
                         </Dropdown.Menu>
                     </Dropdown>
