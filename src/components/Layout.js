@@ -2,8 +2,13 @@ import React, { useState } from 'react';
 import { Route } from 'react-router-dom';
 
 import Navbar from './Navbar';
-import Dashboard from './Dashboard';
 import Sidebar from './Sidebar';
+
+import { Container } from 'semantic-ui-react';
+
+import Dashboard from '../pages/Dashboard';
+import TeSCNew from '../pages/TescNew';
+import TeSCVerify from '../pages/TescVerify';
 
 const Layout = () => {
     const [collapsed, setCollapsed] = useState(false);
@@ -22,7 +27,11 @@ const Layout = () => {
             <Navbar handleCollapseSidebar={handleCollapseSidebar} />
             <div className='layout'>
                 <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} />
-                <Route path="/" component={Dashboard} exact />
+                <Container className="content">
+                    <Route path="/" component={Dashboard} exact />
+                    <Route path="/tesc/new" component={TeSCNew} exact />
+                    <Route path="/tesc/verify" component={TeSCVerify} exact />
+                </Container>
             </div>
         </React.Fragment>
     );

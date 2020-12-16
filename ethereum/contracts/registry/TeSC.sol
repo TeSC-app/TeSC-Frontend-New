@@ -77,12 +77,3 @@ interface TeSC {
     ///  `interfaceID` is not 0xffffffff, `false` otherwise
     function supportsInterface(bytes4 interfaceID) external pure returns (bool);
 }
-
-contract Selector {
-  function calcTeSCInterfaceId() external pure returns (bytes4) {
-    TeSC i;
-    return i.getDomain.selector ^ i.getExpiry.selector ^ i.getFlags.selector ^ i.getSignature.selector
-        ^ i.setDomain.selector ^ i.setExpiry.selector ^ i.setFlags.selector ^ i.setSignature.selector
-        ^ i.setEndorsement.selector;
-  }
-}

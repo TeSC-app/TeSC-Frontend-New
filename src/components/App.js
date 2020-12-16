@@ -6,7 +6,7 @@ import 'semantic-ui-css/semantic.min.css';
 
 
 import Layout from './Layout';
-import './App.scss';
+import '../styles/App.scss';
 
 const App = () => {
   return (

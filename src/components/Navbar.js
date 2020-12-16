@@ -1,15 +1,24 @@
 import React, { useState } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 import { Dropdown, Menu, Icon } from 'semantic-ui-react';
 
-const Navbar = ({ handleCollapseSidebar }) => {
 
+const Navbar = ({ handleCollapseSidebar }) => {
+    let history = useHistory();
+    let location = useLocation();
+
+    const handlePageNavigation = (e, dest) => {
+        if (location.pathname !== dest) {
+            history.push(dest);
+        }
+    };
 
     return (
         <div className="navbar" >
 
-            <Menu  inverted size='huge' style={{borderRadius: '0px'}}>
-                <Menu.Item onClick={handleCollapseSidebar} style={{width: "80px"}}>
-                    <Icon name='bars'  />
+            <Menu inverted size='huge' style={{ borderRadius: '0px' }}>
+                <Menu.Item onClick={handleCollapseSidebar} style={{ width: "60px" }}>
+                    <Icon name='bars' />
                 </Menu.Item>
                 <Menu.Item
                     name='home'
@@ -23,11 +32,15 @@ const Navbar = ({ handleCollapseSidebar }) => {
                         </Dropdown.Menu>
                     </Dropdown>
 
-                    <Dropdown item text='Contract'>
+                    <Dropdown item text='TeSC'>
                         <Dropdown.Menu>
-                            <Dropdown.Item>Deploy</Dropdown.Item>
-                            <Dropdown.Item>Inspect</Dropdown.Item>
-                            <Dropdown.Item>Verify</Dropdown.Item>
+                            <Dropdown.Item onClick={(e) => handlePageNavigation(e, '/tesc/new')}>
+                                Deploy
+                            </Dropdown.Item>
+
+                            <Dropdown.Item onClick={(e) => handlePageNavigation(e, '/tesc/verify')}>
+                                Verify
+                            </Dropdown.Item>
                         </Dropdown.Menu>
                     </Dropdown>
                 </Menu.Menu>
