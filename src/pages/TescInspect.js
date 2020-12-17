@@ -50,7 +50,7 @@ const TeSCInspect = () => {
 
     return (
         <div>
-            <h2>Lookup TeSC</h2>
+            <h2>Inspect TeSC</h2>
             <h4>TeSC Address</h4>
             <div>
                 <Input

@@ -39,7 +39,7 @@ const Navbar = ({ handleCollapseSidebar }) => {
                             </Dropdown.Item>
 
                             <Dropdown.Item onClick={(e) => handlePageNavigation(e, '/tesc/verify')}>
-                                Lookup
+                                Inspect
                             </Dropdown.Item>
                         </Dropdown.Menu>
                     </Dropdown>

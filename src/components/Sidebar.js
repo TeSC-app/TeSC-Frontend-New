@@ -33,7 +33,7 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar }) => {
                     </MenuItem>
 
                     <MenuItem onClick={(e) => handlePageNavigation(e, '/tesc/inspect')} >
-                        Lookup
+                        Inspect
                     </MenuItem>
                 </SubMenu>
                 <MenuItem onClick={(e) => handlePageNavigation(e, "/registry")} icon={<FaAddressBook size='1.5em'/>}>
