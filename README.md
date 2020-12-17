@@ -1,70 +1,28 @@
-# Getting Started with Create React App
+# Development
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Please follow these steps after cloning this repo in order to set up a development environment locally. Note that [nodejs](https://nodejs.org/en/) should be installed on your device. 
 
-## Available Scripts
+### 1. `npm install`
 
-In the project directory, you can run:
+Installs all necessary packages for the app to run 
 
-### `npm start`
+### 2. `npm run chain`
 
-Runs the app in the development mode.\
+Runs a local blockchain in a separate terminal. 
+
+### 3. `npm start`
+
+Runs the app in the development mode (on another terminal other than that from step 2.).\
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
 The page will reload if you make edits.\
 You will also see any lint errors in the console.
 
-### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+# Update Smart Contracts 
 
-### `npm run build`
+### `npm run sol-build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+When the Smart Contracts in repos [Tesc-EIP](https://github.com/TeSC-app/TeSC-EIP) and [TeSC-Registry](https://github.com/TeSC-app/TeSC-Registry) get changed, we can copy the updated SCs to this repo and compile them by `npm run sol-build`.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Note that, the latest TeSC implementation is now in branch `events` of repo TeSC-EIP and can be retrieved [here](https://github.com/TeSC-app/TeSC-EIP/blob/events/ETHSSL.sol). At present, file [src/ethereum/contracts/ERCXXXImplementation.sol](src/ethereum/contracts/ERCXXXImplementation.sol) is containing that implementation and the frontend in this repo is based on that lastest TeSC implementation.
