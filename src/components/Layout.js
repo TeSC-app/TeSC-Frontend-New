@@ -8,7 +8,7 @@ import { Container } from 'semantic-ui-react';
 
 import Dashboard from '../pages/Dashboard';
 import TeSCNew from '../pages/TescNew';
-import TeSCDetail from '../pages/TescDetail';
+import TeSCDetail from '../pages/TescInspect';
 
 const Layout = () => {
     const [collapsed, setCollapsed] = useState(false);
@@ -28,7 +28,7 @@ const Layout = () => {
                 <Container className="content">
                     <Route path="/" component={Dashboard} exact />
                     <Route path="/tesc/new" component={TeSCNew} exact />
-                    <Route path="/tesc/detail" component={TeSCDetail} exact />
+                    <Route path="/tesc/inspect" component={TeSCDetail} exact />
                 </Container>
             </div>
         </React.Fragment>

@@ -10,17 +10,12 @@ const getWeb3 = async () => {
         /**
          * We are in the browser and metasmask is running
          */
-        // const enableAccounts = async () => {
-        //     await window.ethereum.request({ method: 'eth_requestAccounts' });
-        // };
-
-        // enableAccounts();
         console.log("METAMASK RUNNING");
         const provider = await detectEthereumProvider();
         web3 = new Web3(provider);
     } else {
         /**
-         * We are on the server *OR* the user is not running Metamask
+         * We are not running Metamask
          * --> create our own provider and wire it up with web3
          */
 

@@ -32,7 +32,7 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar }) => {
                         Create & Deploy
                     </MenuItem>
 
-                    <MenuItem onClick={(e) => handlePageNavigation(e, '/tesc/verify')} >
+                    <MenuItem onClick={(e) => handlePageNavigation(e, '/tesc/inspect')} >
                         Lookup
                     </MenuItem>
                 </SubMenu>
