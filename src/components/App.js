@@ -10,6 +10,7 @@ import Sidebar from './Sidebar';
 import Dashboard from '../pages/Dashboard';
 import TeSCNew from '../pages/TescNew';
 import TeSCDetail from '../pages/TescInspect'
+import Registry from '../pages/Registry'
 
 import '../styles/App.scss';
 
@@ -32,6 +33,7 @@ const App = () => {
                     <Route path="/" component={Dashboard} exact />
                     <Route path="/tesc/new" component={TeSCNew} exact />
                     <Route path="/tesc/inspect" component={TeSCDetail} exact />
+                    <Route path="/registry" component={Registry} exact />
                 </Container>
             </div>
         </BrowserRouter>

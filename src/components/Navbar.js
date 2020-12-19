@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { Dropdown, Menu, Icon } from 'semantic-ui-react';
 
