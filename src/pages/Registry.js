@@ -1,10 +1,12 @@
 import React, { useContext, useState, useEffect } from 'react'
-import { Table } from 'semantic-ui-react';
-import Search from '../components/Search';
+import { Table, Icon } from 'semantic-ui-react';
+import SearchComponent from '../components/SearchComponent';
 import AppContext from '../appContext';
 import isValidDomain from 'is-valid-domain';
 import keccak256 from 'keccak256';
-import TeSCRegistryImplementation from "../ethereum/build/contracts/TeSCRegistryImplementation.json";
+import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
+import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
+import moment from 'moment'
 
 function Registry() {
     const { web3 } = useContext(AppContext);
@@ -18,9 +20,7 @@ function Registry() {
         const init = async () => {
             try {
                 const networkId = await web3.eth.net.getId();
-                console.log(networkId)
                 const deployedNetworkRegistry = TeSCRegistryImplementation.networks[networkId];
-                console.log(deployedNetworkRegistry && deployedNetworkRegistry.address)
                 const instanceRegistry = new web3.eth.Contract(
                     TeSCRegistryImplementation.abi,
                     deployedNetworkRegistry && deployedNetworkRegistry.address,
@@ -37,16 +37,26 @@ function Registry() {
     const handleInput = event => {
         setSubmitted(false);
         setDomain(event.target.value);
+        //check if domain is valid by using the library
         isValidDomain(event.target.value) ? setSearchDisabled(false) : setSearchDisabled(true);
     }
 
     const handleSubmit = async () => {
         const submittedHash = `0x${keccak256(domain).toString('hex')}`
-        console.log(`You've submitted ${submittedHash}`)
-        const response = await contractRegistry.methods.getContractsFromDomain(submittedHash).call();
-        console.log(response[0])
-        // Update state with the result.
-        setEntries(response);
+        const contractAddresses = await contractRegistry.methods.getContractsFromDomain(submittedHash).call();
+        const contractInstances = [];
+        //generate contracts out of the ERCXXX interface using the contract addresses so that the getExpiry method can be used
+        for (let i = 0; i < contractAddresses.length; i++) {
+            const contractInstance = new web3.eth.Contract(
+                ERCXXX.abi,
+                contractAddresses[i],
+            )
+            const expiry = await contractInstance.methods.getExpiry().call()
+            //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
+            contractInstances.push({ address: contractAddresses[i], expiry: expiry })
+        }
+        console.log(contractInstances)
+        setEntries(contractInstances);
         setSubmitted(true)
     }
 
@@ -57,10 +67,22 @@ function Registry() {
                     <Table.Header>
                         <Table.Row>
                             <Table.HeaderCell>Address</Table.HeaderCell>
+                            <Table.HeaderCell>Expiry</Table.HeaderCell>
+                            <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
                         </Table.Row>
                     </Table.Header>
                     <Table.Body>
-                        {renderRows()}
+                        {
+                            entries.map((contractInstance) => (
+                                <Table.Row key={contractInstance.address}>
+                                    <Table.Cell>{contractInstance.address}</Table.Cell>
+                                    <Table.Cell>{moment.unix(parseInt(contractInstance.expiry)).format('DD/MM/YYYY')}</Table.Cell>
+                                    <Table.Cell textAlign="center">
+                                        <Icon name="delete" color="red" circular />
+                                    </Table.Cell>
+                                </Table.Row>
+                            ))
+                        }
                     </Table.Body>
                 </Table>
             )
@@ -76,25 +98,10 @@ function Registry() {
         }
     }
 
-    const renderRows = () => {
-        if (entries.length > 1) {
-            entries.map((contractAddress) => (
-                <Table.Row key={contractAddress}>
-                    <Table.Cell>{contractAddress}</Table.Cell>
-                </Table.Row>
-            ));
-        } else if (entries.length === 1) {
-            return (<Table.Row key={entries[0]}>
-                <Table.Cell>{entries[0]}</Table.Cell>
-            </Table.Row>
-            )
-        }
-    }
-
     return (
         <div>
             <h2>Explore Smart Contracts associated to a domain</h2>
-            <Search handleInput={handleInput} handleSubmit={handleSubmit} domain={domain} searchDisabled={searchDisabled} />
+            <SearchComponent handleInput={handleInput} handleSubmit={handleSubmit} domain={domain} searchDisabled={searchDisabled} />
             {renderTable()}
         </div>
     )
