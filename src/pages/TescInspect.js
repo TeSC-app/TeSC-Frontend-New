@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Input, Table, Checkbox } from 'semantic-ui-react';
 
 import BitSet from 'bitset';
@@ -9,7 +9,7 @@ import { FLAG_POSITIONS } from '../utils/tesc';
 import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
 
 
-const TeSCInspect = () => {
+const TeSCInspect = ({ location }) => {
     const { web3 } = useContext(AppContext);
     const [contractAddress, setContractAddress] = useState('');
 
@@ -18,7 +18,23 @@ const TeSCInspect = () => {
     const [signature, setSignature] = useState('');
     const [flags, setFlags] = useState(new BitSet('0'));
 
+    useEffect(() => {
+        if(location.state){
+            const contractAddressFromDashboard = location.state.contractAddressFromDashboard.contractAddress;
+            handleAddressEntered(contractAddressFromDashboard);
+        } 
+    }, []);
+
+    const resetValues = () => {
+        setContractAddress(null);
+        setDomain(null);
+        setExpiry(null);
+        setSignature(null);
+        setFlags(null);
+    }
+
     const handleAddressEntered = async (address) => {
+        resetValues();
         try {
             setContractAddress(address);
             if (address) {

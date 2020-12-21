@@ -17,6 +17,7 @@
     "react-dom": "^17.0.1",
     "react-icons": "^4.1.0",
     "react-pro-sidebar": "^0.4.4",
+    "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.1",
     "rlp-browser": "^1.0.1",
