@@ -10,9 +10,10 @@ import Sidebar from './Sidebar';
 import Dashboard from '../pages/Dashboard';
 import TeSCNew from '../pages/TescNew';
 import TeSCDetail from '../pages/TescInspect'
-import Registry from '../pages/Registry'
+import RegistryInspect from '../pages/RegistryInspect'
 
 import '../styles/App.scss';
+import RegistryAdd from '../pages/RegistryAdd';
 
 const App = () => {
     const [collapsed, setCollapsed] = useState(false);
@@ -33,7 +34,8 @@ const App = () => {
                     <Route path="/" component={Dashboard} exact />
                     <Route path="/tesc/new" component={TeSCNew} exact />
                     <Route path="/tesc/inspect" component={TeSCDetail} exact />
-                    <Route path="/registry" component={Registry} exact />
+                    <Route path="/registry/inspect" component={RegistryInspect} exact />
+                    <Route path="/registry/add" component={RegistryAdd} exact />
                 </Container>
             </div>
         </BrowserRouter>

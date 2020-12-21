@@ -8,7 +8,7 @@ import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistry
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
 import moment from 'moment'
 
-function Registry() {
+function RegistryInspect() {
     const { web3 } = useContext(AppContext);
     const [contractRegistry, setContractRegistry] = useState(undefined);
     const [domain, setDomain] = useState('')
@@ -107,4 +107,4 @@ function Registry() {
     )
 }
 
-export default Registry
+export default RegistryInspect
