@@ -1,7 +1,6 @@
 import React, { useState, useContext } from 'react'
-import { Form, Input, Label, Button, Message } from 'semantic-ui-react';
+import { Form, Input, Button } from 'semantic-ui-react';
 import AppContext from '../appContext';
-import keccak256 from 'keccak256';
 import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -24,7 +23,7 @@ function RegistryAdd() {
                 );
                 const isContractRegistered = await registry.methods.isContractRegistered(contractAddress).call()
                 if (!isContractRegistered) {
-                    await registry.methods.add(`0x${keccak256(domain).toString('hex')}`, contractAddress).send({ from: account, gas: '2000000' });
+                    await registry.methods.add(web3.utils.keccak256(domain), contractAddress).send({ from: account, gas: '2000000' });
                     toast.success('Entry added', {
                         position: "bottom-center",
                         autoClose: 3000,

@@ -11,8 +11,8 @@ function SearchComponent({searchDisabled, handleInput, handleSubmit}) {
                     <label>Domain</label>
                     <div className="ui search">
                         <div className="ui icon input searchContainer">
-                            <input className="prompt" type="text" placeholder="www.mysite.com" onChange={handleInput} maxlength="253" />
-                                <Button className="searchButton" icon disabled={searchDisabled} onClick={handleSubmit}><Icon name="search icon"/></Button>
+                            <input className="prompt" type="text" placeholder="www.mysite.com" onChange={handleInput} maxLength="253" />
+                                <Button className="searchButton" icon disabled={searchDisabled} onClick={handleSubmit}><Icon name="search"/></Button>
                         </div>
                     </div>
                 </Form.Field>

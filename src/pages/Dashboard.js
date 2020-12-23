@@ -1,21 +1,77 @@
-import React, { useContext, } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import 'react-day-picker/lib/style.css';
-
-import { Table, Icon } from 'semantic-ui-react';
+import { Table, Icon, Button } from 'semantic-ui-react';
 import moment from 'moment';
-
 import AppContext from '../appContext';
-
+import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Dashboard = () => {
     const { web3 } = useContext(AppContext);
+    const [tescsIsInRegistry, setTescsIsInRegistry] = useState([])
+    const [contractRegistry, setContractRegistry] = useState()
+
+    useEffect(() => {
+        const init = async () => {
+            try {
+                const networkId = await web3.eth.net.getId();
+                const deployedNetworkRegistry = TeSCRegistryImplementation.networks[networkId];
+                const contractRegistry = new web3.eth.Contract(
+                    TeSCRegistryImplementation.abi,
+                    deployedNetworkRegistry && deployedNetworkRegistry.address,
+                );
+                setContractRegistry(contractRegistry)
+                const tescs = JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress));
+                if (tescs) {
+                    const result = await Promise.all(tescs.map(async ({ contractAddress, domain, expiry }) => ({ contractAddress: contractAddress, domain: domain, expiry: expiry, isInRegistry: await contractRegistry.methods.isContractRegistered(contractAddress).call() })))
+                    setTescsIsInRegistry(result)
+                }
+            }
+            catch (error) {
+                console.error(error);
+            }
+        }
+        init()
+    }, [web3.currentProvider.selectedAddress, web3.eth.Contract, web3.eth.net])
+
+    const addToRegistry = async (domain, contractAddress) => {
+        if (domain && contractAddress) {
+            try {
+                const account = web3.currentProvider.selectedAddress;
+                const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
+                if (!isContractRegistered) {
+                    await contractRegistry.methods.add(web3.utils.keccak256(domain), contractAddress).send({ from: account, gas: '2000000' });
+                    toast.success('Entry added', {
+                        position: "bottom-center",
+                        autoClose: 3000,
+                        hideProgressBar: false
+                    });
+                } else {
+                    toast.error('Contract address already exists in the registry', {
+                        position: "bottom-center",
+                        autoClose: 3000,
+                        hideProgressBar: false
+                    }); 
+                }
+            } catch (err) {
+                toast.error('Could not add entry', {
+                    position: "bottom-center",
+                    autoClose: 3000,
+                    hideProgressBar: false
+                });
+                console.log(err);
+            }
+        }
+    }
+
 
     const renderRows = () => {
-        const tescs = JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress));
-        if(!tescs)
+        console.log(tescsIsInRegistry)
+        if (!tescsIsInRegistry)
             return []
 
-        return tescs.map(({ contractAddress, domain, expiry }) => (
+        return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isInRegistry }) => (
             <Table.Row key={contractAddress}>
                 <Table.Cell>{contractAddress}</Table.Cell>
                 <Table.Cell>{domain}</Table.Cell>
@@ -24,7 +80,9 @@ const Dashboard = () => {
                     <Icon name="delete" color="red" circular />
                 </Table.Cell>
                 <Table.Cell textAlign="center">
-                    <Icon name="delete" color="red" circular />
+                    {
+                        isInRegistry ? <Icon name="check" color="green" circular /> : <div><Icon name="delete" color="red" circular /><Button onClick={() => addToRegistry(domain, contractAddress)}>Add</Button></div>
+                    }
                 </Table.Cell>
             </Table.Row>
         ));
@@ -49,6 +107,7 @@ const Dashboard = () => {
                     </Table.Body>
                 )}
             </Table>
+            <ToastContainer />
         </React.Fragment>
     );
 };
