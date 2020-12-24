@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Input, Table, Checkbox, Loader, Icon, Label, Grid, Card, Form, Dimmer } from 'semantic-ui-react';
 
+
 import BitSet from 'bitset';
 import moment from 'moment';
 import axios from 'axios';
@@ -10,7 +11,7 @@ import { FLAG_POSITIONS, hexStringToBitSet } from '../utils/tesc';
 import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
 
 
-const TeSCInspect = () => {
+const TeSCInspect = ({ location }) => {
     const { web3 } = useContext(AppContext);
     const [contractAddress, setContractAddress] = useState('');
 
@@ -22,7 +23,6 @@ const TeSCInspect = () => {
 
     const [plainDomain, setPlainDomain] = useState('');
     const [plainDomainSubmitted, setPlainDomainSubmitted] = useState(false);
-
 
     const [verifResult, setVerifResult] = useState(null);
 
@@ -55,8 +55,15 @@ const TeSCInspect = () => {
         verifyTesc();
     }, [contractAddress, plainDomainSubmitted, verifyTesc]);
 
+    useEffect(() => {
+        if(location.state){
+            handleChangeAddress(location.state.contractAddressFromDashboard);
+        } 
+    }, []);
 
-    const handleTypeContractAddress = async (address) => {
+
+    const handleChangeAddress = async (address) => {
+        // resetValues();
         setContractAddress(address);
         if (address.substring(0, 2) === '0x' && address.length === 42) {
             try {
@@ -70,7 +77,7 @@ const TeSCInspect = () => {
 
     const handleSubmitAddress = async (e) => {
         e.preventDefault();
-        handleTypeContractAddress(contractAddress);
+        handleChangeAddress(contractAddress);
     };
 
     const handlePlainDomainEntered = async (e) => {
@@ -98,9 +105,10 @@ const TeSCInspect = () => {
                 <Form onSubmit={handleSubmitAddress}>
                     <Form.Field>
                         <Input
+                            value={contractAddress}
                             label='TeSC Address'
                             placeholder='0x254dffcd3277c0b1660f6d42efbb754edababc2b'
-                            onChange={e => { handleTypeContractAddress(e.target.value); }}
+                            onChange={e => { handleChangeAddress(e.target.value); }}
                             size='large'
                             icon='search'
                             style={{ width: '75%' }}
@@ -168,6 +176,7 @@ const TeSCInspect = () => {
                                                     <Form.Field>
                                                         <label>Original domain</label>
                                                         <Input
+                                                            value={plainDomain}
                                                             placeholder='www.mysite.com'
                                                             onChange={e => setPlainDomain(e.target.value)}
                                                             size='large'

@@ -3,6 +3,7 @@ import 'react-day-picker/lib/style.css';
 
 import { Table, Icon } from 'semantic-ui-react';
 import moment from 'moment';
+import { Link } from 'react-router-dom';
 
 import AppContext from '../appContext';
 
@@ -17,7 +18,16 @@ const Dashboard = () => {
 
         return tescs.map(({ contractAddress, domain, expiry }) => (
             <Table.Row key={contractAddress}>
-                <Table.Cell>{contractAddress}</Table.Cell>
+                <Table.Cell>
+                    <li>
+                        <Link to={{
+                            pathname: "/tesc/inspect",
+                            state: {
+                                contractAddressFromDashboard: contractAddress
+                            }
+                        }}>{contractAddress}</Link>
+                    </li>
+                </Table.Cell>
                 <Table.Cell>{domain}</Table.Cell>
                 <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
                 <Table.Cell textAlign="center">
