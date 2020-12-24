@@ -35,6 +35,7 @@
     "sol-cp": "npm run sol-cp-registry && npm run sol-cp-tesc",
     "sol-compile": "cd src/ethereum/ && truffle compile",
     "sol-build": "npm run sol-cp && npm run sol-compile",
+    "chain-console": "truffle console --network teams",
     "chain": "ganache-cli --allowUnlimitedContractSize -l 90000000 -d"
   },
   "eslintConfig": {
