@@ -4,15 +4,14 @@ import { Link } from 'react-router-dom';
 import { Table, Icon, Popup, Button } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
 
-function DashboardEntry({contractAddress, domain, expiry, isFavourite, currentAccount, index}) {
+function DashboardEntry({contractAddress, domain, expiry, isFavourite, currentAccount, index, tescs}) {
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false)
 
     useEffect(() => {
         isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false)
-    }, [isFavourite, setTescIsInFavourites])
+    }, [isFavourite, setTescIsInFavourites, currentAccount])
 
     const addRemoveFavourites = () => {
-        let tescs = JSON.parse(localStorage.getItem(currentAccount))
         if(tescIsInFavourites) {
             tescs[index]['isFavourite'] = false
             setTescIsInFavourites(false)
@@ -20,7 +19,7 @@ function DashboardEntry({contractAddress, domain, expiry, isFavourite, currentAc
             tescs[index]['isFavourite'] = true
             setTescIsInFavourites(true)
         }
-        localStorage.setItem(currentAccount, JSON.stringify(tescs));
+        localStorage.setItem(currentAccount.toLowerCase(), JSON.stringify(tescs));
     }
 
     return (

@@ -9,23 +9,31 @@ import DashboardEntry from '../components/DashboardEntry';
 const Dashboard = () => {
     const { web3 } = useContext(AppContext);
     const [currentAccount, setCurrentAccount] = useState(undefined)
+    const [tescs, setTescs] = useState([])
 
     useEffect(() => {
-        setCurrentAccount(web3.currentProvider.selectedAddress)
-    }, [setCurrentAccount, web3.currentProvider.selectedAddress])
+        const init = async () => {
+            const accounts = await web3.eth.getAccounts();
+            setCurrentAccount(accounts[0])
+            //to lower case as accounts[0] is mixed-case
+            setTescs(JSON.parse(localStorage.getItem(accounts[0].toLowerCase())))
+        }
+        init()
+    }, [setCurrentAccount, web3.eth])
 
     const renderRows = () => {
-        const tescs = JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress));
+        console.log(tescs)
         if (!tescs)
             return []
-        return tescs.map(({ contractAddress, domain, expiry, isFavourite }, index) => (
+        return tescs.map(({ contractAddress, domain, expiry, isFavourite }, index, tescs) => (
             <DashboardEntry key={contractAddress}
                 contractAddress={contractAddress}
                 domain={domain}
                 expiry={expiry}
                 isFavourite={isFavourite}
                 currentAccount={currentAccount}
-                index={index} />
+                index={index}
+                tescs={tescs} />
         ));
     };
 
