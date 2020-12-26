@@ -23,7 +23,7 @@ const Dashboard = () => {
                         <Link to={{
                             pathname: "/tesc/inspect",
                             state: {
-                                contractAddressFromDashboard: {contractAddress}
+                                contractAddressFromDashboard: contractAddress
                             }
                         }}>{contractAddress}</Link>
                     </li>

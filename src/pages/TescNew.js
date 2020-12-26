@@ -10,7 +10,12 @@ import 'react-day-picker/lib/style.css';
 
 import AppContext from '../appContext';
 import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
-import { predictContractAddress, generateSignature, flagsTo24BytesHex, FLAG_POSITIONS } from '../utils/tesc';
+import {
+    predictContractAddress,
+    generateSignature,
+    flagsTo24BytesHex,
+    FLAG_POSITIONS,
+} from '../utils/tesc';
 
 
 const TeSCNew = () => {
@@ -21,7 +26,9 @@ const TeSCNew = () => {
     const [domain, setDomain] = useState('');
     const [expiry, setExpiry] = useState(null);
     const [signature, setSignature] = useState('');
-    const [flags, setFlags] = useState(new BitSet('0'));
+    const [flags, setFlags] = useState(new BitSet('0x00'));
+
+    const [domainHashed, setDomainHashed] = useState('');
 
 
     const [privateKeyFileName, setPrivateKeyFileName] = useState('');
@@ -29,10 +36,19 @@ const TeSCNew = () => {
 
     const fileInputRef = React.createRef();
 
+    const getCurrentDomain = () => {
+        return !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)? domainHashed : domain;
+    }
+
     const handleFlagsChange = (i) => {
         const newFlags = new BitSet(flags.flip(i).toString());
         setFlags(newFlags);
         console.log(newFlags.toString());
+        if (i === FLAG_POSITIONS.DOMAIN_HASHED) {
+            if (domain) {
+                setDomainHashed(web3.utils.sha3(domain).substring(2));
+            }
+        }
     };
 
     /* https://stackoverflow.com/a/56377153 */
@@ -46,7 +62,7 @@ const TeSCNew = () => {
                 const address = await predictContractAddress(web3);
                 setContractAddress(address);
                 const flagsHex = flagsTo24BytesHex(flags);
-                const payload = { address, domain, expiry, flagsHex };
+                const payload = { address, domain: getCurrentDomain(), expiry, flagsHex };
                 const privateKeyPem = e.target.result;
                 const signature = await generateSignature(payload, privateKeyPem);
                 setSignature(signature);
@@ -59,7 +75,6 @@ const TeSCNew = () => {
         e.preventDefault();
         const flagsHex = flagsTo24BytesHex(flags);
 
-        console.log(flagsHex);
         if (domain && expiry && signature) {
 
             try {
@@ -67,7 +82,7 @@ const TeSCNew = () => {
                 const contract = new web3.eth.Contract(TeSC.abi);
                 await contract.deploy({
                     data: TeSC.bytecode,
-                    arguments: [domain, expiry, flagsHex, signature]
+                    arguments: [getCurrentDomain(), expiry, flagsHex, signature]
                 }).send({ from: account, gas: '2000000' });
                 setDeployDone(true);
 
@@ -109,7 +124,8 @@ const TeSCNew = () => {
                 <Form.Field>
                     <label>Domain</label>
                     <Input
-                        value={domain}
+                        value={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain}
+                        disabled={!!domain && !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)}
                         placeholder='www.mysite.com'
                         onChange={e => setDomain(e.target.value)}
                     />
@@ -164,7 +180,16 @@ const TeSCNew = () => {
                     onChange={e => setSignature(e.target.value)}
                 />
             </Form.Group>
-            {deployDone && (<span><b>Contract address:</b>  <Label basic color='green' style={{ marginLeft: '5px' }}> {contractAddress}</Label></span>)}
+            {deployDone &&
+                (
+                    <span>
+                        <b>Contract address:</b>
+                        <Label basic color='green' size='large' style={{ marginLeft: '5px' }}>
+                            {contractAddress}
+                        </Label>
+                    </span>
+                )
+            }
             <Button onClick={handleSubmit} floated='right' positive>Deploy</Button>
         </Form>
 
