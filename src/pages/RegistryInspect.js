@@ -3,7 +3,6 @@ import { Table, Icon } from 'semantic-ui-react';
 import SearchComponent from '../components/SearchComponent';
 import AppContext from '../appContext';
 import isValidDomain from 'is-valid-domain';
-import keccak256 from 'keccak256';
 import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
 import moment from 'moment'
@@ -21,11 +20,11 @@ function RegistryInspect() {
             try {
                 const networkId = await web3.eth.net.getId();
                 const deployedNetworkRegistry = TeSCRegistryImplementation.networks[networkId];
-                const instanceRegistry = new web3.eth.Contract(
+                const contractRegistry = new web3.eth.Contract(
                     TeSCRegistryImplementation.abi,
                     deployedNetworkRegistry && deployedNetworkRegistry.address,
                 );
-                setContractRegistry(instanceRegistry);
+                setContractRegistry(contractRegistry);
             }
             catch (error) {
                 console.error(error);
@@ -42,7 +41,7 @@ function RegistryInspect() {
     }
 
     const handleSubmit = async () => {
-        const submittedHash = `0x${keccak256(domain).toString('hex')}`
+        const submittedHash = web3.utils.keccak256(domain)
         const contractAddresses = await contractRegistry.methods.getContractsFromDomain(submittedHash).call();
         const contractInstances = [];
         //generate contracts out of the ERCXXX interface using the contract addresses so that the getExpiry method can be used

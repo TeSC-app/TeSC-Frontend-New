@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useState } from 'react';
 import 'react-day-picker/lib/style.css';
-import { Table, Icon, Button } from 'semantic-ui-react';
+import { Table, Icon, Button, Popup } from 'semantic-ui-react';
 import moment from 'moment';
 import AppContext from '../appContext';
 import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import '../styles/Dashboard.scss'
 
 const Dashboard = () => {
     const { web3 } = useContext(AppContext);
@@ -52,10 +53,40 @@ const Dashboard = () => {
                         position: "bottom-center",
                         autoClose: 3000,
                         hideProgressBar: false
-                    }); 
+                    });
                 }
             } catch (err) {
                 toast.error('Could not add entry', {
+                    position: "bottom-center",
+                    autoClose: 3000,
+                    hideProgressBar: false
+                });
+                console.log(err);
+            }
+        }
+    }
+
+    const removeFromRegistry = async (domain, contractAddress) => {
+        if (domain && contractAddress) {
+            try {
+                const account = web3.currentProvider.selectedAddress;
+                const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
+                if (isContractRegistered) {
+                    await contractRegistry.methods.remove(web3.utils.keccak256(domain), contractAddress).send({ from: account, gas: '2000000' });
+                    toast.success('Entry removed successfully', {
+                        position: "bottom-center",
+                        autoClose: 3000,
+                        hideProgressBar: false
+                    });
+                } else {
+                    toast.error('Contract address not found in the registry', {
+                        position: "bottom-center",
+                        autoClose: 3000,
+                        hideProgressBar: false
+                    });
+                }
+            } catch (err) {
+                toast.error('Could not remove entry', {
                     position: "bottom-center",
                     autoClose: 3000,
                     hideProgressBar: false
@@ -81,7 +112,13 @@ const Dashboard = () => {
                 </Table.Cell>
                 <Table.Cell textAlign="center">
                     {
-                        isInRegistry ? <Icon name="check" color="green" circular /> : <div><Icon name="delete" color="red" circular /><Button onClick={() => addToRegistry(domain, contractAddress)}>Add</Button></div>
+                        isInRegistry ?
+                            <Popup content='Remove entry from the TeSC registry'
+                                trigger={<Button as="div" className="buttonAddRemove" color='red'
+                                    onClick={() => removeFromRegistry(domain, contractAddress)}><Icon name='minus' />Remove</Button>} /> :
+                            <Popup content='Add entry to the TeSC registry'
+                                trigger={<Button as="div" className="buttonAddRemove" color='green'
+                                    onClick={() => addToRegistry(domain, contractAddress)}><Icon name='plus' />Add</Button>} />
                     }
                 </Table.Cell>
             </Table.Row>

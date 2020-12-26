@@ -17,13 +17,13 @@ function RegistryAdd() {
                 const account = web3.currentProvider.selectedAddress;
                 const networkId = await web3.eth.net.getId();
                 const deployedNetworkRegistry = TeSCRegistryImplementation.networks[networkId];
-                const registry = new web3.eth.Contract(
+                const contractRegistry = new web3.eth.Contract(
                     TeSCRegistryImplementation.abi,
                     deployedNetworkRegistry && deployedNetworkRegistry.address,
                 );
-                const isContractRegistered = await registry.methods.isContractRegistered(contractAddress).call()
+                const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
                 if (!isContractRegistered) {
-                    await registry.methods.add(web3.utils.keccak256(domain), contractAddress).send({ from: account, gas: '2000000' });
+                    await contractRegistry.methods.add(web3.utils.keccak256(domain), contractAddress).send({ from: account, gas: '2000000' });
                     toast.success('Entry added', {
                         position: "bottom-center",
                         autoClose: 3000,
