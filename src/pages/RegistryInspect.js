@@ -41,8 +41,7 @@ function RegistryInspect() {
     }
 
     const handleSubmit = async () => {
-        const submittedHash = web3.utils.keccak256(domain)
-        const contractAddresses = await contractRegistry.methods.getContractsFromDomain(submittedHash).call();
+        const contractAddresses = await contractRegistry.methods.getContractsFromDomain(domain).call();
         const contractInstances = [];
         //generate contracts out of the ERCXXX interface using the contract addresses so that the getExpiry method can be used
         for (let i = 0; i < contractAddresses.length; i++) {
@@ -54,7 +53,6 @@ function RegistryInspect() {
             //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
             contractInstances.push({ address: contractAddresses[i], expiry: expiry })
         }
-        console.log(contractInstances)
         setEntries(contractInstances);
         setSubmitted(true)
     }

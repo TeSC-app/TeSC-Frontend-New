@@ -42,7 +42,7 @@ const Dashboard = () => {
                 const account = web3.currentProvider.selectedAddress;
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
                 if (!isContractRegistered) {
-                    await contractRegistry.methods.add(web3.utils.keccak256(domain), contractAddress).send({ from: account, gas: '2000000' });
+                    await contractRegistry.methods.add(domain, contractAddress).send({ from: account, gas: '2000000' });
                     toast.success('Entry added', {
                         position: "bottom-center",
                         autoClose: 3000,
@@ -72,7 +72,7 @@ const Dashboard = () => {
                 const account = web3.currentProvider.selectedAddress;
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
                 if (isContractRegistered) {
-                    await contractRegistry.methods.remove(web3.utils.keccak256(domain), contractAddress).send({ from: account, gas: '2000000' });
+                    await contractRegistry.methods.remove(domain, contractAddress).send({ from: account, gas: '2000000' });
                     toast.success('Entry removed successfully', {
                         position: "bottom-center",
                         autoClose: 3000,

@@ -6,10 +6,10 @@ import "./TeSCRegistry.sol";
 
 contract TeSCRegistryImplementation is TeSCRegistry {
     // @notice Maps domain hash and contract address to address of account that added the entry
-    mapping(bytes32 => mapping(address => address)) private entryOwner;
+    mapping(string => mapping(address => address)) private entryOwner;
 
     // @notice Maps domain hash to addresses of all contracts that are linked to the domain
-    mapping(bytes32 => address[]) private domainToContracts;
+    mapping(string => address[]) private domainToContracts;
 
     // @notice Maps contract addresses included in the registry to true
     mapping(address => bool) private registeredContracts;
@@ -17,9 +17,12 @@ contract TeSCRegistryImplementation is TeSCRegistry {
     // @notice Maps contract addresses to their index in domainToContracts
     mapping(address => uint) private contractsToIndex;
 
-    function add(bytes32 _domain, address _contractAddr) external override {
+    function add(string calldata _domain, address _contractAddr) external override {
         require(TeSC(_contractAddr).supportsInterface(0xd7de9043));
-        require(keccak256(abi.encodePacked(TeSC(_contractAddr).getDomain())) == _domain);
+        bytes24 flags = TeSC(_contractAddr).getFlags();
+        require(isFlagSet(flags, 0));
+        string memory contractDomain = TeSC(_contractAddr).getDomain();
+        require(keccak256(abi.encodePacked(contractDomain)) == keccak256(abi.encodePacked(_domain)));
         require(TeSC(_contractAddr).getExpiry() > block.timestamp);
         require(registeredContracts[_contractAddr] == false);
 
@@ -33,7 +36,7 @@ contract TeSCRegistryImplementation is TeSCRegistry {
         emit RegistryChanged(_domain, _contractAddr, EventType.Add);
     }
 
-    function remove(bytes32 _domain, address _contractAddr) external override {
+    function remove(string calldata _domain, address _contractAddr) external override {
         require(entryOwner[_domain][_contractAddr] == msg.sender);
 
         address[] storage arr = domainToContracts[_domain];
@@ -49,11 +52,16 @@ contract TeSCRegistryImplementation is TeSCRegistry {
         emit RegistryChanged(_domain, _contractAddr, EventType.Remove);
     }
 
-    function getContractsFromDomain(bytes32 _domain) external override view returns (address[] memory) {
+    function getContractsFromDomain(string calldata _domain) external override view returns (address[] memory) {
         return domainToContracts[_domain];
     }
 
     function isContractRegistered(address _contractAddr) external override view returns (bool) {
         return registeredContracts[_contractAddr];
+    }
+
+    function isFlagSet(bytes24 b, uint pos) internal pure returns (bool) {
+        bytes24 one = 0x000000000000000000000000000000000000000000000001;
+        return ((b >> pos) & one) != 0;
     }
 }
