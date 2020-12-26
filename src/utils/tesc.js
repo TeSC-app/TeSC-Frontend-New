@@ -1,5 +1,6 @@
 import RLP from 'rlp-browser';
 import { PrivateKey } from '@fidm/x509';
+import BitSet from 'bitset';
 
 
 export const FLAG_POSITIONS = {
@@ -13,11 +14,11 @@ export const FLAG_POSITIONS = {
 };
 
 export const predictContractAddress = async (web3) => {
-    const senderAddress = (await web3.eth.getAccounts())[0];
+    const senderAddress = web3.currentProvider.selectedAddress;
     console.log("Sender address:", senderAddress);
 
-    if(!senderAddress) {
-        throw new Error('Unable to get wallet address!')
+    if (!senderAddress) {
+        throw new Error('Unable to get wallet address!');
     }
     const nonce = await web3.eth.getTransactionCount(senderAddress);
 
@@ -27,16 +28,25 @@ export const predictContractAddress = async (web3) => {
     return futureAddress;
 };
 
-export const generateSignature = async ({address, domain, expiry, flagHex }, privateKeyPem) => {
-    const claim = `${address}.${domain}.${expiry}.${flagHex}`;
+export const generateSignature = async ({ address, domain, expiry, flagsHex }, privateKeyPem) => {
+    const claim = `${address}.${domain}.${expiry}.${flagsHex}`;
+    console.log('====> CLAIM', claim);
     const privateKey = PrivateKey.fromPEM(privateKeyPem);
     return privateKey.sign(claim, 'RSA-SHA256').toString('base64');
 };
 
-export const flagsTo24BytesHex = (flagsBitSet) => {
-    let hex = flagsBitSet.slice(0, Object.keys(FLAG_POSITIONS).length - 1).toString(16)
-    if(hex.length < 48) {
+
+export const flagsTo24BytesHex = (flagsBitVector) => {
+    // const flagsBitVectorWithSANITY = new BitSet(bitVectorToInt(flagsBitVector) + 1);
+    const flagsBitVectorWithSANITY = new BitSet(flagsBitVector.toString() + '1');
+    let hex = flagsBitVectorWithSANITY.slice(0, Object.keys(FLAG_POSITIONS).length - 1).toString(16);
+    if (hex.length < 48) {
         hex = '0'.repeat(48 - hex.length) + hex;
     }
     return '0x' + hex;
-}   
+};
+
+export const hexStringToBitSet = (hexStr) => {
+    const flagsBitVectorWithoutSANITY = parseInt(hexStr).toString(2).slice(0, -1);
+    return new BitSet(flagsBitVectorWithoutSANITY === ''? 0 : flagsBitVectorWithoutSANITY);
+};
