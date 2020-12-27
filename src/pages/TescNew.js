@@ -10,6 +10,8 @@ import 'react-day-picker/lib/style.css';
 
 import AppContext from '../appContext';
 import FeedbackMessage, { buildNegativeMsg, buildPositiveMsg } from "../components/FeedbackMessage";
+import LinkTescInspect from '../components/InternalLink';
+
 
 import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
 import {
@@ -116,6 +118,8 @@ const TeSCNew = () => {
                     data: TeSC.bytecode,
                     arguments: [getCurrentDomain(), expiry, flagsHex, signature]
                 }).send({ from: account, gas: '2000000' });
+            
+
                 setDeployDone(true);
 
                 setSysMsg(buildPositiveMsg({
@@ -187,8 +191,8 @@ const TeSCNew = () => {
     // style={{ height: '50px' }}  style={{ marginBottom: '100px' }}
     return (
         <React.Fragment>
-            <Grid verticalAlign='middle' style={{ marginBottom: '50px' }}>
-                <Grid.Row>
+            <Grid style={{ marginBottom: '50px', height: '50px' }}>
+                <Grid.Row style={{height: '100%'}}>
                     <Grid.Column width={6}>
                         <h2>Create & Deploy TeSC</h2>
                     </Grid.Column>
@@ -280,7 +284,7 @@ const TeSCNew = () => {
                         <span>
                             <b>Contract address:</b>
                             <Label basic color='green' size='large' style={{ marginLeft: '5px' }}>
-                                {contractAddress}
+                                <LinkTescInspect contractAddress={contractAddress} />
                             </Label>
                         </span>
                     )
@@ -290,7 +294,7 @@ const TeSCNew = () => {
                     // disabled={!isSignatureInputReady() || !signature}
                     floated='right'
                     positive
-                    style={{ width: '15%', margin: '20px auto' }}
+                    style={{ width: '15%'}}
                 >
                     Deploy
                 </Button>

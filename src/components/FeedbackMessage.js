@@ -25,7 +25,7 @@ const FeedbackMessage = ({ message, handleDismiss }) => {
             positive={outcome === 'positive'} 
             negative={outcome === 'negative'} 
             onDismiss={handleDismiss}
-            floating='true'
+            // floating={true}
             style={{paddingRight: '50px'}}
         >
             <Message.Header>{header}</Message.Header>

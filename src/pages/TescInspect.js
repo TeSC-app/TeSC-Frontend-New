@@ -57,7 +57,7 @@ const TeSCInspect = ({ location }) => {
 
     useEffect(() => {
         if(location.state){
-            handleChangeAddress(location.state.contractAddressFromDashboard);
+            handleChangeAddress(location.state.contractAddress);
         } 
     }, []);
 
