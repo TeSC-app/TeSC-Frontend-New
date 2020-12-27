@@ -9,7 +9,6 @@ import BitSet from 'bitset';
 import 'react-day-picker/lib/style.css';
 
 import AppContext from '../appContext';
-import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
 import {
     predictContractAddress,
     generateSignature,
@@ -27,14 +26,17 @@ const TeSCNew = () => {
     const [expiry, setExpiry] = useState(null);
     const [signature, setSignature] = useState('');
     const [flags, setFlags] = useState(new BitSet('0x00'));
+    const [tesc, setTesc] = useState(null);
 
     const [domainHashed, setDomainHashed] = useState('');
 
 
     const [privateKeyFileName, setPrivateKeyFileName] = useState('');
+    const [jsonFileName, setJsonFileName] = useState('');
     const [deployDone, setDeployDone] = useState(false);
 
     const fileInputRef = React.createRef();
+    const jsonFileInputRef = React.createRef();
 
     const getCurrentDomain = () => {
         return !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)? domainHashed : domain;
@@ -71,17 +73,28 @@ const TeSCNew = () => {
         }
     };
 
+    const handleJsonFilePicked = (event) => {
+        event.preventDefault();
+        setJsonFileName(jsonFileInputRef.current.files[0].name);
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const parsedJson = JSON.parse(e.target.result);
+            setTesc(parsedJson);
+        }
+        reader.readAsText(event.target.files[0]);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         const flagsHex = flagsTo24BytesHex(flags);
 
-        if (domain && expiry && signature) {
+        if (domain && expiry && signature && tesc) {
 
             try {
                 const account = web3.currentProvider.selectedAddress;
-                const contract = new web3.eth.Contract(TeSC.abi);
+                const contract = new web3.eth.Contract(tesc.abi);
                 await contract.deploy({
-                    data: TeSC.bytecode,
+                    data: tesc.bytecode,
                     arguments: [getCurrentDomain(), expiry, flagsHex, signature]
                 }).send({ from: account, gas: '2000000' });
                 setDeployDone(true);
@@ -180,6 +193,27 @@ const TeSCNew = () => {
                     onChange={e => setSignature(e.target.value)}
                 />
             </Form.Group>
+
+            <Form.Group grouped>
+                <label>JSON File</label>
+                <div style={{ paddingTop: '5px' }}>
+                    <Button
+                        content="Choose contract JSON file"
+                        labelPosition="left"
+                        icon="file"
+                        onClick={() => jsonFileInputRef.current.click()}
+                    />
+                    <input
+                        ref={jsonFileInputRef}
+                        type="file"
+                        onChange={handleJsonFilePicked}
+                        accept=".json"
+                        hidden
+                    />
+                    {!!jsonFileName && <Label basic pointing='left'>{jsonFileName}</Label>}
+                </div>  
+            </Form.Group>
+        
             {deployDone &&
                 (
                     <span>
