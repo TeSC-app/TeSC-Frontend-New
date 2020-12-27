@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
 import { Input, Form, Label, Button } from 'semantic-ui-react';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
@@ -9,6 +9,8 @@ import BitSet from 'bitset';
 import 'react-day-picker/lib/style.css';
 
 import AppContext from '../appContext';
+import FeedbackMessage from "../components/FeedbackMessage";
+
 import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
 import {
     predictContractAddress,
@@ -27,18 +29,41 @@ const TeSCNew = () => {
     const [expiry, setExpiry] = useState(null);
     const [signature, setSignature] = useState('');
     const [flags, setFlags] = useState(new BitSet('0x00'));
-
     const [domainHashed, setDomainHashed] = useState('');
 
-
     const [privateKeyFileName, setPrivateKeyFileName] = useState('');
+    const [privateKeyPEM, setPrivateKeyPEM] = useState('');
     const [deployDone, setDeployDone] = useState(false);
+
+    const prevExpiry = useRef(expiry);
+    const prevFlags = useRef(flags.toString());
+    const prevPrivateKeyPEM = useRef(privateKeyPEM);
+
 
     const fileInputRef = React.createRef();
 
-    const getCurrentDomain = () => {
-        return !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)? domainHashed : domain;
-    }
+
+    const getCurrentDomain = useCallback(() => !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain,
+        [domainHashed, domain, flags]);
+
+
+    const isSignatureInputReady = useCallback(() => getCurrentDomain() && expiry,
+        [getCurrentDomain, expiry]);
+
+
+    const computeSignature = useCallback(async () => {
+        const domain = getCurrentDomain();
+        if (!!privateKeyPEM && !!domain && !!expiry) {
+            const address = await predictContractAddress(web3);
+            setContractAddress(address);
+            const flagsHex = flagsTo24BytesHex(flags);
+            const payload = { address, domain, expiry, flagsHex };
+            setSignature(await generateSignature(payload, privateKeyPEM));
+        } else if (!domain || !expiry) {
+            setSignature('');
+        }
+    }, [expiry, flags, privateKeyPEM, web3, getCurrentDomain]);
+
 
     const handleFlagsChange = (i) => {
         const newFlags = new BitSet(flags.flip(i).toString());
@@ -51,6 +76,7 @@ const TeSCNew = () => {
         }
     };
 
+
     /* https://stackoverflow.com/a/56377153 */
     const handleFilePicked = (event) => {
         event.preventDefault();
@@ -59,17 +85,19 @@ const TeSCNew = () => {
         if (domain && expiry) {
             const reader = new FileReader();
             reader.onload = async (e) => {
-                const address = await predictContractAddress(web3);
-                setContractAddress(address);
-                const flagsHex = flagsTo24BytesHex(flags);
-                const payload = { address, domain: getCurrentDomain(), expiry, flagsHex };
-                const privateKeyPem = e.target.result;
-                const signature = await generateSignature(payload, privateKeyPem);
-                setSignature(signature);
+                setPrivateKeyPEM(e.target.result);
             };
             reader.readAsText(event.target.files[0]);
         }
     };
+
+    useEffect(() => {
+        if (privateKeyPEM !== prevPrivateKeyPEM.current) {
+            computeSignature();
+            prevPrivateKeyPEM.current = privateKeyPEM;
+        }
+    }, [privateKeyPEM, computeSignature]);
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -97,14 +125,30 @@ const TeSCNew = () => {
                 console.log(err);
             }
         }
-
     };
+
 
     const handleExpiryChange = (date) => {
         const mDate = moment.utc(date);
         mDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
         setExpiry(mDate.unix());
     };
+
+    useEffect(() => {
+        if (expiry !== prevExpiry.current) {
+            computeSignature();
+            prevExpiry.current = expiry;
+        }
+    }, [expiry, computeSignature]);
+
+
+    useEffect(() => {
+        if (flags.toString() !== prevFlags.current) {
+            computeSignature();
+            prevFlags.current = flags.toString();
+        }
+    }, [flags, computeSignature]);
+
 
     const renderFlagCheckboxes = () => {
         return Object.entries(FLAG_POSITIONS).map(([flagName, i]) => (
@@ -113,86 +157,105 @@ const TeSCNew = () => {
                 checked={!!flags.get(i)}
                 label={flagName}
                 onClick={() => handleFlagsChange(i)}
+                disabled={!domain || !expiry}
             />
         ));
     };
 
     return (
-        <Form>
-            <h2>Create & Deploy TeSC</h2>
-            <Form.Group widths='equal'>
-                <Form.Field>
-                    <label>Domain</label>
-                    <Input
-                        value={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain}
-                        disabled={!!domain && !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)}
-                        placeholder='www.mysite.com'
-                        onChange={e => setDomain(e.target.value)}
+        <React.Fragment>
+            <Form>
+                <h2>Create & Deploy TeSC</h2>
+                <Form.Group widths='equal'>
+                    <Form.Field>
+                        <label>Domain</label>
+                        <Input
+                            value={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain}
+                            disabled={!!domain && !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)}
+                            placeholder='www.mysite.com'
+                            onChange={e => setDomain(e.target.value)}
+                            onBlur={() => computeSignature()}
+                        />
+                    </Form.Field>
+
+                    <Form.Field>
+                        <label>Expiry</label>
+                        <DayPickerInput
+                            onBlur={() => computeSignature()}
+                            onDayChange={handleExpiryChange}
+                            format="DD/MM/YYYY"
+                            formatDate={formatDate}
+                            parseDate={parseDate}
+                            placeholder='dd/mm/yyyy'
+                            dayPickerProps={{
+                                disabledDays: {
+                                    before: new Date()
+                                },
+                                readOnly: true
+                            }}
+                            inputProps={{ readOnly: true }}
+                        />
+                    </Form.Field>
+
+                </Form.Group>
+                <Form.Group grouped>
+                    <label>Flags</label>
+                    {renderFlagCheckboxes()}
+                </Form.Group>
+
+                <Form.Group grouped>
+                    <label>Signature</label>
+                    <div style={{ paddingTop: '5px' }}>
+                        <Button
+                            content="Choose certificate private key"
+                            labelPosition="left"
+                            icon="file"
+                            onClick={() => fileInputRef.current.click()}
+                            disabled={!isSignatureInputReady()}
+                        />
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            onChange={handleFilePicked}
+                            accept=".pem, .txt, .cer, .cert, .key"
+                            hidden
+                        />
+                        {!!privateKeyFileName && <Label basic pointing='left'>{privateKeyFileName}</Label>}
+                    </div>
+
+                    <div>
+                        <em>Paste your signature into the box below or pick the certificate private key file to automatically compute the signature</em>
+                    </div>
+                    <Form.TextArea
+                        value={signature}
+                        onChange={e => setSignature(e.target.value)}
+                        // disabled={!isSignatureInputReady()}
+                        disabled={true}
                     />
-                </Form.Field>
+                </Form.Group>
+                {deployDone &&
+                    (
+                        <span>
+                            <b>Contract address:</b>
+                            <Label basic color='green' size='large' style={{ marginLeft: '5px' }}>
+                                {contractAddress}
+                            </Label>
+                        </span>
+                    )
+                }
+                <Button
+                    onClick={handleSubmit}
+                    disabled={!isSignatureInputReady() || !signature}
+                    floated='right'
+                    positive
+                    style={{ width: '15%', margin: '20px auto' }}
+                >
+                    Deploy
+                </Button>
 
-                <Form.Field>
-                    <label>Expiry</label>
-                    <DayPickerInput
-                        onDayChange={handleExpiryChange}
-                        format="DD/MM/YYYY"
-                        formatDate={formatDate}
-                        parseDate={parseDate}
-                        placeholder='dd/mm/yyyy'
-                        dayPickerProps={{
-                            disabledDays: {
-                                before: new Date()
-                            }
-                        }}
-                    />
-                </Form.Field>
+            </Form>
 
-            </Form.Group>
-            <Form.Group grouped>
-                <label>Flags</label>
-                {renderFlagCheckboxes()}
-            </Form.Group>
-
-            <Form.Group grouped>
-                <label>Signature</label>
-                <div style={{ paddingTop: '5px' }}>
-                    <Button
-                        content="Choose certificate private key"
-                        labelPosition="left"
-                        icon="file"
-                        onClick={() => fileInputRef.current.click()}
-                    />
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        onChange={handleFilePicked}
-                        accept=".pem, .txt, .cer, .cert"
-                        hidden
-                    />
-                    {!!privateKeyFileName && <Label basic pointing='left'>{privateKeyFileName}</Label>}
-                </div>
-
-                <div>
-                    <em>Paste your signature into the box below or pick the certificate private key file to automatically compute the signature</em>
-                </div>
-                <Form.TextArea
-                    value={signature}
-                    onChange={e => setSignature(e.target.value)}
-                />
-            </Form.Group>
-            {deployDone &&
-                (
-                    <span>
-                        <b>Contract address:</b>
-                        <Label basic color='green' size='large' style={{ marginLeft: '5px' }}>
-                            {contractAddress}
-                        </Label>
-                    </span>
-                )
-            }
-            <Button onClick={handleSubmit} floated='right' positive>Deploy</Button>
-        </Form>
-
+        </React.Fragment>
     );
 };
 
