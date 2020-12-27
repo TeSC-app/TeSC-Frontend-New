@@ -1,5 +1,5 @@
 import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
-import { Input, Form, Label, Button } from 'semantic-ui-react';
+import { Input, Form, Label, Button, Grid } from 'semantic-ui-react';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { formatDate, parseDate } from 'react-day-picker/moment';
@@ -9,7 +9,7 @@ import BitSet from 'bitset';
 import 'react-day-picker/lib/style.css';
 
 import AppContext from '../appContext';
-import FeedbackMessage from "../components/FeedbackMessage";
+import FeedbackMessage, { buildNegativeMsg, buildPositiveMsg } from "../components/FeedbackMessage";
 
 import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
 import {
@@ -23,6 +23,7 @@ import {
 const TeSCNew = () => {
     const { web3 } = useContext(AppContext);
 
+    const [sysMsg, setSysMsg] = useState(null);
     const [contractAddress, setContractAddress] = useState('');
 
     const [domain, setDomain] = useState('');
@@ -101,10 +102,13 @@ const TeSCNew = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        setSysMsg(null);
+        setDeployDone(false);
+
         const flagsHex = flagsTo24BytesHex(flags);
 
         if (domain && expiry && signature) {
-
             try {
                 const account = web3.currentProvider.selectedAddress;
                 const contract = new web3.eth.Contract(TeSC.abi);
@@ -114,6 +118,11 @@ const TeSCNew = () => {
                 }).send({ from: account, gas: '2000000' });
                 setDeployDone(true);
 
+                setSysMsg(buildPositiveMsg({
+                    header: 'Smart Contract successfully deployed',
+                    msg: `TLS-endorsed Smart Contract deployed successully at address ${contractAddress}`
+                }));
+
 
                 let tescs = JSON.parse(localStorage.getItem(account));
                 if (!tescs) {
@@ -122,8 +131,18 @@ const TeSCNew = () => {
                 tescs.push({ contractAddress, domain, expiry });
                 localStorage.setItem(account, JSON.stringify(tescs));
             } catch (err) {
+                setSysMsg(buildNegativeMsg({
+                    code: err.code,
+                    header: 'Unable to deploy Smart Contract',
+                    msg: err.message
+                }));
                 console.log(err);
             }
+        } else {
+            setSysMsg(buildNegativeMsg({
+                header: 'Unable to deploy Smart Contract',
+                msg: `${!domain ? 'Domain' : !expiry ? 'Expiry' : !signature ? 'Signature' : 'Some required input'} is empty`
+            }));
         }
     };
 
@@ -162,13 +181,34 @@ const TeSCNew = () => {
         ));
     };
 
+    const handleDismissMessage = () => {
+        setSysMsg(null);
+    }
+    // style={{ height: '50px' }}  style={{ marginBottom: '100px' }}
     return (
         <React.Fragment>
+            <Grid verticalAlign='middle' style={{ marginBottom: '50px' }}>
+                <Grid.Row>
+                    <Grid.Column width={6}>
+                        <h2>Create & Deploy TeSC</h2>
+                    </Grid.Column>
+                    <Grid.Column width={10}>
+                        <div style={{ float: 'right'}}>
+                            {sysMsg && <FeedbackMessage message={sysMsg} handleDismiss={handleDismissMessage} />}
+
+                        </div>
+                    </Grid.Column>
+                </Grid.Row>
+
+            </Grid>
             <Form>
-                <h2>Create & Deploy TeSC</h2>
+
                 <Form.Group widths='equal'>
                     <Form.Field>
-                        <label>Domain</label>
+                        <label>
+                            {/* Domain <Label circular='true' color='red' style={{ fontSize: '10px' }}>required</Label> */}
+                            Domain  <span style={{ color: 'red' }}>*</span>
+                        </label>
                         <Input
                             value={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain}
                             disabled={!!domain && !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)}
@@ -179,7 +219,9 @@ const TeSCNew = () => {
                     </Form.Field>
 
                     <Form.Field>
-                        <label>Expiry</label>
+                        <label>
+                            Expiry <span style={{ color: 'red' }}>*</span>
+                        </label>
                         <DayPickerInput
                             onBlur={() => computeSignature()}
                             onDayChange={handleExpiryChange}
@@ -204,7 +246,7 @@ const TeSCNew = () => {
                 </Form.Group>
 
                 <Form.Group grouped>
-                    <label>Signature</label>
+                    <label>Signature <span style={{ color: 'red' }}>*</span></label>
                     <div style={{ paddingTop: '5px' }}>
                         <Button
                             content="Choose certificate private key"
@@ -245,7 +287,7 @@ const TeSCNew = () => {
                 }
                 <Button
                     onClick={handleSubmit}
-                    disabled={!isSignatureInputReady() || !signature}
+                    // disabled={!isSignatureInputReady() || !signature}
                     floated='right'
                     positive
                     style={{ width: '15%', margin: '20px auto' }}
