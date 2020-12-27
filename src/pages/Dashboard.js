@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Table } from 'semantic-ui-react';
+import { Table, Dropdown } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import '../styles/Dashboard.scss';
 import '../components/DashboardEntry'
@@ -22,7 +22,6 @@ const Dashboard = () => {
     }, [setCurrentAccount, web3.eth])
 
     const renderRows = () => {
-        console.log(tescs)
         if (!tescs)
             return []
         return tescs.map(({ contractAddress, domain, expiry, isFavourite }, index, tescs) => (
@@ -37,6 +36,14 @@ const Dashboard = () => {
         ));
     };
 
+    const filterTescs = () => {
+        setTescs(JSON.parse(localStorage.getItem(currentAccount.toLowerCase())).filter(tesc => tesc.isFavourite === true))
+    }
+
+    const showAllTescs = () => {
+        setTescs(JSON.parse(localStorage.getItem(currentAccount.toLowerCase())))
+    }
+
     return (
         <React.Fragment>
             <h2>Dashboard</h2>
@@ -48,7 +55,17 @@ const Dashboard = () => {
                         <Table.HeaderCell>Expiry</Table.HeaderCell>
                         <Table.HeaderCell textAlign="center">Verification</Table.HeaderCell>
                         <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
-                        <Table.HeaderCell textAlign="center">Favourites</Table.HeaderCell>
+                        <Table.HeaderCell textAlign="center">Favourites
+                        <Dropdown
+                                icon='filter'
+                                floating
+                                button
+                                className='icon dropdownFavourites'>
+                                <Dropdown.Menu>
+                                    <Dropdown.Item icon='redo' text='All' onClick={showAllTescs} />
+                                    <Dropdown.Item icon='heart' text='By favourite' onClick={filterTescs} />
+                                </Dropdown.Menu>
+                            </Dropdown></Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
                 {(
