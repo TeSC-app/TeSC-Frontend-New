@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { Dropdown, Menu, Icon } from 'semantic-ui-react';
 
@@ -21,6 +21,7 @@ const Navbar = ({ handleCollapseSidebar }) => {
                     <Icon name='bars' />
                 </Menu.Item>
                 <Menu.Item
+                    onClick={(e) => handlePageNavigation(e, "/home")}
                     name='home'
                 />
 

@@ -10,8 +10,9 @@ import Sidebar from './Sidebar';
 import Dashboard from '../pages/Dashboard';
 import TeSCNew from '../pages/TescNew';
 import TeSCDetail from '../pages/TescInspect'
-
+import Home from '../pages/Home';
 import '../styles/App.scss';
+
 
 const App = () => {
     const [collapsed, setCollapsed] = useState(false);
@@ -30,6 +31,7 @@ const App = () => {
                 <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} />
                 <Container className="content">
                     <Route path="/" component={Dashboard} exact />
+                    <Route path="/home" component={Home} exact />
                     <Route path="/tesc/new" component={TeSCNew} exact />
                     <Route path="/tesc/inspect" component={TeSCDetail} exact />
                 </Container>
