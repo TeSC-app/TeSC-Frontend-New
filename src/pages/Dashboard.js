@@ -33,7 +33,7 @@ const Dashboard = () => {
                 setContractRegistry(contractRegistry)
                 const tescs = JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress));
                 if (tescs) {
-                    const result = await Promise.all(tescs.map(async ({ contractAddress, domain, expiry }) => ({ contractAddress: contractAddress, domain: domain, expiry: expiry, isInRegistry: await contractRegistry.methods.isContractRegistered(contractAddress).call() })))
+                    const result = await Promise.all(tescs.map(async ({ contractAddress, domain, expiry, isFavourite }) => ({ contractAddress: contractAddress, domain: domain, expiry: expiry, isFavourite: isFavourite, isInRegistry: await contractRegistry.methods.isContractRegistered(contractAddress).call() })))
                     setTescsIsInRegistry(result)
                 }
             }
