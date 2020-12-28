@@ -49,7 +49,7 @@ const Dashboard = () => {
         if (!tescsIsInRegistry)
             return []
 
-        return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isInRegistry }, index) => (
+        return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isInRegistry, isFavourite }, index) => (
             <DashboardEntry key={contractAddress}
                 contractAddress={contractAddress}
                 domain={domain}
@@ -57,7 +57,7 @@ const Dashboard = () => {
                 isInRegistry={isInRegistry}
                 currentAccount={web3.currentProvider.selectedAddress}
                 contractRegistry={contractRegistry}
-                assignSysMsg={assignSysMsgFromEntry} />
+                assignSysMsg={assignSysMsgFromEntry}
                 isFavourite={isFavourite}
                 index={index}
                 tescsIsInRegistry={tescsIsInRegistry} />

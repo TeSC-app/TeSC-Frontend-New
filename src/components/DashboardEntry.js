@@ -70,13 +70,13 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, index, t
 
     const addRemoveFavourites = () => {
         if(tescIsInFavourites) {
-            tescs[index]['isFavourite'] = false
+            tescsIsInRegistry[index]['isFavourite'] = false
             setTescIsInFavourites(false)
         } else {
-            tescs[index]['isFavourite'] = true
+            tescsIsInRegistry[index]['isFavourite'] = true
             setTescIsInFavourites(true)
         }
-        localStorage.setItem(currentAccount.toLowerCase(), JSON.stringify(tescs));
+        localStorage.setItem(currentAccount, JSON.stringify(tescsIsInRegistry));
     }
 
     return (
@@ -106,7 +106,6 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, index, t
                             trigger={<Button as="div" className="buttonAddRemove" color='green'
                                 onClick={addToRegistry}><Icon name='plus' />Add</Button>} />
                 }
-            </Table.Cell>
             </Table.Cell>
             {
                 <Table.Cell textAlign="center">
