@@ -38,7 +38,8 @@ const TeSCNew = () => {
     const [privateKeyPEM, setPrivateKeyPEM] = useState('');
     const [deployDone, setDeployDone] = useState(false);
 
-    const [cost, setCost] = useState(0);
+    const [costEstimated, setCostEstimated] = useState(0);
+    const [costActual, setCostActual] = useState(0);
 
     const prevExpiry = useRef(expiry);
     const prevFlags = useRef(flags.toString());
@@ -119,7 +120,11 @@ const TeSCNew = () => {
                 await contract.deploy({
                     data: TeSC.bytecode,
                     arguments: [getCurrentDomain(), expiry, flagsHex, signature]
-                }).send({ from: account, gas: '2000000' });
+                }).send({ from: account, gas: '2000000' })
+                    .on('receipt', async (txReceipt) => {
+                        console.log("TX_RECEIPT: ", txReceipt);
+                        setCostActual(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether'));
+                    });
 
 
                 setDeployDone(true);
@@ -206,7 +211,7 @@ const TeSCNew = () => {
             const gasPrice = await web3.eth.getGasPrice();
 
             console.log("GAS PRICE (ether): ", web3.utils.fromWei(gasPrice, 'ether'));
-            setCost(gasEstimation * web3.utils.fromWei(gasPrice, 'ether'));
+            setCostEstimated(gasEstimation * web3.utils.fromWei(gasPrice, 'ether'));
         }
     }, [expiry, getCurrentDomain, domain, flags, signature, web3]);
 
@@ -216,14 +221,12 @@ const TeSCNew = () => {
 
     return (
         <React.Fragment>
-
-            {/* {estimateDeploymentCost()} */}
             <Grid style={{ marginBottom: '50px', height: '50px' }}>
                 <Grid.Row style={{ height: '100%' }}>
-                    <Grid.Column width={6}>
+                    <Grid.Column width={5}>
                         <h2>Create & Deploy TeSC</h2>
                     </Grid.Column>
-                    <Grid.Column width={10}>
+                    <Grid.Column width={11}>
                         <div style={{ float: 'right' }}>
                             {sysMsg && <FeedbackMessage message={sysMsg} handleDismiss={handleDismissMessage} />}
 
@@ -232,11 +235,7 @@ const TeSCNew = () => {
                 </Grid.Row>
 
             </Grid>
-            {/* <Button onClick={estimateDeploymentCost}>
-                estimate gas
-            </Button> */}
-            <Form>
-
+            <Form style={{ width: '80%', margin: '20px auto' }}>
                 <Form.Group widths='equal'>
                     <Form.Field>
                         <label>
@@ -311,11 +310,17 @@ const TeSCNew = () => {
                 </Form.Group>
                 {deployDone &&
                     (
-                        <span>
+                        <span style={{ float: 'left' }}>
                             <b>Contract address:</b>
                             <Label basic color='green' size='large' style={{ marginLeft: '5px' }}>
                                 <LinkTescInspect contractAddress={contractAddress} />
                             </Label>
+                            <br />
+                            <br />
+                            <b>
+                                Cost paid:
+                                <span style={{ color: 'royalblue' }}> {costActual.toFixed(5)} ether</span>
+                            </b>
                         </span>
                     )
                 }
@@ -331,11 +336,13 @@ const TeSCNew = () => {
                 </Button>
                 <br />
                 <br />
-                {!!cost && signature && (
-                    <p style={{ float: 'right', textAlign:'center' }}>
-                        <b>Cost Estimation: <span style={{color: 'royalblue'}}>{cost.toFixed(5)} ether</span>
+                {!!costEstimated && signature && (
+                    <Label basic style={{ float: 'right', textAlign: 'center' }} pointing='above' >
+                        <b>
+                            Cost estimation:
+                            <span style={{ color: 'royalblue' }}> {costEstimated.toFixed(5)} ether</span>
                         </b>
-                    </p>
+                    </Label>
                 )}
 
             </Form>
