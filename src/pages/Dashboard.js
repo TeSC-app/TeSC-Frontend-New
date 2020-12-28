@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import 'react-day-picker/lib/style.css';
-import { Table, Grid } from 'semantic-ui-react';
+import { Table, Grid, Dropdown } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
 import '../styles/Dashboard.scss'
@@ -49,7 +49,7 @@ const Dashboard = () => {
         if (!tescsIsInRegistry)
             return []
 
-        return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isInRegistry }) => (
+        return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isInRegistry }, index) => (
             <DashboardEntry key={contractAddress}
                 contractAddress={contractAddress}
                 domain={domain}
@@ -58,8 +58,19 @@ const Dashboard = () => {
                 currentAccount={web3.currentProvider.selectedAddress}
                 contractRegistry={contractRegistry}
                 assignSysMsg={assignSysMsgFromEntry} />
+                isFavourite={isFavourite}
+                index={index}
+                tescsIsInRegistry={tescsIsInRegistry} />
         ));
     };
+
+    const filterTescs = () => {
+        setTescsIsInRegistry(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)).filter(tesc => tesc.isFavourite === true))
+    }
+
+    const showAllTescs = () => {
+        setTescsIsInRegistry(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)))
+    }
 
     return (
         <React.Fragment>
@@ -84,6 +95,17 @@ const Dashboard = () => {
                         <Table.HeaderCell>Expiry</Table.HeaderCell>
                         <Table.HeaderCell textAlign="center">Verification</Table.HeaderCell>
                         <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
+                        <Table.HeaderCell textAlign="center">Favourites
+                        <Dropdown
+                                icon='filter'
+                                floating
+                                button
+                                className='icon dropdownFavourites'>
+                                <Dropdown.Menu>
+                                    <Dropdown.Item icon='redo' text='All' onClick={showAllTescs} />
+                                    <Dropdown.Item icon='heart' text='By favourite' onClick={filterTescs} />
+                                </Dropdown.Menu>
+                            </Dropdown></Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
                 {(

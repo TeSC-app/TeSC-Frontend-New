@@ -1,13 +1,18 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import moment from 'moment';
 import { Link } from 'react-router-dom';
 import { Table, Icon, Popup, Button } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
 
-function DashboardEntry({ contractAddress, domain, expiry, contractRegistry, currentAccount, isInRegistry, assignSysMsg }) {
+function DashboardEntry({ contractAddress, domain, expiry, isFavourite, index, tescsIsInRegistry, contractRegistry, currentAccount, isInRegistry, assignSysMsg }) {
 
     const [isInRegistryNew, setIsInRegistryNew] = useState(isInRegistry)
+    const [tescIsInFavourites, setTescIsInFavourites] = useState(false)
+
+    useEffect(() => {
+        isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false)
+    }, [isFavourite, setTescIsInFavourites, currentAccount])
 
     const addToRegistry = async () => {
         if (domain && contractAddress) {
@@ -63,6 +68,16 @@ function DashboardEntry({ contractAddress, domain, expiry, contractRegistry, cur
         }
     }
 
+    const addRemoveFavourites = () => {
+        if(tescIsInFavourites) {
+            tescs[index]['isFavourite'] = false
+            setTescIsInFavourites(false)
+        } else {
+            tescs[index]['isFavourite'] = true
+            setTescIsInFavourites(true)
+        }
+        localStorage.setItem(currentAccount.toLowerCase(), JSON.stringify(tescs));
+    }
 
     return (
         <Table.Row key={contractAddress}>
@@ -92,7 +107,14 @@ function DashboardEntry({ contractAddress, domain, expiry, contractRegistry, cur
                                 onClick={addToRegistry}><Icon name='plus' />Add</Button>} />
                 }
             </Table.Cell>
-
+            </Table.Cell>
+            {
+                <Table.Cell textAlign="center">
+                    <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
+                        trigger={<Button icon="heart" className={tescIsInFavourites ? "favourite" : "notFavourite"}
+                            onClick={addRemoveFavourites} />} />
+                </Table.Cell>
+            }
         </Table.Row>
     )
 }

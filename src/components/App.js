@@ -19,7 +19,6 @@ const App = () => {
     const [collapsed, setCollapsed] = useState(false);
     const [toggled, setToggled] = useState(false);
 
-
     const handleCollapseSidebar = () => {
         setCollapsed(!collapsed);
         setToggled(!toggled);
