@@ -85,7 +85,6 @@ const Dashboard = () => {
                         </div>
                     </Grid.Column>
                 </Grid.Row>
-
             </Grid>
             <Table>
                 <Table.Header>

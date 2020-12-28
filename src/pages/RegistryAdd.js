@@ -1,14 +1,18 @@
 import React, { useState, useContext } from 'react'
-import { Form, Input, Button } from 'semantic-ui-react';
+import { Form, Input, Button, Grid } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import FeedbackMessage, { buildNegativeMsg, buildPositiveMsg } from "../components/FeedbackMessage";
 
 function RegistryAdd() {
     const { web3 } = useContext(AppContext);
     const [domain, setDomain] = useState('')
     const [contractAddress, setContractAddress] = useState('')
+    const [sysMsg, setSysMsg] = useState(null)
+
+    const handleDismissMessage = () => {
+        setSysMsg(null);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -24,25 +28,22 @@ function RegistryAdd() {
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
                 if (!isContractRegistered) {
                     await contractRegistry.methods.add(domain, contractAddress).send({ from: account, gas: '2000000' });
-                    toast.success('Entry added', {
-                        position: "bottom-center",
-                        autoClose: 3000,
-                        hideProgressBar: false
-                    });
+                    setSysMsg(buildPositiveMsg({
+                        header: 'Entry added to the registry',
+                        msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully added to the registry`
+                    }));
                 } else {
-                    toast.error('Contract address already exists in the registry', {
-                        position: "bottom-center",
-                        autoClose: 3000,
-                        hideProgressBar: false
-                    }); 
+                    setSysMsg(buildNegativeMsg({
+                        header: 'Unable to add entry to the registry',
+                        msg: `The address ${contractAddress} has already been added to the registry`
+                    }))
                 }
             } catch (err) {
-                toast.error('Could not add entry', {
-                    position: "bottom-center",
-                    autoClose: 3000,
-                    hideProgressBar: false
-                });
-                console.log(err);
+                setSysMsg(buildNegativeMsg({
+                    code: err.code,
+                    header: 'Unable to add entry to the registry',
+                    msg: `${!domain ? 'Domain' : !contractAddress ? 'Contract address' : 'Some required input'} is empty`
+                }))
             }
         }
 
@@ -51,7 +52,18 @@ function RegistryAdd() {
     return (
         <div>
             <Form>
-                <h2>Add TeSC contract to registry</h2>
+                <Grid>
+                    <Grid.Row style={{ height: '100%' }}>
+                        <Grid.Column width={6}>
+                            <h2>Add TeSC contract to registry</h2>
+                        </Grid.Column>
+                        <Grid.Column width={10}>
+                            <div style={{ float: 'right' }}>
+                                {sysMsg && <FeedbackMessage message={sysMsg} handleDismiss={handleDismissMessage} />}
+                            </div>
+                        </Grid.Column>
+                    </Grid.Row>
+                </Grid>
                 <Form.Group widths='equal'>
                     <Form.Field>
                         <label>Domain</label>
@@ -74,7 +86,6 @@ function RegistryAdd() {
                 </Form.Group>
                 <Button disabled={!domain || !contractAddress} onClick={handleSubmit} floated='right' positive>Add entry</Button>
             </Form>
-            <ToastContainer />
         </div>
     )
 }
