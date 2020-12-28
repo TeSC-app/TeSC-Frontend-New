@@ -38,6 +38,8 @@ const TeSCNew = () => {
     const [privateKeyPEM, setPrivateKeyPEM] = useState('');
     const [deployDone, setDeployDone] = useState(false);
 
+    const [cost, setCost] = useState(0);
+
     const prevExpiry = useRef(expiry);
     const prevFlags = useRef(flags.toString());
     const prevPrivateKeyPEM = useRef(privateKeyPEM);
@@ -118,7 +120,7 @@ const TeSCNew = () => {
                     data: TeSC.bytecode,
                     arguments: [getCurrentDomain(), expiry, flagsHex, signature]
                 }).send({ from: account, gas: '2000000' });
-            
+
 
                 setDeployDone(true);
 
@@ -187,17 +189,42 @@ const TeSCNew = () => {
 
     const handleDismissMessage = () => {
         setSysMsg(null);
-    }
-    // style={{ height: '50px' }}  style={{ marginBottom: '100px' }}
+    };
+
+    const estimateDeploymentCost = useCallback(async () => {
+        if (domain && expiry && signature) {
+            const flagsHex = flagsTo24BytesHex(flags);
+
+            const account = web3.currentProvider.selectedAddress;
+            const contract = new web3.eth.Contract(TeSC.abi);
+            const gasEstimation = await contract.deploy({
+                data: TeSC.bytecode,
+                arguments: [getCurrentDomain(), expiry, flagsHex, signature]
+            }).estimateGas({ from: account, gas: '2000000' });
+
+            console.log("GAS ESTIMATION: ", gasEstimation);
+            const gasPrice = await web3.eth.getGasPrice();
+
+            console.log("GAS PRICE (ether): ", web3.utils.fromWei(gasPrice, 'ether'));
+            setCost(gasEstimation * web3.utils.fromWei(gasPrice, 'ether'));
+        }
+    }, [expiry, getCurrentDomain, domain, flags, signature, web3]);
+
+    useEffect(() => {
+        estimateDeploymentCost();
+    }, [signature, estimateDeploymentCost]);
+
     return (
         <React.Fragment>
+
+            {/* {estimateDeploymentCost()} */}
             <Grid style={{ marginBottom: '50px', height: '50px' }}>
-                <Grid.Row style={{height: '100%'}}>
+                <Grid.Row style={{ height: '100%' }}>
                     <Grid.Column width={6}>
                         <h2>Create & Deploy TeSC</h2>
                     </Grid.Column>
                     <Grid.Column width={10}>
-                        <div style={{ float: 'right'}}>
+                        <div style={{ float: 'right' }}>
                             {sysMsg && <FeedbackMessage message={sysMsg} handleDismiss={handleDismissMessage} />}
 
                         </div>
@@ -205,6 +232,9 @@ const TeSCNew = () => {
                 </Grid.Row>
 
             </Grid>
+            {/* <Button onClick={estimateDeploymentCost}>
+                estimate gas
+            </Button> */}
             <Form>
 
                 <Form.Group widths='equal'>
@@ -289,15 +319,24 @@ const TeSCNew = () => {
                         </span>
                     )
                 }
+
                 <Button
                     onClick={handleSubmit}
                     // disabled={!isSignatureInputReady() || !signature}
                     floated='right'
                     positive
-                    style={{ width: '15%'}}
+                    style={{ width: '15%' }}
                 >
                     Deploy
                 </Button>
+                <br />
+                <br />
+                {!!cost && signature && (
+                    <p style={{ float: 'right', textAlign:'center' }}>
+                        <b>Cost Estimation: <span style={{color: 'royalblue'}}>{cost.toFixed(5)} ether</span>
+                        </b>
+                    </p>
+                )}
 
             </Form>
 
