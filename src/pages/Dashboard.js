@@ -8,18 +8,16 @@ import DashboardEntry from '../components/DashboardEntry';
 
 const Dashboard = () => {
     const { web3 } = useContext(AppContext);
-    const [currentAccount, setCurrentAccount] = useState(undefined)
     const [tescs, setTescs] = useState([])
 
     useEffect(() => {
-        const init = async () => {
-            const accounts = await web3.eth.getAccounts();
-            setCurrentAccount(accounts[0])
-            //to lower case as accounts[0] is mixed-case
-            setTescs(JSON.parse(localStorage.getItem(accounts[0].toLowerCase())))
-        }
-        init()
-    }, [setCurrentAccount, web3.eth])
+
+
+
+        //to lower case as accounts[0] is mixed-case
+        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)))
+
+    }, [web3.currentProvider.selectedAddress])
 
     const renderRows = () => {
         if (!tescs)
@@ -30,18 +28,18 @@ const Dashboard = () => {
                 domain={domain}
                 expiry={expiry}
                 isFavourite={isFavourite}
-                currentAccount={currentAccount}
+                currentAccount={web3.currentProvider.selectedAddress}
                 index={index}
                 tescs={tescs} />
         ));
     };
 
     const filterTescs = () => {
-        setTescs(JSON.parse(localStorage.getItem(currentAccount.toLowerCase())).filter(tesc => tesc.isFavourite === true))
+        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)).filter(tesc => tesc.isFavourite === true))
     }
 
     const showAllTescs = () => {
-        setTescs(JSON.parse(localStorage.getItem(currentAccount.toLowerCase())))
+        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)))
     }
 
     return (
