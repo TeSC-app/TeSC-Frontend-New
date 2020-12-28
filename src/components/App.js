@@ -11,6 +11,7 @@ import Dashboard from '../pages/Dashboard';
 import TeSCNew from '../pages/TescNew';
 import TeSCDetail from '../pages/TescInspect'
 import RegistryInspect from '../pages/RegistryInspect'
+import TeSCInspect from '../pages/TescInspect'
 
 import '../styles/App.scss';
 import RegistryAdd from '../pages/RegistryAdd';
@@ -35,6 +36,7 @@ const App = () => {
                     <Route path="/tesc/inspect" component={TeSCDetail} exact />
                     <Route path="/registry/inspect" component={RegistryInspect} exact />
                     <Route path="/registry/add" component={RegistryAdd} exact />
+                    <Route path="/tesc/inspect" component={TeSCInspect} exact />
                 </Container>
             </div>
         </BrowserRouter>

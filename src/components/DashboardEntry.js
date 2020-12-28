@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 import moment from 'moment';
-import { Link } from 'react-router-dom';
 import { Table, Icon, Popup, Button } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
+import LinkTescInspect from '../components/InternalLink';
 
 function DashboardEntry({ contractAddress, domain, expiry, isFavourite, index, tescsIsInRegistry, contractRegistry, currentAccount, isInRegistry, assignSysMsg }) {
 
     const [isInRegistryNew, setIsInRegistryNew] = useState(isInRegistry)
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false)
-
+    
     useEffect(() => {
-        isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false)
-    }, [isFavourite, setTescIsInFavourites, currentAccount])
+        isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false);
+    }, [isFavourite, setTescIsInFavourites, currentAccount]);
 
     const addToRegistry = async () => {
         if (domain && contractAddress) {
@@ -78,18 +78,11 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, index, t
         }
         localStorage.setItem(currentAccount, JSON.stringify(tescsIsInRegistry));
     }
-
+    
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
-                <li>
-                    <Link to={{
-                        pathname: "/tesc/inspect",
-                        state: {
-                            contractAddressFromDashboard: contractAddress
-                        }
-                    }}>{contractAddress}</Link>
-                </li>
+                <LinkTescInspect contractAddress={contractAddress} />
             </Table.Cell>
             <Table.Cell>{domain}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
@@ -115,7 +108,7 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, index, t
                 </Table.Cell>
             }
         </Table.Row>
-    )
+    );
 }
 
-export default DashboardEntry
+export default DashboardEntry;
