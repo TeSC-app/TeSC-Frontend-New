@@ -1,44 +1,46 @@
-import React, { useContext, } from 'react';
-import 'react-day-picker/lib/style.css';
-
-import { Table, Icon } from 'semantic-ui-react';
-import moment from 'moment';
-import { Link } from 'react-router-dom';
-
+import React, { useContext, useEffect, useState } from 'react';
+import { Table, Dropdown } from 'semantic-ui-react';
 import AppContext from '../appContext';
+import '../styles/Dashboard.scss';
+import '../components/DashboardEntry'
+import DashboardEntry from '../components/DashboardEntry';
 
 
 const Dashboard = () => {
     const { web3 } = useContext(AppContext);
+    const [tescs, setTescs] = useState([])
+
+    useEffect(() => {
+
+
+
+        //to lower case as accounts[0] is mixed-case
+        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)))
+
+    }, [web3.currentProvider.selectedAddress])
 
     const renderRows = () => {
-        const tescs = JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress));
-        if(!tescs)
+        if (!tescs)
             return []
-
-        return tescs.map(({ contractAddress, domain, expiry }) => (
-            <Table.Row key={contractAddress}>
-                <Table.Cell>
-                    <li>
-                        <Link to={{
-                            pathname: "/tesc/inspect",
-                            state: {
-                                contractAddressFromDashboard: contractAddress
-                            }
-                        }}>{contractAddress}</Link>
-                    </li>
-                </Table.Cell>
-                <Table.Cell>{domain}</Table.Cell>
-                <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
-                <Table.Cell textAlign="center">
-                    <Icon name="delete" color="red" circular />
-                </Table.Cell>
-                <Table.Cell textAlign="center">
-                    <Icon name="delete" color="red" circular />
-                </Table.Cell>
-            </Table.Row>
+        return tescs.map(({ contractAddress, domain, expiry, isFavourite }, index, tescs) => (
+            <DashboardEntry key={contractAddress}
+                contractAddress={contractAddress}
+                domain={domain}
+                expiry={expiry}
+                isFavourite={isFavourite}
+                currentAccount={web3.currentProvider.selectedAddress}
+                index={index}
+                tescs={tescs} />
         ));
     };
+
+    const filterTescs = () => {
+        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)).filter(tesc => tesc.isFavourite === true))
+    }
+
+    const showAllTescs = () => {
+        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)))
+    }
 
     return (
         <React.Fragment>
@@ -51,6 +53,17 @@ const Dashboard = () => {
                         <Table.HeaderCell>Expiry</Table.HeaderCell>
                         <Table.HeaderCell textAlign="center">Verification</Table.HeaderCell>
                         <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
+                        <Table.HeaderCell textAlign="center">Favourites
+                        <Dropdown
+                                icon='filter'
+                                floating
+                                button
+                                className='icon dropdownFavourites'>
+                                <Dropdown.Menu>
+                                    <Dropdown.Item icon='redo' text='All' onClick={showAllTescs} />
+                                    <Dropdown.Item icon='heart' text='By favourite' onClick={filterTescs} />
+                                </Dropdown.Menu>
+                            </Dropdown></Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
                 {(

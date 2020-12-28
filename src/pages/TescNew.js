@@ -85,13 +85,14 @@ const TeSCNew = () => {
                     arguments: [getCurrentDomain(), expiry, flagsHex, signature]
                 }).send({ from: account, gas: '2000000' });
                 setDeployDone(true);
+                const isFavourite = false;
 
 
                 let tescs = JSON.parse(localStorage.getItem(account));
                 if (!tescs) {
                     tescs = [];
                 }
-                tescs.push({ contractAddress, domain, expiry });
+                tescs.push({ contractAddress, domain, expiry, isFavourite });
                 localStorage.setItem(account, JSON.stringify(tescs));
             } catch (err) {
                 console.log(err);
