@@ -1,18 +1,25 @@
 import React, { useContext, useEffect, useState } from 'react';
 import 'react-day-picker/lib/style.css';
-import { Table, Icon, Button, Popup } from 'semantic-ui-react';
-import moment from 'moment';
-import { Link } from 'react-router-dom';
+import { Table, Grid } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import '../styles/Dashboard.scss'
+import DashboardEntry from '../components/DashboardEntry';
+import FeedbackMessage from '../components/FeedbackMessage'
 
 const Dashboard = () => {
     const { web3 } = useContext(AppContext);
     const [tescsIsInRegistry, setTescsIsInRegistry] = useState([])
     const [contractRegistry, setContractRegistry] = useState()
+    const [sysMsg, setSysMsg] = useState(null)
+
+    const handleDismissMessage = () => {
+        setSysMsg(null);
+    };
+
+    const assignSysMsgFromEntry = (sysMsg) => {
+        setSysMsg(sysMsg)
+    }
 
     useEffect(() => {
         const init = async () => {
@@ -37,107 +44,38 @@ const Dashboard = () => {
         init()
     }, [web3.currentProvider.selectedAddress, web3.eth.Contract, web3.eth.net])
 
-    const addToRegistry = async (domain, contractAddress) => {
-        if (domain && contractAddress) {
-            try {
-                const account = web3.currentProvider.selectedAddress;
-                const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
-                if (!isContractRegistered) {
-                    await contractRegistry.methods.add(domain, contractAddress).send({ from: account, gas: '2000000' });
-                    toast.success('Entry added', {
-                        position: "bottom-center",
-                        autoClose: 3000,
-                        hideProgressBar: false
-                    });
-                } else {
-                    toast.error('Contract address already exists in the registry', {
-                        position: "bottom-center",
-                        autoClose: 3000,
-                        hideProgressBar: false
-                    });
-                }
-            } catch (err) {
-                toast.error('Could not add entry', {
-                    position: "bottom-center",
-                    autoClose: 3000,
-                    hideProgressBar: false
-                });
-                console.log(err);
-            }
-        }
-    }
-
-    const removeFromRegistry = async (domain, contractAddress) => {
-        if (domain && contractAddress) {
-            try {
-                const account = web3.currentProvider.selectedAddress;
-                const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
-                if (isContractRegistered) {
-                    await contractRegistry.methods.remove(domain, contractAddress).send({ from: account, gas: '2000000' });
-                    toast.success('Entry removed successfully', {
-                        position: "bottom-center",
-                        autoClose: 3000,
-                        hideProgressBar: false
-                    });
-                } else {
-                    toast.error('Contract address not found in the registry', {
-                        position: "bottom-center",
-                        autoClose: 3000,
-                        hideProgressBar: false
-                    });
-                }
-            } catch (err) {
-                toast.error('Could not remove entry', {
-                    position: "bottom-center",
-                    autoClose: 3000,
-                    hideProgressBar: false
-                });
-                console.log(err);
-            }
-        }
-    }
-
 
     const renderRows = () => {
-        console.log(tescsIsInRegistry)
         if (!tescsIsInRegistry)
             return []
 
         return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isInRegistry }) => (
-            <Table.Row key={contractAddress}>
-                <Table.Cell>
-                    <li>
-                        <Link to={{
-                            pathname: "/tesc/inspect",
-                            state: {
-                                contractAddressFromDashboard: contractAddress
-                            }
-                        }}>{contractAddress}</Link>
-                    </li>
-                </Table.Cell>
-                <Table.Cell>{domain}</Table.Cell>
-                <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
-                <Table.Cell textAlign="center">
-                    <Icon name="delete" color="red" circular />
-                </Table.Cell>
-                <Table.Cell textAlign="center">
-                    {
-                        isInRegistry ?
-                            <Popup content='Remove entry from the TeSC registry'
-                                trigger={<Button as="div" className="buttonAddRemove" color='red'
-                                    onClick={() => removeFromRegistry(domain, contractAddress)}><Icon name='minus' />Remove</Button>} /> :
-                            <Popup content='Add entry to the TeSC registry'
-                                trigger={<Button as="div" className="buttonAddRemove" color='green'
-                                    onClick={() => addToRegistry(domain, contractAddress)}><Icon name='plus' />Add</Button>} />
-                    }
-                </Table.Cell>
-            </Table.Row>
+            <DashboardEntry key={contractAddress}
+                contractAddress={contractAddress}
+                domain={domain}
+                expiry={expiry}
+                isInRegistry={isInRegistry}
+                currentAccount={web3.currentProvider.selectedAddress}
+                contractRegistry={contractRegistry}
+                assignSysMsg={assignSysMsgFromEntry} />
         ));
     };
 
     return (
         <React.Fragment>
-            <h2>Dashboard</h2>
+            <Grid>
+                <Grid.Row style={{ height: '100%' }}>
+                    <Grid.Column width={6}>
+                        <h2>Dashboard</h2>
+                    </Grid.Column>
+                    <Grid.Column width={10}>
+                        <div style={{ float: 'right' }}>
+                            {sysMsg && <FeedbackMessage message={sysMsg} handleDismiss={handleDismissMessage} />}
+                        </div>
+                    </Grid.Column>
+                </Grid.Row>
+
+            </Grid>
             <Table>
                 <Table.Header>
                     <Table.Row>
@@ -154,7 +92,6 @@ const Dashboard = () => {
                     </Table.Body>
                 )}
             </Table>
-            <ToastContainer />
         </React.Fragment>
     );
 };
