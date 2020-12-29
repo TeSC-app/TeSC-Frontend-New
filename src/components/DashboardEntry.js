@@ -80,7 +80,7 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, own, ind
     }
 
     const renderRegistryButtons = () => {
-        if (own)
+        if (own) {
             return (
                 isInRegistryNew ?
                     <Popup content='Remove entry from the TeSC registry'
@@ -90,12 +90,23 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, own, ind
                         trigger={<Button as="div" className="buttonAddRemove" color='green'
                             onClick={addToRegistry}><Icon name='plus' />Add</Button>} />
             )
+        } else {
+            return (
+                isInRegistryNew ? <Popup content='In the registry'
+                trigger={<Icon name='checkmark' color='green' circular />} /> :
+                <Popup content='Not in the registry'
+                trigger={<Icon name='delete' color='red' circular />} />
+            )
+        }
     }
 
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
                 <LinkTescInspect contractAddress={contractAddress} />
+                {
+                   own ? <Popup content="Own contract" trigger={<Icon className="userIcon" name="user" color="blue" circular />} /> : null
+                }
             </Table.Cell>
             <Table.Cell>{domain}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>

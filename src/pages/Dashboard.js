@@ -73,6 +73,10 @@ const Dashboard = () => {
         setTescsIsInRegistry(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)))
     }
 
+    const showOwnTescs = () => {
+        setTescsIsInRegistry(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)).filter(tesc => tesc.own === true))
+    }
+
     return (
         <React.Fragment>
             <Grid>
@@ -104,6 +108,7 @@ const Dashboard = () => {
                                 <Dropdown.Menu>
                                     <Dropdown.Item icon='redo' text='All' onClick={showAllTescs} />
                                     <Dropdown.Item icon='heart' text='By favourite' onClick={filterTescs} />
+                                    <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
                                 </Dropdown.Menu>
                             </Dropdown></Table.HeaderCell>
                     </Table.Row>
