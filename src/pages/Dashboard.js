@@ -1,53 +1,91 @@
 import React, { useContext, useEffect, useState } from 'react';
 import 'react-day-picker/lib/style.css';
-
-import { Table, Dropdown } from 'semantic-ui-react';
-
+import { Table, Grid, Dropdown } from 'semantic-ui-react';
 import AppContext from '../appContext';
-import '../styles/Dashboard.scss';
-import '../components/DashboardEntry'
+import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
+import '../styles/Dashboard.scss'
 import DashboardEntry from '../components/DashboardEntry';
-
+import FeedbackMessage from '../components/FeedbackMessage'
 
 const Dashboard = () => {
     const { web3 } = useContext(AppContext);
-    const [tescs, setTescs] = useState([])
+    const [tescsIsInRegistry, setTescsIsInRegistry] = useState([])
+    const [contractRegistry, setContractRegistry] = useState()
+    const [sysMsg, setSysMsg] = useState(null)
+
+    const handleDismissMessage = () => {
+        setSysMsg(null);
+    };
+
+    const assignSysMsgFromEntry = (sysMsg) => {
+        setSysMsg(sysMsg)
+    }
 
     useEffect(() => {
+        const init = async () => {
+            try {
+                const networkId = await web3.eth.net.getId();
+                const deployedNetworkRegistry = TeSCRegistryImplementation.networks[networkId];
+                const contractRegistry = new web3.eth.Contract(
+                    TeSCRegistryImplementation.abi,
+                    deployedNetworkRegistry && deployedNetworkRegistry.address,
+                );
+                setContractRegistry(contractRegistry)
+                const tescs = JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress));
+                if (tescs) {
+                    const result = await Promise.all(tescs.map(async ({ contractAddress, domain, expiry, isFavourite }) => ({ contractAddress: contractAddress, domain: domain, expiry: expiry, isFavourite: isFavourite, isInRegistry: await contractRegistry.methods.isContractRegistered(contractAddress).call() })))
+                    setTescsIsInRegistry(result)
+                }
+            }
+            catch (error) {
+                console.error(error);
+            }
+        }
+        init()
+    }, [web3.currentProvider.selectedAddress, web3.eth.Contract, web3.eth.net])
 
-
-
-        //to lower case as accounts[0] is mixed-case
-        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)))
-
-    }, [web3.currentProvider.selectedAddress])
 
     const renderRows = () => {
-        if (!tescs)
+        if (!tescsIsInRegistry)
             return []
-        return tescs.map(({ contractAddress, domain, expiry, isFavourite }, index, tescs) => (
+
+        return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isInRegistry, isFavourite }, index) => (
             <DashboardEntry key={contractAddress}
                 contractAddress={contractAddress}
                 domain={domain}
                 expiry={expiry}
-                isFavourite={isFavourite}
+                isInRegistry={isInRegistry}
                 currentAccount={web3.currentProvider.selectedAddress}
+                contractRegistry={contractRegistry}
+                assignSysMsg={assignSysMsgFromEntry}
+                isFavourite={isFavourite}
                 index={index}
-                tescs={tescs} />
+                tescsIsInRegistry={tescsIsInRegistry} />
         ));
     };
 
     const filterTescs = () => {
-        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)).filter(tesc => tesc.isFavourite === true))
+        setTescsIsInRegistry(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)).filter(tesc => tesc.isFavourite === true))
     }
 
     const showAllTescs = () => {
-        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)))
+        setTescsIsInRegistry(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)))
     }
 
     return (
         <React.Fragment>
-            <h2>Dashboard</h2>
+            <Grid>
+                <Grid.Row style={{ height: '100%' }}>
+                    <Grid.Column width={6}>
+                        <h2>Dashboard</h2>
+                    </Grid.Column>
+                    <Grid.Column width={10}>
+                        <div style={{ float: 'right' }}>
+                            {sysMsg && <FeedbackMessage message={sysMsg} handleDismiss={handleDismissMessage} />}
+                        </div>
+                    </Grid.Column>
+                </Grid.Row>
+            </Grid>
             <Table>
                 <Table.Header>
                     <Table.Row>

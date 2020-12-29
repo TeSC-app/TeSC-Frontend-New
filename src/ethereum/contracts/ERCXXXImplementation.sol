@@ -165,4 +165,8 @@ contract ERCXXXImplementation is ERCXXX {
         if (flags != _flags) setFlagsInternal(_flags);
         if (bytes(_signature).length > 0) setSignatureInternal(_signature);
     }
+
+    function supportsInterface(bytes4 interfaceID) external view returns (bool) {
+        return interfaceID == 0xd7de9043;
+    }
 }
