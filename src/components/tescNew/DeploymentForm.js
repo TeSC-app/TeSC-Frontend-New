@@ -24,7 +24,7 @@ import {
 } from '../../utils/tesc';
 
 
-const DeploymentForm = ({ onFeedback, blockScreen }) => {
+const DeploymentForm = ({ feedback, blockScreen }) => {
 
     const { web3 } = useContext(AppContext);
     const [contractAddress, setContractAddress] = useState('');
@@ -50,10 +50,18 @@ const DeploymentForm = ({ onFeedback, blockScreen }) => {
     const computeSignature = useCallback(async () => {
         const domain = getCurrentDomain();
         if (!!privateKeyPEM.current && !!domain && !!expiry) {
-            const address = await predictContractAddress(web3);
-            const flagsHex = flagsTo24BytesHex(flags);
-            const payload = { address, domain, expiry, flagsHex };
-            setSignature(await generateSignature(payload, privateKeyPEM.current));
+            try {
+                const address = await predictContractAddress(web3);
+                const flagsHex = flagsTo24BytesHex(flags);
+                const payload = { address, domain, expiry, flagsHex };
+                setSignature(await generateSignature(payload, privateKeyPEM.current));
+            } catch (err) {
+                feedback(buildNegativeMsg({
+                    code: err.code,
+                    header: 'Unable to compute signature',
+                    msg: err.message
+                }));
+            }
         } else if (!domain || !expiry) {
             setSignature('');
         }
@@ -108,7 +116,7 @@ const DeploymentForm = ({ onFeedback, blockScreen }) => {
         e.preventDefault();
         blockScreen(true);
 
-        onFeedback(null);
+        feedback(null);
         setContractAddress('');
 
         const account = web3.currentProvider.selectedAddress;
@@ -122,7 +130,7 @@ const DeploymentForm = ({ onFeedback, blockScreen }) => {
                         setCostPaid(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether'));
                         setContractAddress(txReceipt.contractAddress);
 
-                        onFeedback(buildPositiveMsg({
+                        feedback(buildPositiveMsg({
                             header: 'Smart Contract successfully deployed',
                             msg: `TLS-endorsed Smart Contract deployed successully at address ${txReceipt.contractAddress}`
                         }));
@@ -133,9 +141,8 @@ const DeploymentForm = ({ onFeedback, blockScreen }) => {
                         });
                     });
 
-
             } catch (err) {
-                onFeedback(buildNegativeMsg({
+                feedback(buildNegativeMsg({
                     code: err.code,
                     header: 'Unable to deploy Smart Contract',
                     msg: err.message
@@ -143,7 +150,7 @@ const DeploymentForm = ({ onFeedback, blockScreen }) => {
                 console.log(err);
             }
         } else {
-            onFeedback(buildNegativeMsg({
+            feedback(buildNegativeMsg({
                 header: 'Unable to deploy Smart Contract',
                 msg: `${!curDomain ? 'Domain' : !expiry ? 'Expiry' : !signature ? 'Signature' : 'Some required input'} is empty`
             }));

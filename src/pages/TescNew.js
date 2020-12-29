@@ -27,17 +27,7 @@ const TeSCNew = () => {
 
     return (
         <div>
-            {/* {sysMsg &&
-                <FeedbackMessage
-                    message={sysMsg}
-                    handleDismiss={handleDismissMessage}
-                    style={{ marginBottom: '20px' }}
-                />
-            } */}
-
-            {/* <h2>Create & Deploy TeSC</h2> */}
-
-            <Grid style={{ marginBottom: '20px', height: '50px' }} reversed>
+            <Grid style={{ marginBottom: '20px', height: '50px' }}>
                     <Grid.Row style={{ height: '100%' }}>
                         <Grid.Column width={5}>
                             <h2>Create & Deploy TeSC</h2>
@@ -52,7 +42,7 @@ const TeSCNew = () => {
 
                 </Grid>
             <DeploymentForm
-                onFeedback={handleFeedback}
+                feedback={handleFeedback}
                 blockScreen={handleBlockScreen}
             />
 
