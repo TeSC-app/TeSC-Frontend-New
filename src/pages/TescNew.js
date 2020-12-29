@@ -129,6 +129,7 @@ const TeSCNew = () => {
 
                 setDeployDone(true);
                 const isFavourite = false;
+                const own = true;
 
                 setSysMsg(buildPositiveMsg({
                     header: 'Smart Contract successfully deployed',
@@ -140,7 +141,7 @@ const TeSCNew = () => {
                 if (!tescs) {
                     tescs = [];
                 }
-                tescs.push({ contractAddress, domain, expiry, isFavourite });
+                tescs.push({ contractAddress, domain, expiry, isFavourite, own });
                 localStorage.setItem(account, JSON.stringify(tescs));
             } catch (err) {
                 setSysMsg(buildNegativeMsg({

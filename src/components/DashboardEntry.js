@@ -5,11 +5,11 @@ import 'react-day-picker/lib/style.css';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
 import LinkTescInspect from '../components/InternalLink';
 
-function DashboardEntry({ contractAddress, domain, expiry, isFavourite, index, tescsIsInRegistry, contractRegistry, currentAccount, isInRegistry, assignSysMsg }) {
+function DashboardEntry({ contractAddress, domain, expiry, isFavourite, own, index, tescsIsInRegistry, contractRegistry, currentAccount, isInRegistry, assignSysMsg }) {
 
     const [isInRegistryNew, setIsInRegistryNew] = useState(isInRegistry)
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false)
-    
+
     useEffect(() => {
         isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false);
     }, [isFavourite, setTescIsInFavourites, currentAccount]);
@@ -69,7 +69,7 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, index, t
     }
 
     const addRemoveFavourites = () => {
-        if(tescIsInFavourites) {
+        if (tescIsInFavourites) {
             tescsIsInRegistry[index]['isFavourite'] = false
             setTescIsInFavourites(false)
         } else {
@@ -78,7 +78,20 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, index, t
         }
         localStorage.setItem(currentAccount, JSON.stringify(tescsIsInRegistry));
     }
-    
+
+    const renderRegistryButtons = () => {
+        if (own)
+            return (
+                isInRegistryNew ?
+                    <Popup content='Remove entry from the TeSC registry'
+                        trigger={<Button as="div" className="buttonAddRemove" color='red'
+                            onClick={removeFromRegistry}><Icon name='minus' />Remove</Button>} /> :
+                    <Popup content='Add entry to the TeSC registry'
+                        trigger={<Button as="div" className="buttonAddRemove" color='green'
+                            onClick={addToRegistry}><Icon name='plus' />Add</Button>} />
+            )
+    }
+
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
@@ -90,15 +103,7 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, index, t
                 <Icon name="delete" color="red" circular />
             </Table.Cell>
             <Table.Cell textAlign="center">
-                {
-                    isInRegistryNew ?
-                        <Popup content='Remove entry from the TeSC registry'
-                            trigger={<Button as="div" className="buttonAddRemove" color='red'
-                                onClick={removeFromRegistry}><Icon name='minus' />Remove</Button>} /> :
-                        <Popup content='Add entry to the TeSC registry'
-                            trigger={<Button as="div" className="buttonAddRemove" color='green'
-                                onClick={addToRegistry}><Icon name='plus' />Add</Button>} />
-                }
+                {renderRegistryButtons()}
             </Table.Cell>
             {
                 <Table.Cell textAlign="center">

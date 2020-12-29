@@ -1,9 +1,6 @@
 import Web3 from 'web3';
 import detectEthereumProvider from '@metamask/detect-provider';
 
-
-
-
 const getWeb3 = async () => {
     let web3;
     if (typeof window !== 'undefined' && window.ethereum !== 'undefined') {
