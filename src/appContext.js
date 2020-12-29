@@ -2,4 +2,6 @@ import React from 'react';
 
 const AppContext = React.createContext();
 
-export { AppContext as default };
+const DeploymentFormContext = React.createContext();
+
+export { AppContext as default, DeploymentFormContext };

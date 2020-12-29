@@ -1,29 +1,14 @@
-import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
-import { Input, Form, Label, Button, Grid } from 'semantic-ui-react';
+import React, { useState } from 'react';
+import { Grid } from 'semantic-ui-react';
 
-import DayPickerInput from 'react-day-picker/DayPickerInput';
-import { formatDate, parseDate } from 'react-day-picker/moment';
-import moment from 'moment';
-import BitSet from 'bitset';
 
 import 'react-day-picker/lib/style.css';
 
-import AppContext from '../appContext';
-import FeedbackMessage, { buildNegativeMsg, buildPositiveMsg } from "../components/FeedbackMessage";
-import LinkTescInspect from '../components/InternalLink';
-
-
-import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
-import {
-    predictContractAddress,
-    generateSignature,
-    flagsTo24BytesHex,
-    FLAG_POSITIONS,
-} from '../utils/tesc';
+import DeploymentForm from '../components/tescNew/DeploymentForm';
+import FeedbackMessage from "../components/FeedbackMessage";
 
 
 const TeSCNew = () => {
-    const { web3 } = useContext(AppContext);
 
     const [sysMsg, setSysMsg] = useState(null);
     const [contractAddress, setContractAddress] = useState('');
@@ -198,28 +183,9 @@ const TeSCNew = () => {
         setSysMsg(null);
     };
 
-    const estimateDeploymentCost = useCallback(async () => {
-        if (domain && expiry && signature) {
-            const flagsHex = flagsTo24BytesHex(flags);
-
-            const account = web3.currentProvider.selectedAddress;
-            const contract = new web3.eth.Contract(TeSC.abi);
-            const gasEstimation = await contract.deploy({
-                data: TeSC.bytecode,
-                arguments: [getCurrentDomain(), expiry, flagsHex, signature]
-            }).estimateGas({ from: account, gas: '2000000' });
-
-            console.log("GAS ESTIMATION: ", gasEstimation);
-            const gasPrice = await web3.eth.getGasPrice();
-
-            console.log("GAS PRICE (ether): ", web3.utils.fromWei(gasPrice, 'ether'));
-            setCostEstimated(gasEstimation * web3.utils.fromWei(gasPrice, 'ether'));
-        }
-    }, [expiry, getCurrentDomain, domain, flags, signature, web3]);
-
-    useEffect(() => {
-        estimateDeploymentCost();
-    }, [signature, estimateDeploymentCost]);
+    const handleFeedback = (feedback) => {
+        setSysMsg(feedback)
+    }
 
     return (
         <React.Fragment>
@@ -237,117 +203,8 @@ const TeSCNew = () => {
                 </Grid.Row>
 
             </Grid>
-            <Form style={{ width: '80%', margin: '20px auto' }}>
-                <Form.Group widths='equal'>
-                    <Form.Field>
-                        <label>
-                            {/* Domain <Label circular='true' color='red' style={{ fontSize: '10px' }}>required</Label> */}
-                            Domain  <span style={{ color: 'red' }}>*</span>
-                        </label>
-                        <Input
-                            value={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain}
-                            disabled={!!domain && !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)}
-                            placeholder='www.mysite.com'
-                            onChange={e => setDomain(e.target.value)}
-                            onBlur={() => computeSignature()}
-                        />
-                    </Form.Field>
+            <DeploymentForm onFeedback={handleFeedback} />
 
-                    <Form.Field>
-                        <label>
-                            Expiry <span style={{ color: 'red' }}>*</span>
-                        </label>
-                        <DayPickerInput
-                            onBlur={() => computeSignature()}
-                            onDayChange={handleExpiryChange}
-                            format="DD/MM/YYYY"
-                            formatDate={formatDate}
-                            parseDate={parseDate}
-                            placeholder='dd/mm/yyyy'
-                            dayPickerProps={{
-                                disabledDays: {
-                                    before: new Date()
-                                },
-                                readOnly: true
-                            }}
-                            inputProps={{ readOnly: true }}
-                        />
-                    </Form.Field>
-
-                </Form.Group>
-                <Form.Group grouped>
-                    <label>Flags</label>
-                    {renderFlagCheckboxes()}
-                </Form.Group>
-
-                <Form.Group grouped>
-                    <label>Signature <span style={{ color: 'red' }}>*</span></label>
-                    <div style={{ paddingTop: '5px' }}>
-                        <Button
-                            content="Choose certificate private key"
-                            labelPosition="left"
-                            icon="file"
-                            onClick={() => fileInputRef.current.click()}
-                            disabled={!isSignatureInputReady()}
-                        />
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            onChange={handleFilePicked}
-                            accept=".pem, .txt, .cer, .cert, .key"
-                            hidden
-                        />
-                        {!!privateKeyFileName && <Label basic pointing='left'>{privateKeyFileName}</Label>}
-                    </div>
-
-                    <div>
-                        <em>Paste your signature into the box below or pick the certificate private key file to automatically compute the signature</em>
-                    </div>
-                    <Form.TextArea
-                        value={signature}
-                        onChange={e => setSignature(e.target.value)}
-                        // disabled={!isSignatureInputReady()}
-                        disabled={true}
-                    />
-                </Form.Group>
-                {deployDone &&
-                    (
-                        <span style={{ float: 'left' }}>
-                            <b>Contract address:</b>
-                            <Label basic color='green' size='large' style={{ marginLeft: '5px' }}>
-                                <LinkTescInspect contractAddress={contractAddress} />
-                            </Label>
-                            <br />
-                            <br />
-                            <b>
-                                Cost paid:
-                                <span style={{ color: 'royalblue' }}> {costActual.toFixed(5)} ether</span>
-                            </b>
-                        </span>
-                    )
-                }
-
-                <Button
-                    onClick={handleSubmit}
-                    // disabled={!isSignatureInputReady() || !signature}
-                    floated='right'
-                    positive
-                    style={{ width: '15%' }}
-                >
-                    Deploy
-                </Button>
-                <br />
-                <br />
-                {!!costEstimated && signature && (
-                    <Label basic style={{ float: 'right', textAlign: 'center' }} pointing='above' >
-                        <b>
-                            Cost estimation:
-                            <span style={{ color: 'royalblue' }}> {costEstimated.toFixed(5)} ether</span>
-                        </b>
-                    </Label>
-                )}
-
-            </Form>
 
         </React.Fragment>
     );
