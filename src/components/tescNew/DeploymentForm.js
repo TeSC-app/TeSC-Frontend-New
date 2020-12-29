@@ -24,7 +24,7 @@ import {
 } from '../../utils/tesc';
 
 
-const DeploymentForm = ({ onFeedback }) => {
+const DeploymentForm = ({ onFeedback, blockScreen }) => {
 
     const { web3 } = useContext(AppContext);
     const [contractAddress, setContractAddress] = useState('');
@@ -35,7 +35,6 @@ const DeploymentForm = ({ onFeedback }) => {
     const [flags, setFlags] = useState(new BitSet('0x00'));
     const [domainHashed, setDomainHashed] = useState('');
 
-    // const [privateKeyPEM, setPrivateKeyPEM] = useState('');
     const privateKeyPEM = useRef('');
 
     const [costEstimated, setCostEstimated] = useState(0);
@@ -44,7 +43,6 @@ const DeploymentForm = ({ onFeedback }) => {
     const prevExpiry = useRef(expiry);
     const prevFlags = useRef(flags.toString());
     const prevSignature = useRef(signature);
-    // const prevPrivateKeyPEM = useRef(privateKeyPEM);
 
     const getCurrentDomain = useCallback(() => !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain,
         [domainHashed, domain, flags]);
@@ -108,6 +106,8 @@ const DeploymentForm = ({ onFeedback }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        blockScreen(true);
+
         onFeedback(null);
         setContractAddress('');
 
@@ -124,7 +124,7 @@ const DeploymentForm = ({ onFeedback }) => {
 
                         onFeedback(buildPositiveMsg({
                             header: 'Smart Contract successfully deployed',
-                            msg: `TLS-endorsed Smart Contract deployed successully at address ${contractAddress}`
+                            msg: `TLS-endorsed Smart Contract deployed successully at address ${txReceipt.contractAddress}`
                         }));
 
                         storeTesc({
@@ -148,6 +148,7 @@ const DeploymentForm = ({ onFeedback }) => {
                 msg: `${!curDomain ? 'Domain' : !expiry ? 'Expiry' : !signature ? 'Signature' : 'Some required input'} is empty`
             }));
         }
+        blockScreen(false);
     };
 
     const renderFlagCheckboxes = () => {
@@ -164,7 +165,7 @@ const DeploymentForm = ({ onFeedback }) => {
 
     return (
         <React.Fragment>
-            <Form style={{ width: '80%', margin: '20px auto' }}>
+            <Form style={{ width: '80%', margin: '40px auto' }}>
                 <Form.Group widths='equal'>
                     <Form.Field>
                         <label>Domain  <span style={{ color: 'red' }}>*</span></label>
@@ -209,7 +210,7 @@ const DeploymentForm = ({ onFeedback }) => {
                     </div>
                     <div><em>Pick the certificate private key file to automatically compute the signature</em></div>
 
-                    <Segment style={{ wordBreak: 'break-all', minHeight: '7em' }}>
+                    <Segment style={{ wordBreak: 'break-all', minHeight: '7em' }} placeholder>
                         {signature}
                     </Segment>
 
@@ -217,10 +218,10 @@ const DeploymentForm = ({ onFeedback }) => {
                 </Form.Group>
 
                 {contractAddress && (<DeploymentOutput contractAddress={contractAddress} costPaid={costPaid} />)}
-                
+
                 {!!costEstimated && !!signature && (
-                    <div style={{float: 'right', marginTop: '3px'}}>
-                        <Label tag style={{color: 'royalblue', }}>
+                    <div style={{ float: 'right', marginTop: '3px' }}>
+                        <Label tag style={{ color: 'royalblue', }}>
                             {costEstimated.toFixed(5)} <span style={{ fontSize: '0.75em' }}>ETH</span>
                         </Label>
                     </div>
@@ -237,7 +238,7 @@ const DeploymentForm = ({ onFeedback }) => {
 
                     Deploy
                 </Button>
-                
+
             </Form>
         </React.Fragment>
     );
