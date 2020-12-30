@@ -142,17 +142,18 @@ function DashboardEntry({ web3, contractAddress, domain, expiry, isFavourite, ow
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
+                <span className='contractAddressColumn'>
                 <LinkTescInspect contractAddress={contractAddress} />
                 {
-                    own ? <Popup content="Own contract" trigger={<Icon className="userIcon" name="user" color="blue" circular />} /> : null
-                }
+                    own ? <Popup content="Your contract" trigger={<Icon className="userIcon" name="user" color="blue" circular />} /> : null
+                }</span>
             </Table.Cell>
             <Table.Cell>{domain}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
             <Table.Cell textAlign="center">
                 <Icon name="delete" color="red" circular />
             </Table.Cell>
-            <Table.Cell textAlign="center">
+            <Table.Cell textAlign="center" className='registryButtons'>
                 {renderRegistryButtons()}
             </Table.Cell>
             {

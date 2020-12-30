@@ -133,7 +133,7 @@ function RegistryAdd() {
                     </Form.Field>
 
                 </Form.Group>
-                <Button disabled={!validInput} onClick={handleSubmit} floated='right' positive>Add entry</Button>
+                <Button disabled={!domain || !contractAddress} onClick={handleSubmit} floated='right' positive>Add entry</Button>
                 { domain === tescDomain && tescContractOwner &&
                  tescContractOwner.toLowerCase() === web3.currentProvider.selectedAddress && 
                  !isContractRegistered && validInput && (
