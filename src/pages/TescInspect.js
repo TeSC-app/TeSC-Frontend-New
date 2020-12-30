@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { Input, Table, Checkbox, Loader, Icon, Label, Grid, Card, Form, Dimmer } from 'semantic-ui-react';
+import { Input, Table, Checkbox, Loader, Icon, Label, Grid, Card, Form, Dimmer, Message } from 'semantic-ui-react';
 
 
 import BitSet from 'bitset';
@@ -7,8 +7,10 @@ import moment from 'moment';
 import axios from 'axios';
 
 import AppContext from '../appContext';
-import { FLAG_POSITIONS, hexStringToBitSet } from '../utils/tesc';
+import { FLAG_POSITIONS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc';
 import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
+import { buildPositiveMsg, buildNegativeMsg } from "../components/FeedbackMessage";
+import PageHeader from "../components/PageHeader";
 
 
 const TeSCInspect = ({ location }) => {
@@ -26,18 +28,32 @@ const TeSCInspect = ({ location }) => {
 
     const [verifResult, setVerifResult] = useState(null);
 
+    const [sysMsg, setSysMsg] = useState(null);
+
+    const handleDismissMessage = () => {
+        setSysMsg(null);
+    };
+
 
     const fetchTescData = async (address) => {
-        const contract = new web3.eth.Contract(TeSC.abi, address);
+        setSysMsg(null);
+        try {
+            const contract = new web3.eth.Contract(TeSC.abi, address);
 
-        const flagsHex = await contract.methods.getFlags().call();
-        setIsDomainHashed(!!(new BitSet(flagsHex)).get(FLAG_POSITIONS.DOMAIN_HASHED + 1));
-        console.log("Flaghex", flagsHex);
-        setFlags(hexStringToBitSet(flagsHex));
+            const flagsHex = await contract.methods.getFlags().call();
+            setIsDomainHashed(!!(new BitSet(flagsHex)).get(FLAG_POSITIONS.DOMAIN_HASHED + 1));
+            console.log("Flaghex", flagsHex);
+            setFlags(hexStringToBitSet(flagsHex));
 
-        setDomainFromChain(await contract.methods.getDomain().call());
-        setExpiry(await contract.methods.getExpiry().call());
-        setSignature(await contract.methods.getSignature().call());
+            setDomainFromChain(await contract.methods.getDomain().call());
+            setExpiry(await contract.methods.getExpiry().call());
+            setSignature(await contract.methods.getSignature().call());
+        } catch (err) {
+            setSysMsg(buildNegativeMsg({
+                header: 'Unable to read data from smart contract',
+                msg: err.message
+            }));
+        }
     };
 
     const verifyTesc = useCallback(async () => {
@@ -56,31 +72,53 @@ const TeSCInspect = ({ location }) => {
     }, [contractAddress, plainDomainSubmitted, verifyTesc]);
 
     useEffect(() => {
-        if(location.state){
+        if (location.state) {
             handleChangeAddress(location.state.contractAddress);
-        } 
+        }
     }, []);
+
+    const clearResults = () => {
+        setDomainFromChain(null);
+        setExpiry('')
+        setFlags(new BitSet('0x00'));
+        setSignature('');
+        setPlainDomain('')
+        setVerifResult(null)
+    };
 
 
     const handleChangeAddress = async (address) => {
-        // resetValues();
         setContractAddress(address);
-        if (address.substring(0, 2) === '0x' && address.length === 42) {
+        if (isValidContractAddress(address)) {
             try {
-                setVerifResult(null);
                 await fetchTescData(address);
             } catch (err) {
+                setSysMsg(buildNegativeMsg({
+                    header: 'Unable to retrieve smart contract data',
+                    msg: err.message
+                }));
                 console.log(err);
             }
         }
     };
 
+
     const handleSubmitAddress = async (e) => {
         e.preventDefault();
-        handleChangeAddress(contractAddress);
+        clearResults();
+        try {
+            isValidContractAddress(contractAddress, true);
+            await fetchTescData(contractAddress);
+
+        } catch (err) {
+            setSysMsg(buildNegativeMsg({
+                header: 'Invalid smart contract address',
+                msg: err.message
+            }));
+        }
     };
 
-    const handlePlainDomainEntered = async (e) => {
+    const handleEnterOriginalDomain = async (e) => {
         e.preventDefault();
         setVerifResult(null);
         setPlainDomainSubmitted(true);
@@ -100,7 +138,11 @@ const TeSCInspect = ({ location }) => {
 
     return (
         <div>
-            <h2>Inspect TeSC</h2>
+            <PageHeader
+                title='Inspect TeSC'
+                message={sysMsg}
+                onDismissMessage={handleDismissMessage}
+            />
             <div centered='true' style={{ marginBottom: '50px', marginTop: '50px', textAlign: 'center' }}>
                 <Form onSubmit={handleSubmitAddress}>
                     <Form.Field>
@@ -116,7 +158,7 @@ const TeSCInspect = ({ location }) => {
                     </Form.Field>
                 </Form>
             </div>
-            <Grid>
+            <Grid style={{ margin: '0 auto' }}>
                 <Grid.Row>
                     {
                         domainFromChain && expiry && signature && flags &&
@@ -172,7 +214,7 @@ const TeSCInspect = ({ location }) => {
                                         </Dimmer>
                                         {isDomainHashed &&
                                             (
-                                                <Form onSubmit={handlePlainDomainEntered}>
+                                                <Form onSubmit={handleEnterOriginalDomain}>
                                                     <Form.Field>
                                                         <label>Original domain</label>
                                                         <Input
@@ -216,7 +258,7 @@ const TeSCInspect = ({ location }) => {
                     </Grid.Column>
                 </Grid.Row>
             </Grid>
-        </div >
+        </div>
     );
 };
 

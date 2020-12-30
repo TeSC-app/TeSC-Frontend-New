@@ -74,3 +74,22 @@ export const storeTesc = ({ account, claim }) => {
     tescs.push({ contractAddress, domain, expiry, isFavourite: false });
     localStorage.setItem(account, JSON.stringify(tescs));
 };
+
+export const isValidContractAddress = (address, withReason = false) => {
+    if (!withReason) {
+        return (address.substring(0, 2) === '0x')
+            && (address.length === 42)
+            && Boolean(address.match(/^0x[0-9a-f]+$/i));
+    }
+
+    if (!address) {
+        throw new Error('Contract address is empty');
+    } else if (address.substring(0, 2) !== '0x') {
+        throw new Error('Contract address must start with 0x');
+    } else if (address.length !== 42) {
+        throw new Error('Contract address must be 42 characters long (prefix 0x and 40 hexadecimal digits)');
+    } else if (!Boolean(address.match(/^0x[0-9a-f]+$/i))) {
+        throw new Error('Contract address contains non-hexadecimal digits');
+    }
+    return true;
+};
