@@ -1,32 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
-import { Table, Icon, Popup, Button, Dimmer, Loader } from 'semantic-ui-react';
+import { Table, Icon, Popup, Button, Label } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
 import LinkTescInspect from '../components/InternalLink';
+import {
+    estimateRegistryAddCost,
+    estimateRegistryRemoveCost
+} from '../utils/tesc';
 
-function DashboardEntry({ contractAddress, domain, expiry, isFavourite, own, index, tescsIsInRegistry, contractRegistry, currentAccount, isInRegistry, assignSysMsg }) {
+function DashboardEntry({ web3, contractAddress, domain, expiry, isFavourite, own, index, tescsIsInRegistry, contractRegistry, currentAccount, isInRegistry, assignSysMsg, handleBlocking }) {
 
     const [isInRegistryNew, setIsInRegistryNew] = useState(isInRegistry)
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false)
-    const [blocking, setBlocking] = useState(false);
+    const [costEstimatedAdd, setCostEstimatedAdd] = useState(0)
+    const [costEstimatedRemove, setCostEstimatedRemove] = useState(0)
 
     useEffect(() => {
         isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false);
     }, [isFavourite, setTescIsInFavourites, currentAccount]);
 
+    useEffect(() => {
+        const runEffect = async () => {
+            if (!isInRegistryNew && own) {
+                const estCostAdd = await estimateRegistryAddCost(web3, contractRegistry, domain, contractAddress);
+                setCostEstimatedAdd(estCostAdd);
+            } else if (isInRegistryNew && own) {
+                const estCostRemove = await estimateRegistryRemoveCost(web3, contractRegistry, domain, contractAddress);
+                setCostEstimatedRemove(estCostRemove);
+            }
+        }
+        runEffect()
+    }, [web3, contractAddress, contractRegistry, domain, isInRegistryNew, own])
+
     const addToRegistry = async () => {
-        setBlocking(true)
+        handleBlocking(true)
         if (domain && contractAddress) {
             try {
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
                 if (!isContractRegistered) {
-                    await contractRegistry.methods.add(domain, contractAddress).send({ from: currentAccount, gas: '2000000' });
-                    assignSysMsg(buildPositiveMsg({
-                        header: 'Entry added to the registry',
-                        msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully added to the registry`
-                    }));
-                    setIsInRegistryNew(true)
+                    await contractRegistry.methods.add(domain, contractAddress).send({ from: currentAccount, gas: '2000000' })
+                        .on('receipt', async (txReceipt) => {
+                            assignSysMsg(buildPositiveMsg({
+                                header: 'Entry added to the registry',
+                                msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully added to the registry.
+                                You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
+                            }));
+                            setIsInRegistryNew(true)
+                        });
                 } else {
                     assignSysMsg(buildNegativeMsg({
                         header: 'Unable to add entry to the registry',
@@ -41,21 +62,24 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, own, ind
                 }))
             }
         }
-        setBlocking(false)
+        handleBlocking(false)
     }
 
     const removeFromRegistry = async () => {
-        setBlocking(true)
+        handleBlocking(true)
         if (domain && contractAddress) {
             try {
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
                 if (isContractRegistered) {
-                    await contractRegistry.methods.remove(domain, contractAddress).send({ from: currentAccount, gas: '2000000' });
-                    assignSysMsg(buildPositiveMsg({
-                        header: 'Entry removed from the registry',
-                        msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully removed from the registry`
-                    }));
-                    setIsInRegistryNew(false)
+                    await contractRegistry.methods.remove(domain, contractAddress).send({ from: currentAccount, gas: '2000000' })
+                        .on('receipt', async (txReceipt) => {
+                            assignSysMsg(buildPositiveMsg({
+                                header: 'Entry removed from the registry',
+                                msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully removed from the registry.
+                                You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
+                            }));
+                            setIsInRegistryNew(false)
+                        });
                 } else {
                     assignSysMsg(buildPositiveMsg({
                         header: 'Unable to remove entry from the registry',
@@ -70,7 +94,7 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, own, ind
                 }))
             }
         }
-        setBlocking(false)
+        handleBlocking(false)
     }
 
     const addRemoveFavourites = () => {
@@ -88,12 +112,22 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, own, ind
         if (own) {
             return (
                 isInRegistryNew ?
-                    <Popup content='Remove entry from the TeSC registry'
-                        trigger={<Button as="div" className="buttonAddRemove" color='red'
-                            onClick={removeFromRegistry}><Icon name='minus' />Remove</Button>} /> :
-                    <Popup content='Add entry to the TeSC registry'
-                        trigger={<Button as="div" className="buttonAddRemove" color='green'
-                            onClick={addToRegistry}><Icon name='plus' />Add</Button>} />
+                    <>
+                        <Popup content='Remove entry from the TeSC registry'
+                            trigger={<Button as="button" className="buttonAddRemove" color='red'
+                                onClick={removeFromRegistry}><Icon name='minus' />Remove</Button>} />
+                        <Label tag as="span" className='costEstimateLabel'>
+                            {costEstimatedRemove.toFixed(5)} <span className='costEstimateCurrencyETH'>ETH</span>
+                        </Label>
+                    </> :
+                    <>
+                        <Popup content='Add entry to the TeSC registry'
+                            trigger={<Button as="button" className="buttonAddRemove" color='green'
+                                onClick={addToRegistry}><Icon name='plus' />Add</Button>} />
+                        <Label as="span" tag className='costEstimateLabel'>
+                            {costEstimatedAdd.toFixed(5)} <span className='costEstimateCurrencyETH'>ETH</span>
+                        </Label>
+                    </>
             )
         } else {
             return (
@@ -128,9 +162,6 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, own, ind
                             onClick={addRemoveFavourites} />} />
                 </Table.Cell>
             }
-            <Dimmer active={blocking}>
-                <Loader indeterminate content='Waiting for transaction to finish...' />
-            </Dimmer>
         </Table.Row>
     );
 }

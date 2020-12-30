@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import 'react-day-picker/lib/style.css';
-import { Table, Grid, Dropdown } from 'semantic-ui-react';
+import { Table, Grid, Dropdown, Dimmer, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
 import '../styles/Dashboard.scss'
@@ -12,6 +12,7 @@ const Dashboard = () => {
     const [tescsIsInRegistry, setTescsIsInRegistry] = useState([])
     const [contractRegistry, setContractRegistry] = useState()
     const [sysMsg, setSysMsg] = useState(null)
+    const [blocking, setBlocking] = useState(false)
 
     const handleDismissMessage = () => {
         setSysMsg(null);
@@ -19,6 +20,10 @@ const Dashboard = () => {
 
     const assignSysMsgFromEntry = (sysMsg) => {
         setSysMsg(sysMsg)
+    }
+
+    const handleBlocking = (blockingState) => {
+        setBlocking(blockingState)
     }
 
     useEffect(() => {
@@ -61,7 +66,9 @@ const Dashboard = () => {
                 isFavourite={isFavourite}
                 index={index}
                 tescsIsInRegistry={tescsIsInRegistry}
-                own={own} />
+                own={own}
+                web3={web3}
+                handleBlocking={handleBlocking} />
         ));
     };
 
@@ -119,6 +126,9 @@ const Dashboard = () => {
                     </Table.Body>
                 )}
             </Table>
+            <Dimmer active={blocking}>
+                <Loader indeterminate content='Waiting for transaction to finish...' />
+            </Dimmer>
         </React.Fragment>
     );
 };
