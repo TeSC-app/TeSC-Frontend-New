@@ -17,20 +17,22 @@ export const buildPositiveMsg = ({ header, msg }) => {
     };
 };
 
-const FeedbackMessage = ({ message, handleDismiss }) => {
+const FeedbackMessage = ({ message, handleDismiss, style }) => {
     console.log('MSG', message);
     const { outcome, header, msg } = message;
     return (
-        <Message 
-            positive={outcome === 'positive'} 
-            negative={outcome === 'negative'} 
-            onDismiss={handleDismiss}
-            // floating={true}
-            style={{paddingRight: '50px'}}
-        >
-            <Message.Header>{header}</Message.Header>
-            {msg && <p>{msg}</p>}
-        </Message>
+        <div style={{ float: 'right' }}>
+            <Message
+                positive={outcome === 'positive'}
+                negative={outcome === 'negative'}
+                onDismiss={handleDismiss}
+                style={{ paddingRight: '50px' }}
+            >
+                <Message.Header>{header}</Message.Header>
+                {msg && <p>{msg}</p>}
+            </Message>
+        </div>
+
     );
 };
 

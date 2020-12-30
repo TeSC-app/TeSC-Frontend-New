@@ -24,7 +24,7 @@ import {
 } from '../../utils/tesc';
 
 
-const DeploymentForm = ({ onFeedback }) => {
+const DeploymentForm = ({ feedback, blockScreen }) => {
 
     const { web3 } = useContext(AppContext);
     const [contractAddress, setContractAddress] = useState('');
@@ -35,7 +35,6 @@ const DeploymentForm = ({ onFeedback }) => {
     const [flags, setFlags] = useState(new BitSet('0x00'));
     const [domainHashed, setDomainHashed] = useState('');
 
-    // const [privateKeyPEM, setPrivateKeyPEM] = useState('');
     const privateKeyPEM = useRef('');
 
     const [costEstimated, setCostEstimated] = useState(0);
@@ -44,7 +43,6 @@ const DeploymentForm = ({ onFeedback }) => {
     const prevExpiry = useRef(expiry);
     const prevFlags = useRef(flags.toString());
     const prevSignature = useRef(signature);
-    // const prevPrivateKeyPEM = useRef(privateKeyPEM);
 
     const getCurrentDomain = useCallback(() => !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain,
         [domainHashed, domain, flags]);
@@ -52,10 +50,18 @@ const DeploymentForm = ({ onFeedback }) => {
     const computeSignature = useCallback(async () => {
         const domain = getCurrentDomain();
         if (!!privateKeyPEM.current && !!domain && !!expiry) {
-            const address = await predictContractAddress(web3);
-            const flagsHex = flagsTo24BytesHex(flags);
-            const payload = { address, domain, expiry, flagsHex };
-            setSignature(await generateSignature(payload, privateKeyPEM.current));
+            try {
+                const address = await predictContractAddress(web3);
+                const flagsHex = flagsTo24BytesHex(flags);
+                const payload = { address, domain, expiry, flagsHex };
+                setSignature(await generateSignature(payload, privateKeyPEM.current));
+            } catch (err) {
+                feedback(buildNegativeMsg({
+                    code: err.code,
+                    header: 'Unable to compute signature',
+                    msg: err.message
+                }));
+            }
         } else if (!domain || !expiry) {
             setSignature('');
         }
@@ -108,7 +114,9 @@ const DeploymentForm = ({ onFeedback }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        onFeedback(null);
+        blockScreen(true);
+
+        feedback(null);
         setContractAddress('');
 
         const account = web3.currentProvider.selectedAddress;
@@ -122,9 +130,9 @@ const DeploymentForm = ({ onFeedback }) => {
                         setCostPaid(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether'));
                         setContractAddress(txReceipt.contractAddress);
 
-                        onFeedback(buildPositiveMsg({
+                        feedback(buildPositiveMsg({
                             header: 'Smart Contract successfully deployed',
-                            msg: `TLS-endorsed Smart Contract deployed successully at address ${contractAddress}`
+                            msg: `TLS-endorsed Smart Contract deployed successully at address ${txReceipt.contractAddress}`
                         }));
 
                         storeTesc({
@@ -133,9 +141,8 @@ const DeploymentForm = ({ onFeedback }) => {
                         });
                     });
 
-
             } catch (err) {
-                onFeedback(buildNegativeMsg({
+                feedback(buildNegativeMsg({
                     code: err.code,
                     header: 'Unable to deploy Smart Contract',
                     msg: err.message
@@ -143,11 +150,12 @@ const DeploymentForm = ({ onFeedback }) => {
                 console.log(err);
             }
         } else {
-            onFeedback(buildNegativeMsg({
+            feedback(buildNegativeMsg({
                 header: 'Unable to deploy Smart Contract',
                 msg: `${!curDomain ? 'Domain' : !expiry ? 'Expiry' : !signature ? 'Signature' : 'Some required input'} is empty`
             }));
         }
+        blockScreen(false);
     };
 
     const renderFlagCheckboxes = () => {
@@ -164,7 +172,7 @@ const DeploymentForm = ({ onFeedback }) => {
 
     return (
         <React.Fragment>
-            <Form style={{ width: '80%', margin: '20px auto' }}>
+            <Form style={{ width: '80%', margin: '40px auto' }}>
                 <Form.Group widths='equal'>
                     <Form.Field>
                         <label>Domain  <span style={{ color: 'red' }}>*</span></label>
@@ -209,7 +217,7 @@ const DeploymentForm = ({ onFeedback }) => {
                     </div>
                     <div><em>Pick the certificate private key file to automatically compute the signature</em></div>
 
-                    <Segment style={{ wordBreak: 'break-all', minHeight: '7em' }}>
+                    <Segment style={{ wordBreak: 'break-all', minHeight: '7em' }} placeholder>
                         {signature}
                     </Segment>
 
@@ -217,10 +225,10 @@ const DeploymentForm = ({ onFeedback }) => {
                 </Form.Group>
 
                 {contractAddress && (<DeploymentOutput contractAddress={contractAddress} costPaid={costPaid} />)}
-                
+
                 {!!costEstimated && !!signature && (
-                    <div style={{float: 'right', marginTop: '3px'}}>
-                        <Label tag style={{color: 'royalblue', }}>
+                    <div style={{ float: 'right', marginTop: '3px' }}>
+                        <Label tag style={{ color: 'royalblue', }}>
                             {costEstimated.toFixed(5)} <span style={{ fontSize: '0.75em' }}>ETH</span>
                         </Label>
                     </div>
@@ -237,7 +245,7 @@ const DeploymentForm = ({ onFeedback }) => {
 
                     Deploy
                 </Button>
-                
+
             </Form>
         </React.Fragment>
     );
