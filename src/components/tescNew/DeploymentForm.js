@@ -65,7 +65,7 @@ const DeploymentForm = ({ feedback, blockScreen }) => {
         } else if (!domain || !expiry) {
             setSignature('');
         }
-    }, [expiry, flags, getCurrentDomain, web3]);
+    }, [expiry, flags, getCurrentDomain, feedback, web3]);
 
 
     const handleFlagsChange = (i) => {

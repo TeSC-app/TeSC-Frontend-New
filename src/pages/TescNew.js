@@ -5,8 +5,7 @@ import { Grid, Loader, Dimmer } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
 
 import DeploymentForm from '../components/tescNew/DeploymentForm';
-import FeedbackMessage from "../components/FeedbackMessage";
-
+import PageHeader from "../components/PageHeader";
 
 const TeSCNew = () => {
 
@@ -27,20 +26,11 @@ const TeSCNew = () => {
 
     return (
         <div>
-            <Grid style={{ marginBottom: '20px', height: '50px' }}>
-                    <Grid.Row style={{ height: '100%' }}>
-                        <Grid.Column width={5}>
-                            <h2>Create & Deploy TeSC</h2>
-                        </Grid.Column>
-                        <Grid.Column width={11} >
-                            <div style={{ float: 'right' }}>
-                                {sysMsg && <FeedbackMessage message={sysMsg} handleDismiss={handleDismissMessage} />}
-
-                            </div>
-                        </Grid.Column>
-                    </Grid.Row>
-
-                </Grid>
+            <PageHeader
+                title='Create & Deploy TeSC'
+                message={sysMsg}
+                onDismissMessage={handleDismissMessage}
+            />
             <DeploymentForm
                 feedback={handleFeedback}
                 blockScreen={handleBlockScreen}
