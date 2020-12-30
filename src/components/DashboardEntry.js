@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
-import { Table, Icon, Popup, Button } from 'semantic-ui-react';
+import { Table, Icon, Popup, Button, Dimmer, Loader } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
 import LinkTescInspect from '../components/InternalLink';
@@ -9,12 +9,14 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, own, ind
 
     const [isInRegistryNew, setIsInRegistryNew] = useState(isInRegistry)
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false)
+    const [blocking, setBlocking] = useState(false);
 
     useEffect(() => {
         isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false);
     }, [isFavourite, setTescIsInFavourites, currentAccount]);
 
     const addToRegistry = async () => {
+        setBlocking(true)
         if (domain && contractAddress) {
             try {
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
@@ -39,9 +41,11 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, own, ind
                 }))
             }
         }
+        setBlocking(false)
     }
 
     const removeFromRegistry = async () => {
+        setBlocking(true)
         if (domain && contractAddress) {
             try {
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
@@ -66,6 +70,7 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, own, ind
                 }))
             }
         }
+        setBlocking(false)
     }
 
     const addRemoveFavourites = () => {
@@ -93,9 +98,9 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, own, ind
         } else {
             return (
                 isInRegistryNew ? <Popup content='In the registry'
-                trigger={<Icon name='checkmark' color='green' circular />} /> :
-                <Popup content='Not in the registry'
-                trigger={<Icon name='delete' color='red' circular />} />
+                    trigger={<Icon name='checkmark' color='green' circular />} /> :
+                    <Popup content='Not in the registry'
+                        trigger={<Icon name='delete' color='red' circular />} />
             )
         }
     }
@@ -105,7 +110,7 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, own, ind
             <Table.Cell>
                 <LinkTescInspect contractAddress={contractAddress} />
                 {
-                   own ? <Popup content="Own contract" trigger={<Icon className="userIcon" name="user" color="blue" circular />} /> : null
+                    own ? <Popup content="Own contract" trigger={<Icon className="userIcon" name="user" color="blue" circular />} /> : null
                 }
             </Table.Cell>
             <Table.Cell>{domain}</Table.Cell>
@@ -123,6 +128,9 @@ function DashboardEntry({ contractAddress, domain, expiry, isFavourite, own, ind
                             onClick={addRemoveFavourites} />} />
                 </Table.Cell>
             }
+            <Dimmer active={blocking}>
+                <Loader indeterminate content='Waiting for transaction to finish...' />
+            </Dimmer>
         </Table.Row>
     );
 }

@@ -1,8 +1,8 @@
 import React, { useState, useContext } from 'react'
-import { Form, Input, Button, Grid } from 'semantic-ui-react';
+import { Form, Input, Button, Grid, Dimmer, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
-import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
+import ERCXXXImplementation from '../ethereum/build/contracts/ERCXXXImplementation.json';
 import FeedbackMessage, { buildNegativeMsg, buildPositiveMsg } from "../components/FeedbackMessage";
 
 function RegistryAdd() {
@@ -10,6 +10,7 @@ function RegistryAdd() {
     const [domain, setDomain] = useState('')
     const [contractAddress, setContractAddress] = useState('')
     const [sysMsg, setSysMsg] = useState(null)
+    const [blocking, setBlocking] = useState(false)
 
     const handleDismissMessage = () => {
         setSysMsg(null);
@@ -18,6 +19,7 @@ function RegistryAdd() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (domain && contractAddress) {
+            setBlocking(true)
             try {
                 const account = web3.currentProvider.selectedAddress;
                 const networkId = await web3.eth.net.getId();
@@ -26,11 +28,11 @@ function RegistryAdd() {
                     TeSCRegistryImplementation.abi,
                     deployedNetworkRegistry && deployedNetworkRegistry.address,
                 );
-                const tescContract = new web3.eth.Contract(ERCXXX.abi, contractAddress)
-                const tescContractOwner = await tescContract.owner()
+                const tescContract = new web3.eth.Contract(ERCXXXImplementation.abi, contractAddress)
+                const tescContractOwner = await tescContract.methods.owner.call().call()
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
                 if (!isContractRegistered) {
-                    if (tescContractOwner === web3.currentProvider.selectedAddress) {
+                    if (tescContractOwner && tescContractOwner.toLowerCase() === web3.currentProvider.selectedAddress) {
                         await contractRegistry.methods.add(domain, contractAddress).send({ from: account, gas: '2000000' });
                         setSysMsg(buildPositiveMsg({
                             header: 'Entry added to the registry',
@@ -39,7 +41,7 @@ function RegistryAdd() {
                     } else {
                         setSysMsg(buildNegativeMsg({
                             header: 'Unable to add entry to the registry',
-                            msg: `The contract at address ${contractAddress} does not belong to your current wallet address`
+                            msg: `The contract at address ${contractAddress} does not belong to your selected wallet address`
                         }))
                     }
                 } else {
@@ -56,7 +58,7 @@ function RegistryAdd() {
                 }))
             }
         }
-
+        setBlocking(false)
     };
 
     return (
@@ -96,6 +98,9 @@ function RegistryAdd() {
                 </Form.Group>
                 <Button disabled={!domain || !contractAddress} onClick={handleSubmit} floated='right' positive>Add entry</Button>
             </Form>
+            <Dimmer active={blocking}>
+                <Loader indeterminate content='Waiting for transaction to finish...' />
+            </Dimmer>
         </div>
     )
 }
