@@ -9,8 +9,17 @@ const getWeb3 = async () => {
          * We are in the browser and metasmask is running
          */
         console.log("METAMASK RUNNING");
+        // try {
+        //     window.ethereum.enable().then(async () => {
+        //         const provider = await detectEthereumProvider();
+        //         web3 = new Web3(provider);
+        //     });
+        // } catch (err) {
+        //     console.log(err);
+        // }
         const provider = await detectEthereumProvider();
         web3 = new Web3(provider);
+
     } else {
         /**
          * We are not running Metamask
