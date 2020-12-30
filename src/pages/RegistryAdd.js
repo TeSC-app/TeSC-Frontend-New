@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react'
 import { Form, Input, Button, Grid } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
+import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
 import FeedbackMessage, { buildNegativeMsg, buildPositiveMsg } from "../components/FeedbackMessage";
 
 function RegistryAdd() {
@@ -25,13 +26,22 @@ function RegistryAdd() {
                     TeSCRegistryImplementation.abi,
                     deployedNetworkRegistry && deployedNetworkRegistry.address,
                 );
+                const tescContract = new web3.eth.Contract(ERCXXX.abi, contractAddress)
+                const tescContractOwner = await tescContract.owner()
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
                 if (!isContractRegistered) {
-                    await contractRegistry.methods.add(domain, contractAddress).send({ from: account, gas: '2000000' });
-                    setSysMsg(buildPositiveMsg({
-                        header: 'Entry added to the registry',
-                        msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully added to the registry`
-                    }));
+                    if (tescContractOwner === web3.currentProvider.selectedAddress) {
+                        await contractRegistry.methods.add(domain, contractAddress).send({ from: account, gas: '2000000' });
+                        setSysMsg(buildPositiveMsg({
+                            header: 'Entry added to the registry',
+                            msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully added to the registry`
+                        }));
+                    } else {
+                        setSysMsg(buildNegativeMsg({
+                            header: 'Unable to add entry to the registry',
+                            msg: `The contract at address ${contractAddress} does not belong to your current wallet address`
+                        }))
+                    }
                 } else {
                     setSysMsg(buildNegativeMsg({
                         header: 'Unable to add entry to the registry',
