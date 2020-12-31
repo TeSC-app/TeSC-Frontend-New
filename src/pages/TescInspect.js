@@ -56,7 +56,8 @@ const TeSCInspect = ({ location }) => {
     };
 
     const addRemoveFavourites = (address) => {
-        let tescsNew = tescs;
+        let tescsNew;
+        tescs ? tescsNew = tescs : tescsNew = []
         let found = false;
         for (const tesc of tescsNew) {
             if (tesc.contractAddress === address) {
