@@ -1,9 +1,9 @@
 import React from 'react';
-import { Message } from 'semantic-ui-react';
+import { Message, Icon } from 'semantic-ui-react';
 
 export const buildNegativeMsg = ({ code, header, msg }) => {
     return {
-        outcome: 'negative',
+        type: 'negative',
         header: `FAILED: ${header}`,
         msg: `${msg} ${!!code ? `[MetaMask code: ${code}]` : ''}`
     };
@@ -11,25 +11,39 @@ export const buildNegativeMsg = ({ code, header, msg }) => {
 
 export const buildPositiveMsg = ({ header, msg }) => {
     return {
-        outcome: 'positive',
+        type: 'positive',
         header: `SUCCESS: ${header}`,
+        msg
+    };
+};
+
+export const buildWarningMsg = ({ header, msg }) => {
+    return {
+        type: 'warning',
+        header: `WARNING: ${header}`,
         msg
     };
 };
 
 const FeedbackMessage = ({ message, handleDismiss, style }) => {
     console.log('MSG', message);
-    const { outcome, header, msg } = message;
+    const { type, header, msg } = message;
+    const icon = (type === 'positive') ? 'check' : (type === 'negative') ? 'x' : 'warning sign';
     return (
         <div style={{ float: 'right' }}>
             <Message
-                positive={outcome === 'positive'}
-                negative={outcome === 'negative'}
+                icon
+                positive={type === 'positive'}
+                negative={type === 'negative'}
+                warning={type === 'warning'}
                 onDismiss={handleDismiss}
-                style={{ paddingRight: '50px' }}
+                style={{ paddingRight: '3em' }}
             >
-                <Message.Header>{header}</Message.Header>
-                {msg && <p>{msg}</p>}
+                <Icon name={icon} />
+                <Message.Content>
+                    <Message.Header>{header}</Message.Header>
+                    {msg && <p>{msg}</p>}
+                </Message.Content>
             </Message>
         </div>
 

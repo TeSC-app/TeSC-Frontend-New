@@ -2,7 +2,7 @@ import React, { Fragment, useState, useContext, useCallback, useEffect, useRef }
 import { Input, Form, Label, Button } from 'semantic-ui-react';
 
 
-const FilePicker = ({ onPickFile, isDisabled=false }) => {
+const FilePicker = ({ label, onPickFile, isDisabled=false, }) => {
     const fileInputRef = useRef(null);
     const fileName = useRef('');
 
@@ -23,7 +23,7 @@ const FilePicker = ({ onPickFile, isDisabled=false }) => {
     return (
         <Fragment>
             <Button
-                content="Choose certificate private key"
+                content={label}
                 labelPosition="left"
                 icon="file"
                 onClick={() => fileInputRef.current.click()}

@@ -12,6 +12,7 @@ import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
 import { buildPositiveMsg, buildNegativeMsg } from "../components/FeedbackMessage";
 import PageHeader from "../components/PageHeader";
 
+window.axios = axios;
 
 const TeSCInspect = ({ location }) => {
     const { web3 } = useContext(AppContext);
@@ -79,11 +80,11 @@ const TeSCInspect = ({ location }) => {
 
     const clearResults = () => {
         setDomainFromChain(null);
-        setExpiry('')
+        setExpiry('');
         setFlags(new BitSet('0x00'));
         setSignature('');
-        setPlainDomain('')
-        setVerifResult(null)
+        setPlainDomain('');
+        setVerifResult(null);
     };
 
 

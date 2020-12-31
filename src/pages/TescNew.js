@@ -3,12 +3,12 @@ import { Grid, Loader, Dimmer } from 'semantic-ui-react';
 
 
 import 'react-day-picker/lib/style.css';
+import { TescNewContext } from '../appContext';
 
 import DeploymentForm from '../components/tescNew/DeploymentForm';
 import PageHeader from "../components/PageHeader";
 
 const TeSCNew = () => {
-
     const [sysMsg, setSysMsg] = useState(null);
     const [blocking, setBlocking] = useState(false);
 
@@ -16,8 +16,8 @@ const TeSCNew = () => {
         setSysMsg(null);
     };
 
-    const handleFeedback = (feedback) => {
-        setSysMsg(feedback);
+    const showMessage = (msg) => {
+        setSysMsg(msg);
     };
 
     const handleBlockScreen = (isBlocking) => {
@@ -25,14 +25,13 @@ const TeSCNew = () => {
     };
 
     return (
-        <div>
+        <TescNewContext.Provider value={{ showMessage }}>
             <PageHeader
                 title='Create & Deploy TeSC'
                 message={sysMsg}
                 onDismissMessage={handleDismissMessage}
             />
             <DeploymentForm
-                feedback={handleFeedback}
                 blockScreen={handleBlockScreen}
             />
 
@@ -40,7 +39,7 @@ const TeSCNew = () => {
                 <Loader indeterminate content='Waiting for transaction to finish...' />
             </Dimmer>
 
-        </div>
+        </TescNewContext.Provider>
     );
 };
 

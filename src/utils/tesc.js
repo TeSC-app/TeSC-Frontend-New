@@ -28,18 +28,29 @@ export const predictContractAddress = async (web3) => {
 };
 
 export const generateSignature = async ({ address, domain, expiry, flagsHex }, privateKeyPem) => {
-    const claim = `${address}.${domain}.${expiry}.${flagsHex}`;
+    const claim = formatClaim({
+        contractAddress: address,
+        domain,
+        expiry,
+        flags: flagsHex
+    });
     console.log('====> CLAIM', claim);
     const privateKey = PrivateKey.fromPEM(privateKeyPem);
     return privateKey.sign(claim, 'RSA-SHA256').toString('base64');
 };
 
 
-export const flagsTo24BytesHex = (flagsBitVector) => {
+export const flagsToBytes24Hex = (flagsBitVector) => {
     const flagsBitVectorWithSANITY = new BitSet(flagsBitVector.toString() + '1');
     let hex = flagsBitVectorWithSANITY.slice(0, Object.keys(FLAG_POSITIONS).length - 1).toString(16);
-    if (hex.length < 48) {
-        hex = '0'.repeat(48 - hex.length) + hex;
+    return padToBytesX(hex, 24);
+};
+
+export const padToBytesX = (hexNumber, x) => {
+    let hex = (typeof (hexNumber) === 'number') ? hexNumber.toString(16) : hexNumber;
+    hex = (hex.substring(0, 2) === '0x') ? hex.substring(2) : hex;
+    if (hex.length < x * 2) {
+        hex = '0'.repeat(x * 2 - hex.length) + hex;
     }
     return '0x' + hex;
 };
@@ -47,15 +58,6 @@ export const flagsTo24BytesHex = (flagsBitVector) => {
 export const hexStringToBitSet = (hexStr) => {
     const flagsBitVectorWithoutSANITY = parseInt(hexStr).toString(2).slice(0, -1);
     return new BitSet(flagsBitVectorWithoutSANITY === '' ? 0 : flagsBitVectorWithoutSANITY);
-};
-
-
-export const buildDeploymentTx = async ({ web3, tescJson, domain, expiry, flags, signature }) => {
-    const flagsHex = flagsTo24BytesHex(flags);
-    return await new web3.eth.Contract(tescJson.abi).deploy({
-        data: tescJson.bytecode,
-        arguments: [domain, expiry, flagsHex, signature]
-    });
 };
 
 
@@ -92,4 +94,8 @@ export const isValidContractAddress = (address, withReason = false) => {
         throw new Error('Contract address contains non-hexadecimal digits');
     }
     return true;
+};
+
+export const formatClaim = ({ contractAddress, domain, expiry, flags }) => {
+    return `${contractAddress}.${domain}.${expiry}.${flags}`;
 };
