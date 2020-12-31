@@ -114,11 +114,11 @@ function DashboardEntry({ web3, contractAddress, domain, expiry, isFavourite, ow
                 isInRegistryNew ?
                     <Popup content={`Remove entry from the TeSC registry. This would cost around ${costEstimatedRemove.toFixed(5)} ETH.`}
                         trigger={<Button as="button" className="buttonAddRemove" color='red'
-                            onClick={removeFromRegistry}><Icon name='minus' />Remove</Button>} />
+                            onClick={removeFromRegistry}><Icon name='minus' size='small' />Remove</Button>} />
                     :
                     <Popup content={`Add entry to the TeSC registry. This would cost around ${costEstimatedAdd.toFixed(5)} ETH.`}
                         trigger={<Button as="button" className="buttonAddRemove" color='green'
-                            onClick={addToRegistry}><Icon name='plus' />Add</Button>} />
+                            onClick={addToRegistry}><Icon name='plus' size='small' />Add</Button>} />
             )
         } else {
             return (
@@ -127,6 +127,16 @@ function DashboardEntry({ web3, contractAddress, domain, expiry, isFavourite, ow
                     <Popup content='Not in the registry'
                         trigger={<Icon name='delete' color='red' circular />} />
             )
+        }
+    }
+
+    const renderDomain = () => {
+        if (domain.length === 64 && domain.split('.').length === 1) {
+            return (<Popup content={domain} trigger={<i>hashed domain</i>} />)
+        } else if (domain.length > 32) {
+            return (<Popup on="click" content={domain} trigger={<i>{`${domain.substring(0, 6)}...${domain.substring(domain.length - 4, domain.length)}`}</i>} />)
+        } else {
+            return domain
         }
     }
 
@@ -140,7 +150,7 @@ function DashboardEntry({ web3, contractAddress, domain, expiry, isFavourite, ow
                     }
                 </span>
             </Table.Cell>
-            <Table.Cell>{domain}</Table.Cell>
+            <Table.Cell>{renderDomain()}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
             <Table.Cell textAlign="center">
                 <Icon name="delete" color="red" circular />

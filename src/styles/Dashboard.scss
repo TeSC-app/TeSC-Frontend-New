@@ -1,5 +1,6 @@
 .buttonAddRemove {
-    width: 9em;
+    width: 6em;
+    padding: 1em 0 1em 0 !important;
 }
 
 .dropdownFavourites {
@@ -22,4 +23,9 @@
 
 .contractAddressColumn {
     display: flex;
+}
+
+.ui.popup div {
+    max-width: 45em !important;
+    overflow: auto;
 }
