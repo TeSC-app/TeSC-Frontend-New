@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { Input, Table, Checkbox, Loader, Icon, Label, Grid, Card, Form, Dimmer } from 'semantic-ui-react';
+import { Input, Table, Checkbox, Loader, Icon, Label, Grid, Card, Form, Dimmer, Popup, Button } from 'semantic-ui-react';
 
 
 import BitSet from 'bitset';
@@ -26,6 +26,12 @@ const TeSCInspect = ({ location }) => {
 
     const [verifResult, setVerifResult] = useState(null);
 
+    const [tescIsInFavourites, setTescsIsInFavourites] = useState(false)
+    const [tescs, setTescs] = useState(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)))
+
+    useEffect(() => {
+        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
+    }, [web3.currentProvider.selectedAddress])
 
     const fetchTescData = async (address) => {
         const contract = new web3.eth.Contract(TeSC.abi, address);
@@ -38,7 +44,41 @@ const TeSCInspect = ({ location }) => {
         setDomainFromChain(await contract.methods.getDomain().call());
         setExpiry(await contract.methods.getExpiry().call());
         setSignature(await contract.methods.getSignature().call());
+
+        //favourites
+        console.log(tescs)
+        for (const tesc of tescs) {
+            if (tesc.contractAddress === address) {
+                setTescsIsInFavourites(tesc.isFavourite)
+                break
+            }
+        }
     };
+
+    const addRemoveFavourites = (address) => {
+        let tescsNew;
+        tescs ? tescsNew = tescs : tescsNew = []
+        let found = false;
+        for (const tesc of tescsNew) {
+            if (tesc.contractAddress === address) {
+                found = true;
+                if (tesc.isFavourite) {
+                    tesc.isFavourite = false
+                    setTescsIsInFavourites(false)
+                } else {
+                    tesc.isFavourite = true
+                    setTescsIsInFavourites(true)
+                }
+                localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+                break
+            }
+        }
+        if (!found) {
+            tescsNew.push({contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false })
+            localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+            setTescsIsInFavourites(true)
+        }
+    }
 
     const verifyTesc = useCallback(async () => {
         if (isDomainHashed !== null && (!isDomainHashed || (isDomainHashed && plainDomainSubmitted))) {
@@ -56,9 +96,9 @@ const TeSCInspect = ({ location }) => {
     }, [contractAddress, plainDomainSubmitted, verifyTesc]);
 
     useEffect(() => {
-        if(location.state){
+        if (location.state) {
             handleChangeAddress(location.state.contractAddress);
-        } 
+        }
     }, []);
 
 
@@ -150,6 +190,16 @@ const TeSCInspect = ({ location }) => {
                                             </Table.Cell>
                                             <Table.Cell style={{ wordBreak: 'break-all' }}>
                                                 {signature}
+                                            </Table.Cell>
+                                        </Table.Row>
+                                        <Table.Row>
+                                            <Table.Cell>
+                                                <b>Favourite</b>
+                                            </Table.Cell>
+                                            <Table.Cell>
+                                                <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
+                                                    trigger={<Button icon="heart" className={tescIsInFavourites ? "favourite" : "notFavourite"}
+                                                        onClick={() => addRemoveFavourites(contractAddress)} />} />
                                             </Table.Cell>
                                         </Table.Row>
                                     </Table.Body>

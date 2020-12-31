@@ -1,4 +1,4 @@
-import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
+import React from 'react';
 import { Label } from 'semantic-ui-react';
 
 import LinkTescInspect from '../InternalLink';
