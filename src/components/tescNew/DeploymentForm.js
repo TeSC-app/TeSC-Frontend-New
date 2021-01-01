@@ -51,13 +51,6 @@ const DeploymentForm = ({ blockScreen }) => {
     const getCurrentDomain = useCallback(() => !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain,
         [domainHashed, domain, flags]);
 
-    const getClaim = useCallback(() => formatClaim({
-        contractAddress,
-        domain: getCurrentDomain(),
-        expiry,
-        flags: flagsToBytes24Hex(flags)
-    }), [contractAddress, getCurrentDomain, expiry, flags]);
-
     const computeSignature = useCallback(async () => {
         const domain = getCurrentDomain();
         if (!!privateKeyPEM.current && !!domain && !!expiry) {
@@ -252,9 +245,7 @@ const DeploymentForm = ({ blockScreen }) => {
 
                 <Form.Group grouped>
                     <FingerprintInput
-                        domain={getCurrentDomain()}
-                        claim={getClaim()}
-                        signature={signature}
+                        inputs={{ domain: getCurrentDomain(), expiry, flags, signature}}
                         onGetFingerprint={handleGetFingerprint}
                     />
                 </Form.Group>

@@ -1,100 +1,159 @@
 import React, { Fragment, useState, useContext, useCallback, useEffect, useRef } from 'react';
 import { Input, Form, Label, Button, Segment } from 'semantic-ui-react';
 
-
 import axios from 'axios';
 
 import AppContext, { TescNewContext } from '../../appContext';
 import FilePicker from '../FilePicker';
 import { buildNegativeMsg, buildWarningMsg } from "../FeedbackMessage";
 
-import { predictContractAddress } from '../../utils/tesc';
+import { predictContractAddress, formatClaim, flagsToBytes24Hex } from '../../utils/tesc';
 
-const ERRCODE_MESSAGE_MAPPING = {
-    "ENOTFOUND": " Unable to connect to the given website address. Please check your Domain input or the availability of your website."
-};
 
-const getErrorMessage = (errorCode) => {
-    const msg = ERRCODE_MESSAGE_MAPPING[errorCode];
-    return !!msg ? msg : 'Unknown error occurred.';
-};
-
-const FingerprintInput = ({ domain, signature, claim, onGetFingerprint }) => {
+const FingerprintInput = ({ inputs, onGetFingerprint }) => {
     const { web3 } = useContext(AppContext);
     const { showMessage } = useContext(TescNewContext);
+
+    const [sysMsg, setSysMsg] = useState(null);
 
     const [sliderState, setSliderState] = useState(false);
     const [fingerprint, setFingerprint] = useState('');
 
     const [filePickerDisplayed, setFilePickerDisplayed] = useState(false);
 
-    const handleChangeSliderState = async () => {
-        setSliderState(!sliderState);
-        if (!sliderState) {
-            try {
-                if (claim.substring(0, 2) !== '0x') {
-                    const contractAddress = await predictContractAddress(web3);
-                    claim = contractAddress + claim;
+    const domain = useRef(inputs.domain);
+    const flags = useRef(inputs.flags);
+    const expiry = useRef(inputs.expiry);
+    const signature = useRef(inputs.signature);
+
+    const contractAddress = useRef('');
+    const claim = useRef('');
+
+    // const cache = useRef({});
+
+    const updateClaim = () => {
+        if (contractAddress.current && domain.current && expiry.current) {
+            console.log('cAdd in');
+            claim.current = formatClaim({
+                contractAddress: contractAddress.current,
+                domain: domain.current,
+                expiry: expiry.current,
+                flags: flagsToBytes24Hex(flags.current)
+            });
+        }
+    };
+
+    const retrieveCertificate = useCallback(async () => {
+        try {
+            console.log('CLAIM', claim.current);
+            updateClaim();
+            const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/fingerprint/by-cert-retrieval`, {
+                params: {
+                    domain: domain.current,
+                    signature: signature.current,
+                    claim: claim.current
                 }
-                console.log('CLAIM ===>', claim);
+            });
+            setFingerprint(res.data.fingerprint);
 
-                const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/fingerprint/by-cert-retrieval`, {
-                    params: {
-                        domain,
-                        signature,
-                        claim
-                    }
-                });
-                setFingerprint(res.data.fingerprint);
+        } catch (error) {
+            setFingerprint('');
+            if (error.response) {
+                console.log("AUTO CERT", error.response.data);
+                const msg = getMsgFromErrorCode(error.response.data.err);
+                setSysMsg(buildWarningMsg({
+                    header: 'Unable to automatically retrieve domain certificate to compute the fingerprint',
+                    msg: `${msg}${!!msg.match(/[.!]+$/i) ? '' : '.'} Please check your domain input and the availability of your website or upload your domain certificate manually.`
+                }));
 
-            } catch (error) {
-                if (error.response) {
-                    const err = error.response.data.err;
-                    console.log("AUTO CERT", error.response.data);
-                    const msg = err ? err : getErrorMessage(err);
-                    showMessage(buildWarningMsg({
-                        header: 'Unable to automatically retrieve domain certificate to compute the fingerprint',
-                        msg: `${msg}${!!msg.match(/[.!]+$/i) ? '' : '.'} Please upload the domain certificate manually`
-                    }));
+                setFilePickerDisplayed(true);
+            } else {
+                console.log(error);
+            }
+        }
+    }, []);
 
-                    setFilePickerDisplayed(true);
-                } else {
-                    console.log(error);
+
+    useEffect(() => {
+        (async () => {
+            console.log('INPUTS', inputs);
+            if (!contractAddress.current) {
+                contractAddress.current = await predictContractAddress(web3);
+            }
+            if (signature.current !== inputs.signature) {
+                signature.current = inputs.signature;
+                if (sliderState) {
+                    retrieveCertificate();
                 }
             }
 
+            if (domain.current !== inputs.domain) {
+                domain.current = inputs.domain;
+            } else if (expiry.current !== inputs.expiry) {
+                expiry.current = inputs.expiry;
+
+            } else if (flags.current !== inputs.flags) {
+                flags.current = inputs.flags;
+
+            }
+            
+
+        })();
+    }, [inputs, sliderState, retrieveCertificate, web3]);
+
+    const getMsgFromErrorCode = (errMsg) => {
+        if (errMsg.includes('getaddrinfo ENOTFOUND'))
+            return ` Unable to connect to ${domain.current}.`;
+
+        return errMsg;
+    };
+
+    const handleChangeSliderState = async () => {
+        setSliderState(!sliderState);
+
+        if (!sliderState) {
+            retrieveCertificate();
         } else {
             setFilePickerDisplayed(false);
-            showMessage(null);
+            setFingerprint('');
+            setSysMsg(null);
         }
     };
 
     const handlePickCert = async (cert) => {
-        const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/fingerprint/by-cert-uploading`, {
-            params: {
-                cert,
-                signature,
-                claim
-            }
-        });
-        console.log("MANUAL CERT", res);
-
-        if (res.status === '200') {
+        try {
+            const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/fingerprint/by-cert-uploading`, {
+                params: {
+                    cert,
+                    signature,
+                    claim
+                }
+            });
+            console.log("MANUAL CERT", res);
             setFingerprint(res.data.fingerprint);
-            showMessage(null);
-        } else {
-            showMessage(buildNegativeMsg({
-                header: 'Unable to automatically retrieve domain certificate to compute the fingerprint',
-                msg: res.data.err + ' Please upload the domain certificate manually '
+
+        } catch (error) {
+            setFingerprint('');
+            const msg = getMsgFromErrorCode(error.response.data.err);
+            setSysMsg(buildNegativeMsg({
+                header: 'Unable to compute fingerprint',
+                msg
             }));
         }
     };
 
     useEffect(() => {
+        // if (fingerprint) {
+        //     cache.current[domain.current] = fingerprint;
+        // }
         onGetFingerprint(fingerprint);
-    }, [fingerprint, onGetFingerprint]);
-
-
+        if (sysMsg && fingerprint) {
+            setSysMsg(null);
+            // showMessage(null);
+        } else {
+            showMessage(sysMsg);
+        }
+    }, [fingerprint, sysMsg, showMessage, onGetFingerprint]);
 
 
     return (
@@ -106,7 +165,7 @@ const FingerprintInput = ({ domain, signature, claim, onGetFingerprint }) => {
                 onClick={handleChangeSliderState}
                 disabled={!signature} handlePickCert
             />
-            {filePickerDisplayed && (<FilePicker label='Choose certificate' onPickFile={handlePickCert} isDisabled={!sliderState} />)}
+            {filePickerDisplayed && !fingerprint && (<FilePicker label='Choose certificate' onPickFile={handlePickCert} isDisabled={!sliderState} />)}
             {sliderState && fingerprint && (<p><b>Fingerprint: {fingerprint}</b></p>)
             }
         </div>
