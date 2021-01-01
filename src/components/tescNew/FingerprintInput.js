@@ -7,7 +7,7 @@ import AppContext, { TescNewContext } from '../../appContext';
 import FilePicker from '../FilePicker';
 import { buildNegativeMsg, buildWarningMsg } from "../FeedbackMessage";
 
-import { predictContractAddress, formatClaim, flagsToBytes24Hex } from '../../utils/tesc';
+import { predictContractAddress, formatClaim, flagsToBytes24Hex, FLAG_POSITIONS } from '../../utils/tesc';
 
 
 const FingerprintInput = ({ inputs, onGetFingerprint }) => {
@@ -32,11 +32,12 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
     // const cache = useRef({});
 
     const updateClaim = () => {
+        const curDomain = !!flags.current.get(FLAG_POSITIONS.DOMAIN_HASHED) ? web3.utils.sha3(domain.current).substring(2) : domain.current
         if (contractAddress.current && domain.current && expiry.current) {
             console.log('cAdd in');
             claim.current = formatClaim({
                 contractAddress: contractAddress.current,
-                domain: domain.current,
+                domain: curDomain,
                 expiry: expiry.current,
                 flags: flagsToBytes24Hex(flags.current)
             });
@@ -45,8 +46,8 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
 
     const retrieveCertificate = useCallback(async () => {
         try {
-            console.log('CLAIM', claim.current);
             updateClaim();
+            console.log('CLAIM', claim.current);
             const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/fingerprint/by-cert-retrieval`, {
                 params: {
                     domain: domain.current,
@@ -77,7 +78,7 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
     useEffect(() => {
         (async () => {
             console.log('INPUTS', inputs);
-            if (!contractAddress.current) {
+            if (!contractAddress.current &&  web3.currentProvider.selectedAddress) {
                 contractAddress.current = await predictContractAddress(web3);
             }
             if (signature.current !== inputs.signature) {
@@ -86,17 +87,16 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
                     retrieveCertificate();
                 }
             }
-
-            if (domain.current !== inputs.domain) {
-                domain.current = inputs.domain;
-            } else if (expiry.current !== inputs.expiry) {
-                expiry.current = inputs.expiry;
-
-            } else if (flags.current !== inputs.flags) {
-                flags.current = inputs.flags;
-
+            if(signature.current) {
+                if (domain.current !== inputs.domain) {
+                    domain.current = inputs.domain;
+                } else if (expiry.current !== inputs.expiry) {
+                    expiry.current = inputs.expiry;
+                } else if (flags.current !== inputs.flags) {
+                    flags.current = inputs.flags;
+                }
             }
-            
+            console.log('Signature.current', signature.current)
 
         })();
     }, [inputs, sliderState, retrieveCertificate, web3]);
@@ -163,7 +163,7 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
                 checked={sliderState}
                 label='Use certificate fingerprint (optional)'
                 onClick={handleChangeSliderState}
-                disabled={!signature} handlePickCert
+                disabled={!signature.current || !domain.current}
             />
             {filePickerDisplayed && !fingerprint && (<FilePicker label='Choose certificate' onPickFile={handlePickCert} isDisabled={!sliderState} />)}
             {sliderState && fingerprint && (<p><b>Fingerprint: {fingerprint}</b></p>)

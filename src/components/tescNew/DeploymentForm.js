@@ -245,7 +245,7 @@ const DeploymentForm = ({ blockScreen }) => {
 
                 <Form.Group grouped>
                     <FingerprintInput
-                        inputs={{ domain: getCurrentDomain(), expiry, flags, signature}}
+                        inputs={{ domain, expiry, flags, signature}}
                         onGetFingerprint={handleGetFingerprint}
                     />
                 </Form.Group>
