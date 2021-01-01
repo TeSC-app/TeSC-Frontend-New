@@ -26,7 +26,6 @@ export const buildWarningMsg = ({ header, msg }) => {
 };
 
 const FeedbackMessage = ({ message, handleDismiss, style }) => {
-    console.log('MSG', message);
     const { type, header, msg } = message;
     const icon = (type === 'positive') ? 'check' : (type === 'negative') ? 'x' : 'warning sign';
     return (
