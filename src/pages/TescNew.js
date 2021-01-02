@@ -10,7 +10,7 @@ import PageHeader from "../components/PageHeader";
 
 const TeSCNew = () => {
     const [sysMsg, setSysMsg] = useState(null);
-    const [blocking, setBlocking] = useState(false);
+    const [screenBlocked, setScreenBlocked] = useState(false);
 
     const handleDismissMessage = () => {
         setSysMsg(null);
@@ -20,8 +20,8 @@ const TeSCNew = () => {
         setSysMsg(msg);
     };
 
-    const handleBlockScreen = (isBlocking) => {
-        setBlocking(isBlocking);
+    const handleBlockScreen = (blocked) => {
+        setScreenBlocked(blocked);
     };
 
     return (
@@ -35,7 +35,7 @@ const TeSCNew = () => {
                 blockScreen={handleBlockScreen}
             />
 
-            <Dimmer active={blocking}>
+            <Dimmer active={screenBlocked}>
                 <Loader indeterminate content='Waiting for transaction to finish...' />
             </Dimmer>
 

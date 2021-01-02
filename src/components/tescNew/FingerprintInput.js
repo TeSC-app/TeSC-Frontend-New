@@ -1,5 +1,5 @@
-import React, { Fragment, useState, useContext, useCallback, useEffect, useRef } from 'react';
-import { Input, Form, Label, Button, Segment } from 'semantic-ui-react';
+import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
+import { Form, Dimmer, Loader, Segment } from 'semantic-ui-react';
 
 import axios from 'axios';
 import { Certificate } from '@fidm/x509';
@@ -16,10 +16,12 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
     const { showMessage } = useContext(TescNewContext);
 
     const [sysMsg, setSysMsg] = useState(null);
+    const [isWaiting, setIsWaiting] = useState(false);
 
     const [sliderState, setSliderState] = useState(false);
     const [fingerprint, setFingerprint] = useState('');
 
+    const [certPEM, setCertPEM] = useState('');
     const [filePickerDisplayed, setFilePickerDisplayed] = useState(false);
 
     const domain = useRef(inputs.domain);
@@ -30,7 +32,58 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
     const contractAddress = useRef('');
     const claim = useRef('');
 
-    // const cache = useRef({});
+    const cache = useRef({});
+
+    const resetStates = () => {
+        setFilePickerDisplayed(false);
+        setFingerprint('');
+        setSysMsg(null);
+        setCertPEM('');
+    };
+
+    const handleChangeSliderState = async () => {
+        setSliderState(!sliderState);
+
+        if (!sliderState) {
+            retrieveCertificate();
+        } else {
+            resetStates();
+        }
+    };
+
+    const handlePickCert = useCallback(async (certPEM) => {
+        setCertPEM(certPEM);
+        console.log('CLAIM', claim.current);
+        try {
+            if (!cache.current[domain.current]) {
+                const cert = Certificate.fromPEM(certPEM);
+                if (!cert.dnsNames.includes(domain.current) && !cert.ipAddresses.includes(domain.current)) {
+                    throw new Error(`The selected certificate is not issued to domain ${domain.current}`);
+                }
+                
+                setIsWaiting(true);
+                const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/fingerprint/by-cert-uploading`, {
+                    params: {
+                        certPEM,
+                        signature: signature.current,
+                        claim: claim.current
+                    }
+                });
+                setFingerprint(res.data.fingerprint);
+
+            } else {
+                setFingerprint(cache.current[domain.current]);
+            }
+
+        } catch (error) {
+            setFingerprint('');
+            const msg = (error.response) ? getMsgFromErrorCode(error.response.data.err) : error.message;
+            setSysMsg(buildNegativeMsg({
+                header: 'Unable to compute fingerprint',
+                msg
+            }));
+        }
+    }, []);
 
     const updateClaim = useCallback(() => {
         const curDomain = !!flags.current.get(FLAG_POSITIONS.DOMAIN_HASHED) ? web3.utils.sha3(domain.current).substring(2) : domain.current;
@@ -47,23 +100,28 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
 
     const retrieveCertificate = useCallback(async () => {
         try {
-            updateClaim();
-            console.log('CLAIM', claim.current);
-            const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/fingerprint/by-cert-retrieval`, {
-                params: {
-                    domain: domain.current,
-                    signature: signature.current,
-                    claim: claim.current
-                }
-            });
-            setFingerprint(res.data.fingerprint);
+            if (!cache.current[domain.current]) {
+                setIsWaiting(true);
+                updateClaim();
+                const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/fingerprint/by-cert-retrieval`, {
+                    params: {
+                        domain: domain.current,
+                        signature: signature.current,
+                        claim: claim.current
+                    }
+                });
+                setFingerprint(res.data.fingerprint);
+
+            } else {
+                setFingerprint(cache.current[domain.current]);
+            }
 
         } catch (error) {
             setFingerprint('');
             const msg = (error.response) ? getMsgFromErrorCode(error.response.data.err) : error.message;
             setSysMsg(buildWarningMsg({
-                header: 'Unable to automatically retrieve domain certificate to compute the fingerprint',
-                msg: `${msg}${!!msg.match(/[.!]+$/i) ? '' : '.'} Please check your domain input and the availability of your website or upload your domain certificate manually.`
+                header: 'Unable to automatically retrieve domain certificate to compute the fingerprint.',
+                msg: `${msg}${!!msg.match(/[.!]+$/i) ? '' : '.'} You can also upload your domain certificate manually.`
             }));
             setFilePickerDisplayed(true);
         }
@@ -78,8 +136,12 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
             }
             if (signature.current !== inputs.signature) {
                 signature.current = inputs.signature;
-                if (sliderState) {
-                    retrieveCertificate();
+                if (sliderState && signature.current) {
+                    (!certPEM) ? retrieveCertificate() : handlePickCert(certPEM);
+
+                } else if (!signature.current) {
+                    resetStates();
+                    setSliderState(false);
                 }
             }
             if (signature.current) {
@@ -94,65 +156,29 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
             console.log('Signature.current', signature.current);
 
         })();
-    }, [inputs, sliderState, retrieveCertificate, web3]);
+    }, [inputs, sliderState, retrieveCertificate, certPEM, handlePickCert, web3]);
 
     const getMsgFromErrorCode = (errMsg) => {
         if (errMsg.includes('getaddrinfo ENOTFOUND'))
-            return ` Unable to connect to ${domain.current}.`;
+            return ` Unable to connect to ${domain.current}. Please check your domain input and the availability of your website. `;
         else if (errMsg.includes('Signature does not match'))
             return `${errMsg}. Please make sure you have selected the right certificate for domain ${domain.current}`;
         return errMsg;
     };
 
-    const handleChangeSliderState = async () => {
-        setSliderState(!sliderState);
-
-        if (!sliderState) {
-            retrieveCertificate();
-        } else {
-            setFilePickerDisplayed(false);
-            setFingerprint('');
-            setSysMsg(null);
-        }
-    };
-
-    const handlePickCert = async (certPEM) => {
-        console.log('CLAIM', claim.current);
-        try {
-            const cert = Certificate.fromPEM(certPEM);
-            if (!cert.dnsNames.includes(domain.current) && !cert.ipAddresses.includes(domain.current)) {
-                throw new Error(`The selected certificate is not issued to domain ${domain.current}`);
-            }
-
-            const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/fingerprint/by-cert-uploading`, {
-                params: {
-                    certPEM,
-                    signature: signature.current,
-                    claim: claim.current
-                }
-            });
-            setFingerprint(res.data.fingerprint);
-
-        } catch (error) {
-            setFingerprint('');
-            const msg = (error.response) ? getMsgFromErrorCode(error.response.data.err) : error.message;
-            setSysMsg(buildNegativeMsg({
-                header: 'Unable to compute fingerprint',
-                msg
-            }));
-        }
-    };
 
     useEffect(() => {
-        // if (fingerprint) {
-        //     cache.current[domain.current] = fingerprint;
-        // }
-        onGetFingerprint(fingerprint);
+        if (fingerprint) {
+            cache.current[domain.current] = fingerprint;
+        }
         if (sysMsg && fingerprint) {
             setSysMsg(null);
         } else {
             showMessage(sysMsg);
         }
+
+        onGetFingerprint(fingerprint);
+        setIsWaiting(false);
     }, [fingerprint, sysMsg, showMessage, onGetFingerprint]);
 
 
@@ -168,6 +194,9 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
             {filePickerDisplayed && !fingerprint && (<FilePicker label='Choose certificate' onPickFile={handlePickCert} isDisabled={!sliderState} />)}
             {sliderState && fingerprint && (<p><b>Fingerprint: {fingerprint}</b></p>)
             }
+            <Dimmer active={isWaiting} inverted>
+                <Loader indeterminate content='Waiting for transaction to finish...' />
+            </Dimmer>
         </div>
     );
 
