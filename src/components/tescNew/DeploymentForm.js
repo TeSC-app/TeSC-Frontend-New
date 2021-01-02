@@ -10,7 +10,7 @@ import BitSet from 'bitset';
 import AppContext, { TescNewContext } from '../../appContext';
 import { buildNegativeMsg, buildPositiveMsg } from "../FeedbackMessage";
 import FilePicker from '../FilePicker';
-import FingerprintInput from './FingerprintInput';
+import FingerprintSegment from './FingerprintSegment';
 import DeploymentOutput from './DeploymentOutput';
 
 import TeSC from '../../ethereum/build/contracts/ERCXXXImplementation.json';
@@ -247,7 +247,7 @@ const DeploymentForm = ({ blockScreen }) => {
                 </Form.Group>
 
                 <Form.Group grouped>
-                    <FingerprintInput
+                    <FingerprintSegment
                         inputs={{ domain, expiry, flags, signature }}
                         onGetFingerprint={handleGetFingerprint}
                     />
