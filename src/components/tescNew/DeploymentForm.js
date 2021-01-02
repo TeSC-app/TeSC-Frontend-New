@@ -21,7 +21,6 @@ import {
     padToBytesX,
     storeTesc,
     estimateDeploymentCost,
-    formatClaim,
     FLAG_POSITIONS,
 } from '../../utils/tesc';
 
@@ -37,6 +36,7 @@ const DeploymentForm = ({ blockScreen }) => {
     const [signature, setSignature] = useState('');
     const [flags, setFlags] = useState(new BitSet('0x00'));
     const [domainHashed, setDomainHashed] = useState('');
+    const [fingerprint, setFingerprint] = useState('');
 
     const privateKeyPEM = useRef('');
 
@@ -46,7 +46,7 @@ const DeploymentForm = ({ blockScreen }) => {
     const prevExpiry = useRef(expiry);
     const prevFlags = useRef(flags.toString());
     const prevSignature = useRef(signature);
-    const fingerprint = useRef('');
+    const prevFingerprint = useRef('');
 
     const getCurrentDomain = useCallback(() => !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain,
         [domainHashed, domain, flags]);
@@ -73,12 +73,12 @@ const DeploymentForm = ({ blockScreen }) => {
 
     const makeDeploymentTx = useCallback(async () => {
         const flagsHex = flagsToBytes24Hex(flags);
-        const fingerprintHex = padToBytesX(fingerprint.current, 32);
+        const fingerprintHex = padToBytesX(fingerprint, 32);
         return await new web3.eth.Contract(TeSC.abi).deploy({
             data: TeSC.bytecode,
             arguments: [domain, expiry, flagsHex, fingerprintHex, signature]
         });
-    }, [domain, expiry, flags, signature, web3.eth.Contract]);
+    }, [domain, expiry, flags, signature, fingerprint, web3.eth.Contract]);
 
 
     const handleFlagsChange = (i) => {
@@ -98,7 +98,7 @@ const DeploymentForm = ({ blockScreen }) => {
     };
 
     const handleGetFingerprint = (fp) => {
-        fingerprint.current = fp;
+        setFingerprint(fp);
     };
 
     const handleExpiryChange = (date) => {
@@ -117,16 +117,19 @@ const DeploymentForm = ({ blockScreen }) => {
                 computeSignature();
                 prevFlags.current = flags.toString();
 
-            }
-            else if (signature !== prevSignature.current) {
+            } else if (signature !== prevSignature.current || fingerprint !== prevFingerprint.current) {
                 const tx = await makeDeploymentTx();
                 const estCost = await estimateDeploymentCost(web3, tx);
                 setCostEstimated(estCost);
-                prevSignature.current = signature;
+
+                if (signature !== prevSignature.current)
+                    prevSignature.current = signature;
+                else if (fingerprint !== prevFingerprint.current)
+                    prevFingerprint.current = fingerprint;
             }
         };
         runEffect();
-    }, [expiry, flags, signature, domain, computeSignature, getCurrentDomain, makeDeploymentTx, web3]);
+    }, [expiry, flags, signature, domain, computeSignature, fingerprint, getCurrentDomain, makeDeploymentTx, web3]);
 
 
     const handleSubmit = async (e) => {
@@ -245,7 +248,7 @@ const DeploymentForm = ({ blockScreen }) => {
 
                 <Form.Group grouped>
                     <FingerprintInput
-                        inputs={{ domain, expiry, flags, signature}}
+                        inputs={{ domain, expiry, flags, signature }}
                         onGetFingerprint={handleGetFingerprint}
                     />
                 </Form.Group>
