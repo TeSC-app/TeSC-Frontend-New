@@ -15,7 +15,6 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
     const { web3 } = useContext(AppContext);
     const { showMessage } = useContext(TescNewContext);
 
-    const [sysMsg, setSysMsg] = useState(null);
     const [isWaiting, setIsWaiting] = useState(false);
 
     const [sliderState, setSliderState] = useState(false);
@@ -37,7 +36,6 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
     const resetStates = () => {
         setFilePickerDisplayed(false);
         setFingerprint('');
-        setSysMsg(null);
         setCertPEM('');
     };
 
@@ -48,6 +46,7 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
             retrieveCertificate();
         } else {
             resetStates();
+            showMessage(null, 'fp')
         }
     };
 
@@ -76,19 +75,19 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
             }
 
         } catch (error) {
-            setFingerprint('');
             const msg = (error.response) ? getMsgFromErrorCode(error.response.data.err) : error.message;
-            setSysMsg(buildNegativeMsg({
+            showMessage(buildNegativeMsg({
                 header: 'Unable to compute fingerprint',
-                msg
+                msg,
+                closingCondition: 'fp'
             }));
+            setFingerprint('');
         }
-    }, []);
+    }, [showMessage]);
 
     const updateClaim = useCallback(() => {
         const curDomain = !!flags.current.get(FLAG_POSITIONS.DOMAIN_HASHED) ? web3.utils.sha3(domain.current).substring(2) : domain.current;
         if (contractAddress.current && domain.current && expiry.current) {
-            console.log('cAdd in');
             claim.current = formatClaim({
                 contractAddress: contractAddress.current,
                 domain: curDomain,
@@ -117,20 +116,20 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
             }
 
         } catch (error) {
-            setFingerprint('');
             const msg = (error.response) ? getMsgFromErrorCode(error.response.data.err) : error.message;
-            setSysMsg(buildWarningMsg({
+            showMessage(buildWarningMsg({
                 header: 'Unable to automatically retrieve domain certificate to compute the fingerprint.',
-                msg: `${msg}${!!msg.match(/[.!]+$/i) ? '' : '.'} You can also upload your domain certificate manually.`
+                msg: `${msg}${!!msg.match(/[.!]+$/i) ? '' : '.'} You can also upload your domain certificate manually.`,
+                closingCondition: 'fp'
             }));
             setFilePickerDisplayed(true);
+            setFingerprint('');
         }
-    }, [updateClaim]);
+    }, [updateClaim, showMessage]);
 
 
     useEffect(() => {
         (async () => {
-            console.log('INPUTS', inputs);
             if (!contractAddress.current && web3.currentProvider.selectedAddress) {
                 contractAddress.current = await predictContractAddress(web3);
             }
@@ -153,14 +152,12 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
                     flags.current = inputs.flags;
                 }
             }
-            console.log('Signature.current', signature.current);
-
         })();
     }, [inputs, sliderState, retrieveCertificate, certPEM, handlePickCert, web3]);
 
     const getMsgFromErrorCode = (errMsg) => {
         if (errMsg.includes('getaddrinfo ENOTFOUND'))
-            return ` Unable to connect to ${domain.current}. Please check your domain input and the availability of your website. `;
+            return ` Unable to connect to ${domain.current}. Please check your domain input and the availability of your website.`;
         else if (errMsg.includes('Signature does not match'))
             return `${errMsg}. Please make sure you have selected the right certificate for domain ${domain.current}`;
         return errMsg;
@@ -171,15 +168,11 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
         if (fingerprint) {
             cache.current[domain.current] = fingerprint;
         }
-        if (sysMsg && fingerprint) {
-            setSysMsg(null);
-        } else {
-            showMessage(sysMsg);
-        }
-
-        onGetFingerprint(fingerprint);
-        setIsWaiting(false);
-    }, [fingerprint, sysMsg, showMessage, onGetFingerprint]);
+        if(sliderState) {
+            onGetFingerprint(fingerprint);
+            setIsWaiting(false);
+        } 
+    }, [fingerprint, sliderState, onGetFingerprint]);
 
 
     return (
@@ -191,11 +184,11 @@ const FingerprintInput = ({ inputs, onGetFingerprint }) => {
                 onClick={handleChangeSliderState}
                 disabled={!signature.current || !domain.current}
             />
-            {filePickerDisplayed && !fingerprint && (<FilePicker label='Choose certificate' onPickFile={handlePickCert} isDisabled={!sliderState} />)}
+            {sliderState && filePickerDisplayed && !fingerprint && (<FilePicker label='Choose certificate' onPickFile={handlePickCert} isDisabled={!sliderState} />)}
             {sliderState && fingerprint && (<p><b>Fingerprint: {fingerprint}</b></p>)
             }
             <Dimmer active={isWaiting} inverted>
-                <Loader indeterminate content='Waiting for transaction to finish...' />
+                <Loader indeterminate content='Retrieving certificate and computing fingerprint...' />
             </Dimmer>
         </div>
     );

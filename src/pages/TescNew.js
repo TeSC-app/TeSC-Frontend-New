@@ -16,8 +16,12 @@ const TeSCNew = () => {
         setSysMsg(null);
     };
 
-    const showMessage = (msg) => {
-        setSysMsg(msg);
+    const showMessage = (msg, closingCondition = null) => {
+        if (msg === null && sysMsg !== null && sysMsg.closingCondition === closingCondition) {
+            setSysMsg(null);
+        } else if (msg !== null) {
+            setSysMsg(msg);
+        }
     };
 
     const handleBlockScreen = (blocked) => {

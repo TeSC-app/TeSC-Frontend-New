@@ -1,31 +1,34 @@
 import React from 'react';
 import { Message, Icon } from 'semantic-ui-react';
 
-export const buildNegativeMsg = ({ code, header, msg }) => {
+export const buildNegativeMsg = ({ code, header, msg, closingCondition=null }) => {
     return {
         type: 'negative',
         header: `FAILED: ${header}`,
-        msg: `${msg} ${!!code ? `[MetaMask code: ${code}]` : ''}`
+        msg: `${msg} ${!!code ? `[MetaMask code: ${code}]` : ''}`,
+        closingCondition
     };
 };
 
-export const buildPositiveMsg = ({ header, msg }) => {
+export const buildPositiveMsg = ({ header, msg, closingCondition=null  }) => {
     return {
         type: 'positive',
         header: `SUCCESS: ${header}`,
-        msg
+        msg,
+        closingCondition
     };
 };
 
-export const buildWarningMsg = ({ header, msg }) => {
+export const buildWarningMsg = ({ header, msg, closingCondition=null  }) => {
     return {
         type: 'warning',
         header: `WARNING: ${header}`,
-        msg
+        msg,
+        closingCondition
     };
 };
 
-const FeedbackMessage = ({ message, handleDismiss, style }) => {
+const FeedbackMessage = ({ message, handleDismiss }) => {
     const { type, header, msg } = message;
     const icon = (type === 'positive') ? 'check' : (type === 'negative') ? 'x' : 'warning sign';
     return (
