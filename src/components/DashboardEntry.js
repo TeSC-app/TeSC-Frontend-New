@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
-import { Table, Icon, Popup, Button, Label } from 'semantic-ui-react';
+import { Table, Icon, Popup, Button } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
 import LinkTescInspect from '../components/InternalLink';
@@ -112,22 +112,13 @@ function DashboardEntry({ web3, contractAddress, domain, expiry, isFavourite, ow
         if (own) {
             return (
                 isInRegistryNew ?
-                    <>
-                        <Popup content='Remove entry from the TeSC registry'
-                            trigger={<Button as="button" className="buttonAddRemove" color='red'
-                                onClick={removeFromRegistry}><Icon name='minus' />Remove</Button>} />
-                        <Label tag as="span" className='costEstimateLabel'>
-                            {costEstimatedRemove.toFixed(5)} <span className='costEstimateCurrencyETH'>ETH</span>
-                        </Label>
-                    </> :
-                    <>
-                        <Popup content='Add entry to the TeSC registry'
-                            trigger={<Button as="button" className="buttonAddRemove" color='green'
-                                onClick={addToRegistry}><Icon name='plus' />Add</Button>} />
-                        <Label as="span" tag className='costEstimateLabel'>
-                            {costEstimatedAdd.toFixed(5)} <span className='costEstimateCurrencyETH'>ETH</span>
-                        </Label>
-                    </>
+                    <Popup content={`Remove entry from the TeSC registry. This would cost around ${costEstimatedRemove.toFixed(5)} ETH.`}
+                        trigger={<Button as="button" className="buttonAddRemove" color='red'
+                            onClick={removeFromRegistry}><Icon name='minus' size='small' />Remove</Button>} />
+                    :
+                    <Popup content={`Add entry to the TeSC registry. This would cost around ${costEstimatedAdd.toFixed(5)} ETH.`}
+                        trigger={<Button as="button" className="buttonAddRemove" color='green'
+                            onClick={addToRegistry}><Icon name='plus' size='small' />Add</Button>} />
             )
         } else {
             return (
@@ -139,21 +130,32 @@ function DashboardEntry({ web3, contractAddress, domain, expiry, isFavourite, ow
         }
     }
 
+    const renderDomain = () => {
+        if (domain.length === 64 && domain.split('.').length === 1) {
+            return (<Popup content={domain} trigger={<i>hashed domain</i>} />)
+        } else if (domain.length > 32) {
+            return (<Popup on="click" content={domain} trigger={<i>{`${domain.substring(0, 6)}...${domain.substring(domain.length - 4, domain.length)}`}</i>} />)
+        } else {
+            return domain
+        }
+    }
+
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
                 <span className='contractAddressColumn'>
-                <LinkTescInspect contractAddress={contractAddress} />
-                {
-                    own ? <Popup content="Your contract" trigger={<Icon className="userIcon" name="user" color="blue" circular />} /> : null
-                }</span>
+                    <LinkTescInspect contractAddress={contractAddress} />
+                    {
+                        own ? <Popup content="Your contract" trigger={<Icon className="userIcon" name="user" color="blue" circular />} /> : null
+                    }
+                </span>
             </Table.Cell>
-            <Table.Cell>{domain}</Table.Cell>
+            <Table.Cell>{renderDomain()}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
             <Table.Cell textAlign="center">
                 <Icon name="delete" color="red" circular />
             </Table.Cell>
-            <Table.Cell textAlign="center" className='registryButtons'>
+            <Table.Cell textAlign="center">
                 {renderRegistryButtons()}
             </Table.Cell>
             {
