@@ -240,6 +240,14 @@ const TeSCInspect = ({ location }) => {
                                         </Table.Row>
                                         <Table.Row>
                                             <Table.Cell>
+                                                <b>Fingerprint</b>
+                                            </Table.Cell>
+                                            <Table.Cell style={{ wordBreak: 'break-all' }}>
+                                                {parseInt(fingerprint, 16) === 0 ? 'Not available' : fingerprint.substring(2)}
+                                            </Table.Cell>
+                                        </Table.Row>
+                                        <Table.Row>
+                                            <Table.Cell>
                                                 <b>Favourite</b>
                                             </Table.Cell>
                                             <Table.Cell>
