@@ -50,8 +50,8 @@ const TeSCInspect = ({ location }) => {
             const contract = new web3.eth.Contract(TeSC.abi, address);
 
             const flagsHex = await contract.methods.getFlags().call();
-            setIsDomainHashed(!!(new BitSet(flagsHex)).get(FLAG_POSITIONS.DOMAIN_HASHED + 1));
             console.log("Flaghex", flagsHex);
+            setIsDomainHashed(!!(new BitSet(flagsHex)).get(FLAG_POSITIONS.DOMAIN_HASHED + 1));
             setFlags(hexStringToBitSet(flagsHex));
 
             setDomainFromChain(await contract.methods.getDomain().call());
@@ -102,7 +102,7 @@ const TeSCInspect = ({ location }) => {
 
     const verifyTesc = useCallback(async () => {
         if (isDomainHashed !== null && (!isDomainHashed || (isDomainHashed && plainDomainSubmitted))) {
-            const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress}`, {
+            const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress.toLowerCase()}`, {
                 params: { plainDomain }
             });
             console.log('VERIF_RESULT', response);

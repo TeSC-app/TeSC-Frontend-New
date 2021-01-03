@@ -23,7 +23,7 @@ import {
     estimateDeploymentCost,
     FLAG_POSITIONS,
 } from '../../utils/tesc';
-
+window.BitSet = BitSet
 
 const DeploymentForm = ({ blockScreen }) => {
     const { web3 } = useContext(AppContext);
@@ -72,13 +72,14 @@ const DeploymentForm = ({ blockScreen }) => {
     }, [expiry, flags, getCurrentDomain, showMessage, web3]);
 
     const makeDeploymentTx = useCallback(async () => {
+        const curDomain = getCurrentDomain()
         const flagsHex = flagsToBytes24Hex(flags);
         const fingerprintHex = padToBytesX(fingerprint, 32);
         return await new web3.eth.Contract(TeSC.abi).deploy({
             data: TeSC.bytecode,
-            arguments: [domain, expiry, flagsHex, fingerprintHex, signature]
+            arguments: [curDomain, expiry, flagsHex, fingerprintHex, signature]
         });
-    }, [domain, expiry, flags, signature, fingerprint, web3.eth.Contract]);
+    }, [expiry, flags, signature, fingerprint, web3.eth.Contract, getCurrentDomain]);
 
 
     const handleFlagsChange = (i) => {
@@ -179,7 +180,7 @@ const DeploymentForm = ({ blockScreen }) => {
     };
 
     const renderFlagCheckboxes = () => {
-        return Object.entries(FLAG_POSITIONS).map(([flagName, i]) => (
+        return Object.entries(FLAG_POSITIONS).map(([flagName, i]) =>
             <Form.Checkbox
                 key={i}
                 checked={!!flags.get(i)}
@@ -187,7 +188,7 @@ const DeploymentForm = ({ blockScreen }) => {
                 onClick={() => handleFlagsChange(i)}
                 disabled={!domain || !expiry}
             />
-        ));
+        );
     };
 
     return (

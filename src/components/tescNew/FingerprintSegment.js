@@ -190,7 +190,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
             {sliderState && (fingerprint || filePickerDisplayed) &&
                 <Segment style={{ maxWidth: '50%', width: 'max-content' }}>
                     {filePickerDisplayed && !fingerprint && (<FilePicker label='Choose certificate' onPickFile={handlePickCert} isDisabled={!sliderState} />)}
-                    {sliderState && fingerprint && (<p style={{ wordBreak: 'break-all' }}><b>Fingerprint: <Label>{fingerprint}</Label></b></p>)
+                    {sliderState && fingerprint && (<span style={{ wordBreak: 'break-all' }}><b>Fingerprint: <Label>{fingerprint}</Label></b></span>)
                     }
                     <Dimmer active={isWaiting} inverted>
                         <Loader indeterminate content='Retrieving certificate and computing fingerprint...' />
