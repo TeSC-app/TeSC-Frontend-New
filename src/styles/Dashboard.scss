@@ -1,17 +1,31 @@
 .buttonAddRemove {
-    width: 9em;
-}
-
-.favourite {
-    color: red !important;
-    background-color: white !important;
-}
-
-.notFavourite {
-    color: grey !important;
-    background-color: white !important;
+    width: 6em;
+    padding: 1em 0 1em 0 !important;
 }
 
 .dropdownFavourites {
     background-color: #f9fafb !important;
+}
+
+.userIcon {
+    margin-left: 0.5em !important;
+}
+
+.costEstimateLabel {
+    float: right;
+    margin-top: 0.2em !important;
+    color: royalblue !important
+}
+
+.costEstimateCurrencyETH {
+    font-size: 0.75em;
+}
+
+.contractAddressColumn {
+    display: flex;
+}
+
+.ui.popup div {
+    max-width: 45em !important;
+    overflow: auto;
 }

@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import 'react-day-picker/lib/style.css';
-import { Table, Grid, Dropdown } from 'semantic-ui-react';
+import { Table, Grid, Dropdown, Dimmer, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
 import '../styles/Dashboard.scss'
@@ -12,6 +12,7 @@ const Dashboard = () => {
     const [tescsIsInRegistry, setTescsIsInRegistry] = useState([])
     const [contractRegistry, setContractRegistry] = useState()
     const [sysMsg, setSysMsg] = useState(null)
+    const [blocking, setBlocking] = useState(false)
 
     const handleDismissMessage = () => {
         setSysMsg(null);
@@ -19,6 +20,10 @@ const Dashboard = () => {
 
     const assignSysMsgFromEntry = (sysMsg) => {
         setSysMsg(sysMsg)
+    }
+
+    const handleBlocking = (blockingState) => {
+        setBlocking(blockingState)
     }
 
     useEffect(() => {
@@ -33,7 +38,7 @@ const Dashboard = () => {
                 setContractRegistry(contractRegistry)
                 const tescs = JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress));
                 if (tescs) {
-                    const result = await Promise.all(tescs.map(async ({ contractAddress, domain, expiry, isFavourite }) => ({ contractAddress: contractAddress, domain: domain, expiry: expiry, isFavourite: isFavourite, isInRegistry: await contractRegistry.methods.isContractRegistered(contractAddress).call() })))
+                    const result = await Promise.all(tescs.map(async ({ contractAddress, domain, expiry, isFavourite, own }) => ({ contractAddress: contractAddress, domain: domain, expiry: expiry, isFavourite: isFavourite, own: own, isInRegistry: await contractRegistry.methods.isContractRegistered(contractAddress).call() })))
                     setTescsIsInRegistry(result)
                 }
             }
@@ -49,7 +54,7 @@ const Dashboard = () => {
         if (!tescsIsInRegistry)
             return []
 
-        return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isInRegistry, isFavourite }, index) => (
+        return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isInRegistry, isFavourite, own }, index) => (
             <DashboardEntry key={contractAddress}
                 contractAddress={contractAddress}
                 domain={domain}
@@ -60,7 +65,10 @@ const Dashboard = () => {
                 assignSysMsg={assignSysMsgFromEntry}
                 isFavourite={isFavourite}
                 index={index}
-                tescsIsInRegistry={tescsIsInRegistry} />
+                tescsIsInRegistry={tescsIsInRegistry}
+                own={own}
+                web3={web3}
+                handleBlocking={handleBlocking} />
         ));
     };
 
@@ -70,6 +78,10 @@ const Dashboard = () => {
 
     const showAllTescs = () => {
         setTescsIsInRegistry(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)))
+    }
+
+    const showOwnTescs = () => {
+        setTescsIsInRegistry(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)).filter(tesc => tesc.own === true))
     }
 
     return (
@@ -103,6 +115,7 @@ const Dashboard = () => {
                                 <Dropdown.Menu>
                                     <Dropdown.Item icon='redo' text='All' onClick={showAllTescs} />
                                     <Dropdown.Item icon='heart' text='By favourite' onClick={filterTescs} />
+                                    <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
                                 </Dropdown.Menu>
                             </Dropdown></Table.HeaderCell>
                     </Table.Row>
@@ -113,6 +126,9 @@ const Dashboard = () => {
                     </Table.Body>
                 )}
             </Table>
+            <Dimmer active={blocking}>
+                <Loader indeterminate content='Waiting for transaction to finish...' />
+            </Dimmer>
         </React.Fragment>
     );
 };

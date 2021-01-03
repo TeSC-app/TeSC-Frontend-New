@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { Input, Table, Checkbox, Loader, Icon, Label, Grid, Card, Form, Dimmer, Message } from 'semantic-ui-react';
+import { Input, Table, Checkbox, Loader, Icon, Label, Grid, Card, Form, Dimmer, Popup, Button } from 'semantic-ui-react';
 
 
 import BitSet from 'bitset';
@@ -21,6 +21,7 @@ const TeSCInspect = ({ location }) => {
     const [domainFromChain, setDomainFromChain] = useState('');
     const [expiry, setExpiry] = useState('');
     const [signature, setSignature] = useState('');
+    const [fingerprint, setFingerprint] = useState('');
     const [flags, setFlags] = useState(new BitSet('0x00'));
     const [isDomainHashed, setIsDomainHashed] = useState(null);
 
@@ -31,10 +32,17 @@ const TeSCInspect = ({ location }) => {
 
     const [sysMsg, setSysMsg] = useState(null);
 
+    const [tescIsInFavourites, setTescsIsInFavourites] = useState(false);
+    const [tescs, setTescs] = useState(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
+
     const handleDismissMessage = () => {
         setSysMsg(null);
     };
 
+
+    useEffect(() => {
+        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
+    }, [web3.currentProvider.selectedAddress]);
 
     const fetchTescData = async (address) => {
         setSysMsg(null);
@@ -49,11 +57,46 @@ const TeSCInspect = ({ location }) => {
             setDomainFromChain(await contract.methods.getDomain().call());
             setExpiry(await contract.methods.getExpiry().call());
             setSignature(await contract.methods.getSignature().call());
+            setFingerprint(await contract.methods.getFingerprint().call());
+
+            //favourites
+            console.log(tescs);
+            for (const tesc of tescs) {
+                if (tesc.contractAddress === address) {
+                    setTescsIsInFavourites(tesc.isFavourite);
+                    break;
+                }
+            }
         } catch (err) {
             setSysMsg(buildNegativeMsg({
                 header: 'Unable to read data from smart contract',
                 msg: err.message
             }));
+        };
+    };
+
+    const addRemoveFavourites = (address) => {
+        let tescsNew;
+        tescs ? tescsNew = tescs : tescsNew = [];
+        let found = false;
+        for (const tesc of tescsNew) {
+            if (tesc.contractAddress === address) {
+                found = true;
+                if (tesc.isFavourite) {
+                    tesc.isFavourite = false;
+                    setTescsIsInFavourites(false);
+                } else {
+                    tesc.isFavourite = true;
+                    setTescsIsInFavourites(true);
+                }
+                localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+                break;
+            }
+        }
+        if (!found) {
+            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false });
+            localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+            setTescsIsInFavourites(true);
         }
     };
 
@@ -193,6 +236,16 @@ const TeSCInspect = ({ location }) => {
                                             </Table.Cell>
                                             <Table.Cell style={{ wordBreak: 'break-all' }}>
                                                 {signature}
+                                            </Table.Cell>
+                                        </Table.Row>
+                                        <Table.Row>
+                                            <Table.Cell>
+                                                <b>Favourite</b>
+                                            </Table.Cell>
+                                            <Table.Cell>
+                                                <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
+                                                    trigger={<Button icon="heart" className={tescIsInFavourites ? "favourite" : "notFavourite"}
+                                                        onClick={() => addRemoveFavourites(contractAddress)} />} />
                                             </Table.Cell>
                                         </Table.Row>
                                     </Table.Body>
