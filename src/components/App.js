@@ -25,7 +25,7 @@ const App = () => {
             <Navbar handleCollapseSidebar={handleCollapseSidebar} />
             <div className='layout'>
                 <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} />
-                <Container className="content">
+                <Container className="page">
                     <Route path="/" component={Dashboard} exact />
                     <Route path="/tesc/new" component={TeSCNew} exact />
                     <Route path="/tesc/inspect" component={TeSCDetail} exact />

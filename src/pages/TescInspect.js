@@ -7,9 +7,12 @@ import moment from 'moment';
 import axios from 'axios';
 
 import AppContext from '../appContext';
-import { FLAG_POSITIONS, hexStringToBitSet } from '../utils/tesc';
+import { FLAG_POSITIONS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc';
 import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
+import { buildPositiveMsg, buildNegativeMsg } from "../components/FeedbackMessage";
+import PageHeader from "../components/PageHeader";
 
+window.axios = axios;
 
 const TeSCInspect = ({ location }) => {
     const { web3 } = useContext(AppContext);
@@ -18,6 +21,7 @@ const TeSCInspect = ({ location }) => {
     const [domainFromChain, setDomainFromChain] = useState('');
     const [expiry, setExpiry] = useState('');
     const [signature, setSignature] = useState('');
+    const [fingerprint, setFingerprint] = useState('');
     const [flags, setFlags] = useState(new BitSet('0x00'));
     const [isDomainHashed, setIsDomainHashed] = useState(null);
 
@@ -26,59 +30,75 @@ const TeSCInspect = ({ location }) => {
 
     const [verifResult, setVerifResult] = useState(null);
 
-    const [tescIsInFavourites, setTescsIsInFavourites] = useState(false)
-    const [tescs, setTescs] = useState(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)))
+    const [sysMsg, setSysMsg] = useState(null);
+
+    const [tescIsInFavourites, setTescsIsInFavourites] = useState(false);
+    const [tescs, setTescs] = useState(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
+
+    const handleDismissMessage = () => {
+        setSysMsg(null);
+    };
+
 
     useEffect(() => {
         setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
-    }, [web3.currentProvider.selectedAddress])
+    }, [web3.currentProvider.selectedAddress]);
 
     const fetchTescData = async (address) => {
-        const contract = new web3.eth.Contract(TeSC.abi, address);
+        setSysMsg(null);
+        try {
+            const contract = new web3.eth.Contract(TeSC.abi, address);
 
-        const flagsHex = await contract.methods.getFlags().call();
-        setIsDomainHashed(!!(new BitSet(flagsHex)).get(FLAG_POSITIONS.DOMAIN_HASHED + 1));
-        console.log("Flaghex", flagsHex);
-        setFlags(hexStringToBitSet(flagsHex));
+            const flagsHex = await contract.methods.getFlags().call();
+            setIsDomainHashed(!!(new BitSet(flagsHex)).get(FLAG_POSITIONS.DOMAIN_HASHED + 1));
+            console.log("Flaghex", flagsHex);
+            setFlags(hexStringToBitSet(flagsHex));
 
-        setDomainFromChain(await contract.methods.getDomain().call());
-        setExpiry(await contract.methods.getExpiry().call());
-        setSignature(await contract.methods.getSignature().call());
+            setDomainFromChain(await contract.methods.getDomain().call());
+            setExpiry(await contract.methods.getExpiry().call());
+            setSignature(await contract.methods.getSignature().call());
+            setFingerprint(await contract.methods.getFingerprint().call());
 
-        //favourites
-        console.log(tescs)
-        for (const tesc of tescs) {
-            if (tesc.contractAddress === address) {
-                setTescsIsInFavourites(tesc.isFavourite)
-                break
+            //favourites
+            console.log(tescs);
+            for (const tesc of tescs) {
+                if (tesc.contractAddress === address) {
+                    setTescsIsInFavourites(tesc.isFavourite);
+                    break;
+                }
             }
-        }
+        } catch (err) {
+            setSysMsg(buildNegativeMsg({
+                header: 'Unable to read data from smart contract',
+                msg: err.message
+            }));
+        };
     };
 
     const addRemoveFavourites = (address) => {
         let tescsNew;
-        tescs ? tescsNew = tescs : tescsNew = []
+        tescs ? tescsNew = tescs : tescsNew = [];
         let found = false;
         for (const tesc of tescsNew) {
             if (tesc.contractAddress === address) {
                 found = true;
                 if (tesc.isFavourite) {
-                    tesc.isFavourite = false
-                    setTescsIsInFavourites(false)
+                    tesc.isFavourite = false;
+                    setTescsIsInFavourites(false);
                 } else {
-                    tesc.isFavourite = true
-                    setTescsIsInFavourites(true)
+                    tesc.isFavourite = true;
+                    setTescsIsInFavourites(true);
                 }
                 localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
-                break
+                break;
             }
         }
         if (!found) {
-            tescsNew.push({contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false })
+            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false });
             localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
-            setTescsIsInFavourites(true)
+            setTescsIsInFavourites(true);
         }
-    }
+    };
 
     const verifyTesc = useCallback(async () => {
         if (isDomainHashed !== null && (!isDomainHashed || (isDomainHashed && plainDomainSubmitted))) {
@@ -101,26 +121,48 @@ const TeSCInspect = ({ location }) => {
         }
     }, []);
 
+    const clearResults = () => {
+        setDomainFromChain(null);
+        setExpiry('');
+        setFlags(new BitSet('0x00'));
+        setSignature('');
+        setPlainDomain('');
+        setVerifResult(null);
+    };
+
 
     const handleChangeAddress = async (address) => {
-        // resetValues();
         setContractAddress(address);
-        if (address.substring(0, 2) === '0x' && address.length === 42) {
+        if (isValidContractAddress(address)) {
             try {
-                setVerifResult(null);
                 await fetchTescData(address);
             } catch (err) {
+                setSysMsg(buildNegativeMsg({
+                    header: 'Unable to retrieve smart contract data',
+                    msg: err.message
+                }));
                 console.log(err);
             }
         }
     };
 
+
     const handleSubmitAddress = async (e) => {
         e.preventDefault();
-        handleChangeAddress(contractAddress);
+        clearResults();
+        try {
+            isValidContractAddress(contractAddress, true);
+            await fetchTescData(contractAddress);
+
+        } catch (err) {
+            setSysMsg(buildNegativeMsg({
+                header: 'Invalid smart contract address',
+                msg: err.message
+            }));
+        }
     };
 
-    const handlePlainDomainEntered = async (e) => {
+    const handleEnterOriginalDomain = async (e) => {
         e.preventDefault();
         setVerifResult(null);
         setPlainDomainSubmitted(true);
@@ -140,7 +182,11 @@ const TeSCInspect = ({ location }) => {
 
     return (
         <div>
-            <h2>Inspect TeSC</h2>
+            <PageHeader
+                title='Inspect TeSC'
+                message={sysMsg}
+                onDismissMessage={handleDismissMessage}
+            />
             <div centered='true' style={{ marginBottom: '50px', marginTop: '50px', textAlign: 'center' }}>
                 <Form onSubmit={handleSubmitAddress}>
                     <Form.Field>
@@ -156,7 +202,7 @@ const TeSCInspect = ({ location }) => {
                     </Form.Field>
                 </Form>
             </div>
-            <Grid>
+            <Grid style={{ margin: '0 auto' }}>
                 <Grid.Row>
                     {
                         domainFromChain && expiry && signature && flags &&
@@ -194,6 +240,14 @@ const TeSCInspect = ({ location }) => {
                                         </Table.Row>
                                         <Table.Row>
                                             <Table.Cell>
+                                                <b>Fingerprint</b>
+                                            </Table.Cell>
+                                            <Table.Cell style={{ wordBreak: 'break-all' }}>
+                                                {parseInt(fingerprint, 16) === 0 ? 'Not available' : fingerprint.substring(2)}
+                                            </Table.Cell>
+                                        </Table.Row>
+                                        <Table.Row>
+                                            <Table.Cell>
                                                 <b>Favourite</b>
                                             </Table.Cell>
                                             <Table.Cell>
@@ -222,7 +276,7 @@ const TeSCInspect = ({ location }) => {
                                         </Dimmer>
                                         {isDomainHashed &&
                                             (
-                                                <Form onSubmit={handlePlainDomainEntered}>
+                                                <Form onSubmit={handleEnterOriginalDomain}>
                                                     <Form.Field>
                                                         <label>Original domain</label>
                                                         <Input
@@ -266,7 +320,7 @@ const TeSCInspect = ({ location }) => {
                     </Grid.Column>
                 </Grid.Row>
             </Grid>
-        </div >
+        </div>
     );
 };
 

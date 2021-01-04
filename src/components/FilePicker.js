@@ -1,10 +1,10 @@
-import React, { Fragment, useRef } from 'react';
+import React, { Fragment, useState, useRef } from 'react';
 import { Label, Button } from 'semantic-ui-react';
 
 
-const FilePicker = ({ onPickFile, isDisabled=false }) => {
+const FilePicker = ({ label, onPickFile, isDisabled=false, }) => {
     const fileInputRef = useRef(null);
-    const fileName = useRef('');
+    const [fileName, setFileName] = useState('');
 
     /* https://stackoverflow.com/a/56377153 */
     const handlePickFile = (event) => {
@@ -12,7 +12,7 @@ const FilePicker = ({ onPickFile, isDisabled=false }) => {
 
         const reader = new FileReader();
         reader.onload = async (e) => {
-            fileName.current = fileInputRef.current.files[0].name
+            setFileName(fileInputRef.current.files[0].name)
             onPickFile(e.target.result)
         };
         if(event.target.files.length > 0){
@@ -23,7 +23,7 @@ const FilePicker = ({ onPickFile, isDisabled=false }) => {
     return (
         <Fragment>
             <Button
-                content="Choose certificate private key"
+                content={label}
                 labelPosition="left"
                 icon="file"
                 onClick={() => fileInputRef.current.click()}
@@ -36,7 +36,7 @@ const FilePicker = ({ onPickFile, isDisabled=false }) => {
                 accept=".pem, .txt, .cer, .cert, .key"
                 hidden
             />
-            {!!fileName.current && <Label basic pointing='left'>{fileName.current}</Label>}
+            {!!fileName && <Label basic pointing='left'>{fileName}</Label>}
         </Fragment>
     );
 };
