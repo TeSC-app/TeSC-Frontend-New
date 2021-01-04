@@ -1,5 +1,5 @@
 import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
-import { Input, Form, Label, Button, Segment } from 'semantic-ui-react';
+import { Input, Form, Label, Button, Segment, Dimmer, Loader } from 'semantic-ui-react';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { formatDate, parseDate } from 'react-day-picker/moment';
@@ -23,9 +23,9 @@ import {
     estimateDeploymentCost,
     FLAG_POSITIONS,
 } from '../../utils/tesc';
-window.BitSet = BitSet
+window.BitSet = BitSet;
 
-const DeploymentForm = () => {
+const DeploymentForm = ({ initInputs }) => {
     const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
 
     const [contractAddress, setContractAddress] = useState('');
@@ -37,15 +37,30 @@ const DeploymentForm = () => {
     const [domainHashed, setDomainHashed] = useState('');
     const [fingerprint, setFingerprint] = useState('');
 
+    const [isMetamaskOpen, setIsMetamaskOpen] = useState(false);
+
     const privateKeyPEM = useRef('');
 
-    const [costEstimated, setCostEstimated] = useState(0);
-    const [costPaid, setCostPaid] = useState(0);
+    const [costEstimated, setCostEstimated] = useState(null);
+    const [costPaid, setCostPaid] = useState(null);
 
     const prevExpiry = useRef(expiry);
     const prevFlags = useRef(flags.toString());
     const prevSignature = useRef(signature);
     const prevFingerprint = useRef('');
+
+    useEffect(() => {
+        if (initInputs && initInputs.contractAddress) {
+            setContractAddress(initInputs.contractAddress);
+            setDomain(initInputs.domain);
+            handleExpiryChange(new Date(parseInt(initInputs.expiry) * 1000))
+            // setExpiry(expiry);
+            setFlags(initInputs.flags);
+            setSignature(initInputs.signature);
+            console.log("FINGERPRINT", initInputs.fingerprint)
+            setFingerprint(initInputs.fingerprint)
+        }
+    }, []);
 
     const getCurrentDomain = useCallback(() => !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain,
         [domainHashed, domain, flags]);
@@ -71,15 +86,21 @@ const DeploymentForm = () => {
     }, [expiry, flags, getCurrentDomain, showMessage, web3]);
 
     const makeDeploymentTx = useCallback(async () => {
-        const curDomain = getCurrentDomain()
-        const flagsHex = flagsToBytes24Hex(flags);
-        const fingerprintHex = padToBytesX(fingerprint, 32);
         return await new web3.eth.Contract(TeSC.abi).deploy({
             data: TeSC.bytecode,
-            arguments: [curDomain, expiry, flagsHex, fingerprintHex, signature]
+            arguments: [getCurrentDomain(), expiry, flagsToBytes24Hex(flags), padToBytesX(fingerprint, 32), signature]
         });
     }, [expiry, flags, signature, fingerprint, web3.eth.Contract, getCurrentDomain]);
 
+    const makeUpdateTx = useCallback(async () => {
+        return await new web3.eth.Contract(TeSC.abi, contractAddress).methods.setEndorsement(
+            getCurrentDomain(),
+            expiry,
+            flagsToBytes24Hex(flags),
+            padToBytesX(fingerprint, 32),
+            signature
+        );
+    }, [contractAddress, expiry, flags, signature, fingerprint, web3.eth.Contract, getCurrentDomain]);
 
     const handleFlagsChange = (i) => {
         const newFlags = new BitSet(flags.flip(i).toString());
@@ -102,13 +123,14 @@ const DeploymentForm = () => {
     };
 
     const handleExpiryChange = (date) => {
+        console.log('DATE EXPIRY', date);
         const mDate = moment.utc(date);
         mDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
         setExpiry(mDate.unix());
     };
 
     useEffect(() => {
-        const runEffect = async () => {
+        (async () => {
             if (expiry !== prevExpiry.current) {
                 computeSignature();
                 prevExpiry.current = expiry;
@@ -118,7 +140,7 @@ const DeploymentForm = () => {
                 prevFlags.current = flags.toString();
 
             } else if (signature !== prevSignature.current || fingerprint !== prevFingerprint.current) {
-                const tx = await makeDeploymentTx();
+                const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx();
                 const estCost = await estimateDeploymentCost(web3, tx);
                 setCostEstimated(estCost);
 
@@ -127,24 +149,24 @@ const DeploymentForm = () => {
                 else if (fingerprint !== prevFingerprint.current)
                     prevFingerprint.current = fingerprint;
             }
-        };
-        runEffect();
-    }, [expiry, flags, signature, domain, computeSignature, fingerprint, getCurrentDomain, makeDeploymentTx, web3]);
-
+        })();
+    }, [expiry, flags, signature, domain, computeSignature, fingerprint, getCurrentDomain, makeDeploymentTx, initInputs, makeUpdateTx, web3]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         handleBlockScreen(true);
+        setIsMetamaskOpen(true);
 
         showMessage(null);
         setContractAddress('');
 
         const account = web3.currentProvider.selectedAddress;
         const curDomain = getCurrentDomain();
+        
 
         if (curDomain && expiry && signature) {
             try {
-                const tx = await makeDeploymentTx({ web3, contractJson: TeSC, domain: curDomain, expiry, flags, signature, fingerprint: fingerprint.current });
+                const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx();
                 await tx.send({ from: account, gas: '2000000' })
                     .on('receipt', async (txReceipt) => {
                         setCostPaid(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether'));
@@ -176,6 +198,7 @@ const DeploymentForm = () => {
             }));
         }
         handleBlockScreen(false);
+        setIsMetamaskOpen(false);
     };
 
     const renderFlagCheckboxes = () => {
@@ -208,6 +231,7 @@ const DeploymentForm = () => {
                     <Form.Field>
                         <label>Expiry <span style={{ color: 'red' }}>*</span></label>
                         <DayPickerInput
+                            value={expiry ? formatDate(new Date(expiry * 1000), 'DD/MM/YYYY') : null}
                             onBlur={() => computeSignature()}
                             onDayChange={handleExpiryChange}
                             format="DD/MM/YYYY"
@@ -248,7 +272,7 @@ const DeploymentForm = () => {
 
                 <Form.Group grouped>
                     <FingerprintSegment
-                        inputs={{ domain, expiry, flags, signature }}
+                        inputs={{ domain, expiry, flags, signature, fingerprint: initInputs? initInputs.fingerprint : '' }}
                         onGetFingerprint={handleGetFingerprint}
                     />
                 </Form.Group>
@@ -266,14 +290,17 @@ const DeploymentForm = () => {
                 <br />
                 <Button
                     onClick={handleSubmit}
-                    disabled={!signature}
+                    disabled={!signature || !privateKeyPEM.current}
                     floated='right'
                     positive
                     style={{ width: '20%', marginTop: '0px' }}
                 >
-                    Deploy
+                    {!initInputs ? 'Deploy' : 'Update'}
                 </Button>
 
+                <Dimmer active={!!initInputs && isMetamaskOpen} inverted>
+                    <Loader indeterminate content='Waiting for transaction to finish...' />
+                </Dimmer>
             </Form>
         </React.Fragment>
     );

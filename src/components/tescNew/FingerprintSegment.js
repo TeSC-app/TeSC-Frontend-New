@@ -16,8 +16,8 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
 
     const [isWaiting, setIsWaiting] = useState(false);
 
-    const [sliderState, setSliderState] = useState(false);
-    const [fingerprint, setFingerprint] = useState('');
+    const [sliderState, setSliderState] = useState(inputs.fingerprint ? true : false);
+    const [fingerprint, setFingerprint] = useState(inputs.fingerprint ? inputs.fingerprint : '');
 
     const [certPEM, setCertPEM] = useState('');
     const [filePickerDisplayed, setFilePickerDisplayed] = useState(false);
@@ -31,7 +31,15 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
     const claim = useRef('');
 
     const cache = useRef({});
-    const prevFingerprint = useRef('');
+    const prevFingerprint = useRef(fingerprint);
+
+    // useEffect(() => {
+    //     if(inputs.fingerprint) {
+    //         setFingerprint(inputs.fingerprint)
+    //         setSliderState(true)
+    //         inputs.fingerprint = ''
+    //     }
+    // }, [])
 
     const resetStates = () => {
         setFilePickerDisplayed(false);
@@ -42,7 +50,8 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
     const handleChangeSliderState = async () => {
         setSliderState(!sliderState);
 
-        if (!sliderState) {
+        console.log('inputs.fingerprint', inputs.fingerprint)
+        if (!sliderState && !inputs.fingerprint) {
             retrieveCertificate();
         } else {
             resetStates();
@@ -139,7 +148,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
             }
             if (signature.current !== inputs.signature) {
                 signature.current = inputs.signature;
-                if (sliderState && signature.current) {
+                if (sliderState && signature.current && !inputs.fingerprint) {
                     (!certPEM) ? retrieveCertificate() : handlePickCert(certPEM);
 
                 } else if (!signature.current) {
@@ -184,7 +193,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
                 checked={sliderState}
                 label='Use certificate fingerprint (optional)'
                 onClick={handleChangeSliderState}
-                disabled={!signature.current || !domain.current}
+                disabled={!signature.current}
             />
             {sliderState && (fingerprint || filePickerDisplayed) &&
                 <Segment style={{ maxWidth: '50%', width: 'max-content' }}>

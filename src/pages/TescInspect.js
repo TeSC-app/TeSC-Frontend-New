@@ -165,6 +165,12 @@ const TeSCInspect = ({ location }) => {
         setPlainDomainSubmitted(true);
     };
 
+    const handleCloseTescUpdate = (e) => {
+        showMessage(null);
+        console.log("CONTRACT ADDRESS", contractAddress)
+        fetchTescData(contractAddress);
+    };
+
     const renderFlagCheckboxes = () => {
         return Object.entries(FLAG_POSITIONS).map(([flagName, i]) => (
             <div key={i} style={{ paddingBottom: '5px' }}>
@@ -315,26 +321,24 @@ const TeSCInspect = ({ location }) => {
                             )
                         }
                     </Grid.Column>
-                    <Grid.Row>
-                        {domainFromChain && expiry && signature && flags && (
-                            <Grid.Column width={10} style={{ textAlign: 'right' }}>
-
+                    {domainFromChain && expiry && signature && flags && (
+                        <Grid.Row style={{ width: `${1000/16}%` }}>
+                            <Grid.Column width={10} >
                                 <Modal
                                     closeIcon
                                     trigger={<Button primary style={{ float: 'right' }}>Update TeSC</Button>}
-
+                                    onClose={handleCloseTescUpdate}
                                 >
                                     <Modal.Header>Update TeSC</Modal.Header>
                                     <Modal.Content>
                                         <DeploymentForm
-
+                                            initInputs={{ contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint: fingerprint.substring(2) }}
                                         />
-                                        {/* This is my first modal */}
                                     </Modal.Content>
                                 </Modal>
                             </Grid.Column>
-                        )}
-                    </Grid.Row>
+                        </Grid.Row>
+                    )}
                 </Grid.Row>
             </Grid>
         </div>
