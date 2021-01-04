@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { Input, Table, Checkbox, Loader, Icon, Label, Grid, Card, Form, Dimmer, Popup, Button } from 'semantic-ui-react';
+import { Input, Table, Checkbox, Loader, Icon, Label, Grid, Card, Form, Dimmer, Popup, Button, Modal } from 'semantic-ui-react';
 
 
 import BitSet from 'bitset';
@@ -9,7 +9,8 @@ import axios from 'axios';
 import AppContext from '../appContext';
 import { FLAG_POSITIONS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc';
 import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
-import { buildPositiveMsg, buildNegativeMsg } from "../components/FeedbackMessage";
+import { buildNegativeMsg } from "../components/FeedbackMessage";
+import DeploymentForm from "../components/tescNew/DeploymentForm";
 import PageHeader from "../components/PageHeader";
 
 window.axios = axios;
@@ -264,6 +265,8 @@ const TeSCInspect = ({ location }) => {
 
                         )
                     }
+
+
                     <Grid.Column width={6} centered='true'>
                         {domainFromChain && signature &&
                             (
@@ -318,6 +321,26 @@ const TeSCInspect = ({ location }) => {
                             )
                         }
                     </Grid.Column>
+                    <Grid.Row>
+                        {domainFromChain && expiry && signature && flags && (
+                            <Grid.Column width={10} style={{ textAlign: 'right' }}>
+
+                                <Modal
+                                    closeIcon
+                                    trigger={<Button primary style={{ float: 'right' }}>Update TeSC</Button>}
+
+                                >
+                                    <Modal.Header>Update TeSC</Modal.Header>
+                                    <Modal.Content>
+                                        {/* <DeploymentForm
+
+                                        /> */}
+                                        This is my first modal
+                                    </Modal.Content>
+                                </Modal>
+                            </Grid.Column>
+                        )}
+                    </Grid.Row>
                 </Grid.Row>
             </Grid>
         </div>
