@@ -4,7 +4,7 @@ import { Form, Dimmer, Loader, Segment, Label } from 'semantic-ui-react';
 import axios from 'axios';
 import { Certificate } from '@fidm/x509';
 
-import AppContext, { TescNewContext } from '../../appContext';
+import AppContext from '../../appContext';
 import FilePicker from '../FilePicker';
 import { buildNegativeMsg, buildWarningMsg } from "../FeedbackMessage";
 
@@ -12,8 +12,7 @@ import { predictContractAddress, formatClaim, flagsToBytes24Hex, FLAG_POSITIONS 
 
 
 const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
-    const { web3 } = useContext(AppContext);
-    const { showMessage } = useContext(TescNewContext);
+    const { web3, showMessage } = useContext(AppContext);
 
     const [isWaiting, setIsWaiting] = useState(false);
 

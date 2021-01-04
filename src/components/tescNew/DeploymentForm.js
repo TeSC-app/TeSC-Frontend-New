@@ -7,7 +7,7 @@ import { formatDate, parseDate } from 'react-day-picker/moment';
 import moment from 'moment';
 import BitSet from 'bitset';
 
-import AppContext, { TescNewContext } from '../../appContext';
+import AppContext from '../../appContext';
 import { buildNegativeMsg, buildPositiveMsg } from "../FeedbackMessage";
 import FilePicker from '../FilePicker';
 import FingerprintSegment from './FingerprintSegment';
@@ -25,9 +25,8 @@ import {
 } from '../../utils/tesc';
 window.BitSet = BitSet
 
-const DeploymentForm = ({ blockScreen }) => {
-    const { web3 } = useContext(AppContext);
-    const { showMessage } = useContext(TescNewContext);
+const DeploymentForm = () => {
+    const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
 
     const [contractAddress, setContractAddress] = useState('');
 
@@ -135,7 +134,7 @@ const DeploymentForm = ({ blockScreen }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        blockScreen(true);
+        handleBlockScreen(true);
 
         showMessage(null);
         setContractAddress('');
@@ -176,7 +175,7 @@ const DeploymentForm = ({ blockScreen }) => {
                 msg: `${!curDomain ? 'Domain' : !expiry ? 'Expiry' : !signature ? 'Signature' : 'Some required input'} is empty`
             }));
         }
-        blockScreen(false);
+        handleBlockScreen(false);
     };
 
     const renderFlagCheckboxes = () => {

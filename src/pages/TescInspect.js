@@ -16,7 +16,7 @@ import PageHeader from "../components/PageHeader";
 window.axios = axios;
 
 const TeSCInspect = ({ location }) => {
-    const { web3 } = useContext(AppContext);
+    const { web3, showMessage } = useContext(AppContext);
     const [contractAddress, setContractAddress] = useState('');
 
     const [domainFromChain, setDomainFromChain] = useState('');
@@ -31,14 +31,9 @@ const TeSCInspect = ({ location }) => {
 
     const [verifResult, setVerifResult] = useState(null);
 
-    const [sysMsg, setSysMsg] = useState(null);
 
     const [tescIsInFavourites, setTescsIsInFavourites] = useState(false);
     const [tescs, setTescs] = useState(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
-
-    const handleDismissMessage = () => {
-        setSysMsg(null);
-    };
 
 
     useEffect(() => {
@@ -46,7 +41,7 @@ const TeSCInspect = ({ location }) => {
     }, [web3.currentProvider.selectedAddress]);
 
     const fetchTescData = async (address) => {
-        setSysMsg(null);
+        showMessage(null);
         try {
             const contract = new web3.eth.Contract(TeSC.abi, address);
 
@@ -69,7 +64,7 @@ const TeSCInspect = ({ location }) => {
                 }
             }
         } catch (err) {
-            setSysMsg(buildNegativeMsg({
+            showMessage(buildNegativeMsg({
                 header: 'Unable to read data from smart contract',
                 msg: err.message
             }));
@@ -117,6 +112,7 @@ const TeSCInspect = ({ location }) => {
     }, [contractAddress, plainDomainSubmitted, verifyTesc]);
 
     useEffect(() => {
+        showMessage(null);
         if (location.state) {
             handleChangeAddress(location.state.contractAddress);
         }
@@ -138,7 +134,7 @@ const TeSCInspect = ({ location }) => {
             try {
                 await fetchTescData(address);
             } catch (err) {
-                setSysMsg(buildNegativeMsg({
+                showMessage(buildNegativeMsg({
                     header: 'Unable to retrieve smart contract data',
                     msg: err.message
                 }));
@@ -156,7 +152,7 @@ const TeSCInspect = ({ location }) => {
             await fetchTescData(contractAddress);
 
         } catch (err) {
-            setSysMsg(buildNegativeMsg({
+            showMessage(buildNegativeMsg({
                 header: 'Invalid smart contract address',
                 msg: err.message
             }));
@@ -185,8 +181,6 @@ const TeSCInspect = ({ location }) => {
         <div>
             <PageHeader
                 title='Inspect TeSC'
-                message={sysMsg}
-                onDismissMessage={handleDismissMessage}
             />
             <div centered='true' style={{ marginBottom: '50px', marginTop: '50px', textAlign: 'center' }}>
                 <Form onSubmit={handleSubmitAddress}>
@@ -332,10 +326,10 @@ const TeSCInspect = ({ location }) => {
                                 >
                                     <Modal.Header>Update TeSC</Modal.Header>
                                     <Modal.Content>
-                                        {/* <DeploymentForm
+                                        <DeploymentForm
 
-                                        /> */}
-                                        This is my first modal
+                                        />
+                                        {/* This is my first modal */}
                                     </Modal.Content>
                                 </Modal>
                             </Grid.Column>
