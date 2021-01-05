@@ -39,7 +39,7 @@ const DeploymentForm = ({ initInputs }) => {
 
     const [isMetamaskOpen, setIsMetamaskOpen] = useState(false);
 
-    const privateKeyPEM = useRef('');
+    const [privateKeyPEM, setPrivateKeyPEM] = useState('');
 
     const [costEstimated, setCostEstimated] = useState(null);
     const [costPaid, setCostPaid] = useState(null);
@@ -47,7 +47,8 @@ const DeploymentForm = ({ initInputs }) => {
     const prevExpiry = useRef(expiry);
     const prevFlags = useRef(flags.toString());
     const prevSignature = useRef(signature);
-    const prevFingerprint = useRef('');
+    const prevFingerprint = useRef(fingerprint);
+    const prevPrivateKeyPEM = useRef(privateKeyPEM);
 
     // useEffect(() => {
     //     if (initInputs && initInputs.contractAddress) {
@@ -66,12 +67,12 @@ const DeploymentForm = ({ initInputs }) => {
 
     const computeSignature = useCallback(async () => {
         const domain = getCurrentDomain();
-        if (!!privateKeyPEM.current && !!domain && !!expiry) {
+        if (!!privateKeyPEM && !!domain && !!expiry) {
             try {
                 const address = initInputs ? contractAddress : await predictContractAddress(web3);
                 const flagsHex = flagsToBytes24Hex(flags);
                 const payload = { address, domain, expiry, flagsHex };
-                setSignature(await generateSignature(payload, privateKeyPEM.current));
+                setSignature(await generateSignature(payload, privateKeyPEM));
             } catch (err) {
                 showMessage(buildNegativeMsg({
                     code: err.code,
@@ -82,7 +83,7 @@ const DeploymentForm = ({ initInputs }) => {
         } else if (!domain || !expiry) {
             setSignature('');
         }
-    }, [contractAddress, expiry, flags, getCurrentDomain, showMessage, initInputs, web3]);
+    }, [privateKeyPEM, contractAddress, expiry, flags, getCurrentDomain, showMessage, initInputs, web3]);
 
     const makeDeploymentTx = useCallback(async () => {
         return await new web3.eth.Contract(TeSC.abi).deploy({
@@ -113,8 +114,7 @@ const DeploymentForm = ({ initInputs }) => {
     };
 
     const handlePickPrivateKey = (content) => {
-        privateKeyPEM.current = content;
-        computeSignature();
+        setPrivateKeyPEM(content);
     };
 
     const handleGetFingerprint = (fp) => {
@@ -139,8 +139,8 @@ const DeploymentForm = ({ initInputs }) => {
                 prevFlags.current = flags.toString();
 
             } else if (signature !== prevSignature.current || fingerprint !== prevFingerprint.current) {
-                const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx() ;
-                if(!initInputs || contractAddress) {
+                const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx();
+                if (!initInputs || contractAddress) {
                     const estCost = await estimateDeploymentCost(web3, tx);
                     setCostEstimated(estCost);
                 }
@@ -149,9 +149,14 @@ const DeploymentForm = ({ initInputs }) => {
                     prevSignature.current = signature;
                 else if (fingerprint !== prevFingerprint.current)
                     prevFingerprint.current = fingerprint;
+
+            } else if (privateKeyPEM !== prevPrivateKeyPEM.current) {
+                prevPrivateKeyPEM.current = prevPrivateKeyPEM;
+                computeSignature();
             }
         })();
-    }, [expiry, contractAddress, flags, signature, domain, computeSignature, fingerprint, getCurrentDomain, makeDeploymentTx, initInputs, makeUpdateTx, web3]);
+    }, [expiry, contractAddress, flags, signature, domain, privateKeyPEM, computeSignature, 
+        fingerprint, getCurrentDomain, makeDeploymentTx, initInputs, makeUpdateTx, web3]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -163,7 +168,7 @@ const DeploymentForm = ({ initInputs }) => {
 
         const account = web3.currentProvider.selectedAddress;
         const curDomain = getCurrentDomain();
-        
+
 
         if (curDomain && expiry && signature) {
             try {
@@ -259,7 +264,7 @@ const DeploymentForm = ({ initInputs }) => {
                     <label>Signature <span style={{ color: 'red' }}>*</span></label>
                     <div style={{ paddingTop: '5px' }}>
                         <FilePicker
-                            label='Choose certificate private key'
+                            label='Choose certificate  key'
                             onPickFile={handlePickPrivateKey}
                             isDisabled={!getCurrentDomain() || !expiry}
                         />
@@ -273,7 +278,7 @@ const DeploymentForm = ({ initInputs }) => {
 
                 <Form.Group grouped>
                     <FingerprintSegment
-                        inputs={{contractAddress, domain, expiry, flags, signature, fingerprint: initInputs ? initInputs.fingerprint : '' }}
+                        inputs={{ contractAddress, domain, expiry, flags, signature, fingerprint: initInputs ? initInputs.fingerprint : '' }}
                         onGetFingerprint={handleGetFingerprint}
                     />
                 </Form.Group>
@@ -291,7 +296,7 @@ const DeploymentForm = ({ initInputs }) => {
                 <br />
                 <Button
                     onClick={handleSubmit}
-                    disabled={!signature || !privateKeyPEM.current}
+                    disabled={!signature || !privateKeyPEM}
                     floated='right'
                     positive
                     style={{ width: '20%', marginTop: '0px' }}
