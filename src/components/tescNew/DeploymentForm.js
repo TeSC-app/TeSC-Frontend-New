@@ -68,7 +68,7 @@ const DeploymentForm = ({ initInputs }) => {
         const domain = getCurrentDomain();
         if (!!privateKeyPEM.current && !!domain && !!expiry) {
             try {
-                const address = await predictContractAddress(web3);
+                const address = initInputs ? contractAddress : await predictContractAddress(web3);
                 const flagsHex = flagsToBytes24Hex(flags);
                 const payload = { address, domain, expiry, flagsHex };
                 setSignature(await generateSignature(payload, privateKeyPEM.current));
@@ -82,7 +82,7 @@ const DeploymentForm = ({ initInputs }) => {
         } else if (!domain || !expiry) {
             setSignature('');
         }
-    }, [expiry, flags, getCurrentDomain, showMessage, web3]);
+    }, [contractAddress, expiry, flags, getCurrentDomain, showMessage, initInputs, web3]);
 
     const makeDeploymentTx = useCallback(async () => {
         return await new web3.eth.Contract(TeSC.abi).deploy({
@@ -92,15 +92,14 @@ const DeploymentForm = ({ initInputs }) => {
     }, [expiry, flags, signature, fingerprint, web3.eth.Contract, getCurrentDomain]);
 
     const makeUpdateTx = useCallback(async () => {
-        console.log("contract ADDRESS", contractAddress)
-        return await new web3.eth.Contract(TeSC.abi, contractAddress? contractAddress : initInputs.contractAddress).methods.setEndorsement(
-            getCurrentDomain() ? getCurrentDomain() : initInputs.domain,
-            expiry ? expiry : initInputs.expiry,
-            parseInt(flagsToBytes24Hex(flags), 16) > 1 ? flagsToBytes24Hex(flags) : flagsToBytes24Hex(initInputs.flags),
-            padToBytesX(fingerprint ? fingerprint : initInputs.fingerprint, 32),
-            signature ? signature : initInputs.signature
+        return await new web3.eth.Contract(TeSC.abi, contractAddress).methods.setEndorsement(
+            getCurrentDomain(),
+            expiry,
+            flagsToBytes24Hex(flags),
+            padToBytesX(fingerprint),
+            signature
         );
-    }, [contractAddress, expiry, flags, signature, fingerprint, getCurrentDomain, web3.eth.Contract, initInputs]);
+    }, [contractAddress, expiry, flags, signature, fingerprint, getCurrentDomain, web3.eth.Contract]);
     // 
     const handleFlagsChange = (i) => {
         const newFlags = new BitSet(flags.flip(i).toString());
@@ -141,8 +140,10 @@ const DeploymentForm = ({ initInputs }) => {
 
             } else if (signature !== prevSignature.current || fingerprint !== prevFingerprint.current) {
                 const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx() ;
-                const estCost = await estimateDeploymentCost(web3, tx);
-                setCostEstimated(estCost);
+                if(!initInputs || contractAddress) {
+                    const estCost = await estimateDeploymentCost(web3, tx);
+                    setCostEstimated(estCost);
+                }
 
                 if (signature !== prevSignature.current)
                     prevSignature.current = signature;

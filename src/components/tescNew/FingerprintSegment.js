@@ -33,25 +33,18 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
     const cache = useRef({});
     const prevFingerprint = useRef(fingerprint);
 
-    // useEffect(() => {
-    //     // if(inputs.fingerprint) {
-    //     //     setFingerprint(inputs.fingerprint)
-    //     //     setSliderState(true)
-    //     //     inputs.fingerprint = ''
-    //     // }
-    //     console.log("inputs.fingerprint", inputs.fingerprint)
-    // }, [])
 
-    const resetStates = () => {
+    const resetStates = useCallback(() => {
         setFilePickerDisplayed(false);
         setFingerprint('');
         setCertPEM('');
-    };
+        onGetFingerprint('');
+        prevFingerprint.current = ''
+    }, [onGetFingerprint]);
 
     const handleChangeSliderState = async () => {
         setSliderState(!sliderState);
 
-        console.log('fingerprint', fingerprint)
         if (!sliderState) {
             retrieveCertificate();
         } else {
@@ -167,7 +160,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
                 }
             }
         })();
-    }, [inputs, sliderState, retrieveCertificate, certPEM, handlePickCert, web3]);
+    }, [inputs, sliderState, retrieveCertificate, certPEM, handlePickCert, resetStates, web3]);
 
     const getMsgFromErrorCode = (errMsg) => {
         if (errMsg.includes('getaddrinfo ENOTFOUND'))
