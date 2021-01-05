@@ -28,14 +28,14 @@ window.BitSet = BitSet;
 const DeploymentForm = ({ initInputs }) => {
     const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
 
-    const [contractAddress, setContractAddress] = useState('');
+    const [contractAddress, setContractAddress] = useState(initInputs ? initInputs.contractAddress.toLowerCase() : '');
 
-    const [domain, setDomain] = useState('');
-    const [expiry, setExpiry] = useState(null);
-    const [signature, setSignature] = useState('');
-    const [flags, setFlags] = useState(new BitSet('0x00'));
-    const [domainHashed, setDomainHashed] = useState('');
-    const [fingerprint, setFingerprint] = useState('');
+    const [domain, setDomain] = useState(initInputs && !initInputs.flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? initInputs.domain : '');
+    const [expiry, setExpiry] = useState(initInputs ? initInputs.expiry : null);
+    const [signature, setSignature] = useState(initInputs ? initInputs.signature : '');
+    const [flags, setFlags] = useState(initInputs ? initInputs.flags : new BitSet('0x00'));
+    const [domainHashed, setDomainHashed] = useState(initInputs && !!initInputs.flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? initInputs.domain : '');
+    const [fingerprint, setFingerprint] = useState(!initInputs || parseInt(initInputs.fingerprint, 16) === 0 ? '' : initInputs.fingerprint);
 
     const [isMetamaskOpen, setIsMetamaskOpen] = useState(false);
 
@@ -49,18 +49,17 @@ const DeploymentForm = ({ initInputs }) => {
     const prevSignature = useRef(signature);
     const prevFingerprint = useRef('');
 
-    useEffect(() => {
-        if (initInputs && initInputs.contractAddress) {
-            setContractAddress(initInputs.contractAddress);
-            setDomain(initInputs.domain);
-            handleExpiryChange(new Date(parseInt(initInputs.expiry) * 1000))
-            // setExpiry(expiry);
-            setFlags(initInputs.flags);
-            setSignature(initInputs.signature);
-            console.log("FINGERPRINT", initInputs.fingerprint)
-            setFingerprint(initInputs.fingerprint)
-        }
-    }, []);
+    // useEffect(() => {
+    //     if (initInputs && initInputs.contractAddress) {
+    //         setContractAddress(initInputs.contractAddress);
+    //         setDomain(initInputs.domain);
+    //         handleExpiryChange(new Date(parseInt(initInputs.expiry) * 1000))
+    //         // setExpiry(expiry);
+    //         setFlags(initInputs.flags);
+    //         // setSignature(initInputs.signature);
+    //         setFingerprint(parseInt(initInputs.fingerprint, 16) === 0 ? '' : initInputs.fingerprint)
+    //     }
+    // }, []);
 
     const getCurrentDomain = useCallback(() => !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain,
         [domainHashed, domain, flags]);
@@ -93,15 +92,16 @@ const DeploymentForm = ({ initInputs }) => {
     }, [expiry, flags, signature, fingerprint, web3.eth.Contract, getCurrentDomain]);
 
     const makeUpdateTx = useCallback(async () => {
-        return await new web3.eth.Contract(TeSC.abi, contractAddress).methods.setEndorsement(
-            getCurrentDomain(),
-            expiry,
-            flagsToBytes24Hex(flags),
-            padToBytesX(fingerprint, 32),
-            signature
+        console.log("contract ADDRESS", contractAddress)
+        return await new web3.eth.Contract(TeSC.abi, contractAddress? contractAddress : initInputs.contractAddress).methods.setEndorsement(
+            getCurrentDomain() ? getCurrentDomain() : initInputs.domain,
+            expiry ? expiry : initInputs.expiry,
+            parseInt(flagsToBytes24Hex(flags), 16) > 1 ? flagsToBytes24Hex(flags) : flagsToBytes24Hex(initInputs.flags),
+            padToBytesX(fingerprint ? fingerprint : initInputs.fingerprint, 32),
+            signature ? signature : initInputs.signature
         );
-    }, [contractAddress, expiry, flags, signature, fingerprint, web3.eth.Contract, getCurrentDomain]);
-
+    }, [contractAddress, expiry, flags, signature, fingerprint, getCurrentDomain, web3.eth.Contract, initInputs]);
+    // 
     const handleFlagsChange = (i) => {
         const newFlags = new BitSet(flags.flip(i).toString());
         setFlags(newFlags);
@@ -140,7 +140,7 @@ const DeploymentForm = ({ initInputs }) => {
                 prevFlags.current = flags.toString();
 
             } else if (signature !== prevSignature.current || fingerprint !== prevFingerprint.current) {
-                const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx();
+                const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx() ;
                 const estCost = await estimateDeploymentCost(web3, tx);
                 setCostEstimated(estCost);
 
@@ -150,7 +150,7 @@ const DeploymentForm = ({ initInputs }) => {
                     prevFingerprint.current = fingerprint;
             }
         })();
-    }, [expiry, flags, signature, domain, computeSignature, fingerprint, getCurrentDomain, makeDeploymentTx, initInputs, makeUpdateTx, web3]);
+    }, [expiry, contractAddress, flags, signature, domain, computeSignature, fingerprint, getCurrentDomain, makeDeploymentTx, initInputs, makeUpdateTx, web3]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -272,12 +272,12 @@ const DeploymentForm = ({ initInputs }) => {
 
                 <Form.Group grouped>
                     <FingerprintSegment
-                        inputs={{ domain, expiry, flags, signature, fingerprint: initInputs? initInputs.fingerprint : '' }}
+                        inputs={{contractAddress, domain, expiry, flags, signature, fingerprint: initInputs ? initInputs.fingerprint : '' }}
                         onGetFingerprint={handleGetFingerprint}
                     />
                 </Form.Group>
 
-                {contractAddress && (<DeploymentOutput contractAddress={contractAddress} costPaid={costPaid} />)}
+                {contractAddress && !initInputs && (<DeploymentOutput contractAddress={contractAddress} costPaid={costPaid} />)}
 
                 {!!costEstimated && !!signature && (
                     <div style={{ float: 'right', marginTop: '3px' }}>

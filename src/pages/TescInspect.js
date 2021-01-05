@@ -18,6 +18,7 @@ window.axios = axios;
 const TeSCInspect = ({ location }) => {
     const { web3, showMessage } = useContext(AppContext);
     const [contractAddress, setContractAddress] = useState('');
+    const [contractOwner, setContractOwner] = useState('');
 
     const [domainFromChain, setDomainFromChain] = useState('');
     const [expiry, setExpiry] = useState('');
@@ -54,6 +55,8 @@ const TeSCInspect = ({ location }) => {
             setExpiry(await contract.methods.getExpiry().call());
             setSignature(await contract.methods.getSignature().call());
             setFingerprint(await contract.methods.getFingerprint().call());
+
+            setContractOwner((await contract.methods.owner().call()).toLowerCase());
 
             //favourites
             console.log(tescs);
@@ -302,15 +305,15 @@ const TeSCInspect = ({ location }) => {
                                                             <div>
                                                                 <Icon name="checkmark" circular={true} color="green" size='big' style={{ marginTop: '10px' }} />
                                                                 <br />
-                                                                <Label basic={true} color='green' size='large' style={{ marginTop: '10px' }}>{verifResult.reason}</Label>
+                                                                <Label basic color='green' size='large' style={{ marginTop: '10px' }}>{verifResult.reason}</Label>
                                                             </div>
 
                                                         ) :
                                                         (
                                                             <div>
-                                                                <Icon name="warning sign" basic={true} color="red" size='huge' style={{ marginTop: '10px' }} />
+                                                                <Icon name="warning sign" color="red" size='huge' style={{ marginTop: '10px' }} />
                                                                 <br />
-                                                                <Label basic={true} color='red' size='large' style={{ marginTop: '10px' }}>{verifResult.reason}</Label>
+                                                                <Label basic color='red' size='large' style={{ marginTop: '10px' }}>{verifResult.reason}</Label>
                                                             </div>
                                                         )
                                                 }
@@ -321,15 +324,16 @@ const TeSCInspect = ({ location }) => {
                             )
                         }
                     </Grid.Column>
-                    {domainFromChain && expiry && signature && flags && (
+                    {web3.currentProvider.selectedAddress === contractOwner && domainFromChain && expiry && signature && flags && (
                         <Grid.Row style={{ width: `${1000/16}%` }}>
                             <Grid.Column width={10} >
                                 <Modal
                                     closeIcon
+                                    // dimmer='blurring'
                                     trigger={<Button primary style={{ float: 'right' }}>Update TeSC</Button>}
                                     onClose={handleCloseTescUpdate}
                                 >
-                                    <Modal.Header>Update TeSC</Modal.Header>
+                                    <Modal.Header>Update TLS-endorsed Smart Contract</Modal.Header>
                                     <Modal.Content>
                                         <DeploymentForm
                                             initInputs={{ contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint: fingerprint.substring(2) }}

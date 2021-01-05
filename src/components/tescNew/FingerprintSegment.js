@@ -16,8 +16,8 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
 
     const [isWaiting, setIsWaiting] = useState(false);
 
-    const [sliderState, setSliderState] = useState(inputs.fingerprint ? true : false);
-    const [fingerprint, setFingerprint] = useState(inputs.fingerprint ? inputs.fingerprint : '');
+    const [sliderState, setSliderState] = useState(!inputs.fingerprint || parseInt(inputs.fingerprint, 16) === 0 ? false : true);
+    const [fingerprint, setFingerprint] = useState(!inputs.fingerprint || parseInt(inputs.fingerprint, 16) === 0 ? '' : inputs.fingerprint);
 
     const [certPEM, setCertPEM] = useState('');
     const [filePickerDisplayed, setFilePickerDisplayed] = useState(false);
@@ -27,18 +27,19 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
     const expiry = useRef(inputs.expiry);
     const signature = useRef(inputs.signature);
 
-    const contractAddress = useRef('');
+    const contractAddress = useRef(inputs.contractAddress);
     const claim = useRef('');
 
     const cache = useRef({});
     const prevFingerprint = useRef(fingerprint);
 
     // useEffect(() => {
-    //     if(inputs.fingerprint) {
-    //         setFingerprint(inputs.fingerprint)
-    //         setSliderState(true)
-    //         inputs.fingerprint = ''
-    //     }
+    //     // if(inputs.fingerprint) {
+    //     //     setFingerprint(inputs.fingerprint)
+    //     //     setSliderState(true)
+    //     //     inputs.fingerprint = ''
+    //     // }
+    //     console.log("inputs.fingerprint", inputs.fingerprint)
     // }, [])
 
     const resetStates = () => {
@@ -50,8 +51,8 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
     const handleChangeSliderState = async () => {
         setSliderState(!sliderState);
 
-        console.log('inputs.fingerprint', inputs.fingerprint)
-        if (!sliderState && !inputs.fingerprint) {
+        console.log('fingerprint', fingerprint)
+        if (!sliderState) {
             retrieveCertificate();
         } else {
             resetStates();
@@ -64,7 +65,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
         try {
             if (!cache.current[domain.current]) {
                 const cert = Certificate.fromPEM(certPEM);
-                if (!cert.dnsNames.includes(domain.current) && !cert.ipAddresses.includes(domain.current)) {
+                if (!cert.dnsNames.includes(domain.current) || !cert.ipAddresses.includes(domain.current)) {
                     throw new Error(`The selected certificate is not issued to domain ${domain.current}`);
                 }
 

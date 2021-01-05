@@ -62,6 +62,8 @@ export const hexStringToBitSet = (hexStr) => {
 
 
 export const estimateDeploymentCost = async (web3, tx) => {
+    console.log("TX", tx)
+
     const gasEstimation = await tx.estimateGas({ from: web3.currentProvider.selectedAddress, gas: '2000000' });
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 };
