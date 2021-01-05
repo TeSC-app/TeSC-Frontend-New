@@ -134,7 +134,7 @@ function DashboardEntry({ web3, contractAddress, domain, expiry, isFavourite, ow
         if (domain.length === 64 && domain.split('.').length === 1) {
             return (<Popup content={domain} trigger={<i>hashed domain</i>} />)
         } else if (domain.length > 32) {
-            return (<Popup on="click" content={domain} trigger={<i>{`${domain.substring(0, 6)}...${domain.substring(domain.length - 4, domain.length)}`}</i>} />)
+            return (<Popup on="click" content={domain} trigger={<i className='cursorPointer'>{`${domain.substring(0, 6)}...${domain.substring(domain.length - 4, domain.length)}`}</i>} />)
         } else {
             return domain
         }

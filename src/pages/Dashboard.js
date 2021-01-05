@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import 'react-day-picker/lib/style.css';
 import { Table, Grid, Dropdown, Dimmer, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
-import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
+import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import '../styles/Dashboard.scss'
 import DashboardEntry from '../components/DashboardEntry';
 import FeedbackMessage from '../components/FeedbackMessage'
@@ -29,11 +29,9 @@ const Dashboard = () => {
     useEffect(() => {
         const init = async () => {
             try {
-                const networkId = await web3.eth.net.getId();
-                const deployedNetworkRegistry = TeSCRegistryImplementation.networks[networkId];
                 const contractRegistry = new web3.eth.Contract(
-                    TeSCRegistryImplementation.abi,
-                    deployedNetworkRegistry && deployedNetworkRegistry.address,
+                    TeSCRegistry.abi,
+                    process.env.REACT_APP_REGISTRY_ADDRESS,
                 );
                 setContractRegistry(contractRegistry)
                 const tescs = JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress));

@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react'
 import { Form, Input, Button, Grid, Dimmer, Loader, Label } from 'semantic-ui-react';
 import AppContext from '../appContext';
-import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
+import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import ERCXXXImplementation from '../ethereum/build/contracts/ERCXXXImplementation.json';
 import FeedbackMessage, { buildNegativeMsg, buildPositiveMsg } from "../components/FeedbackMessage";
 import {
@@ -24,11 +24,9 @@ function RegistryAdd() {
     //To predetermine the cost - only for valid input that would be able to be added to the registry
     useEffect(() => {
         const runEffect = async () => {
-            const networkId = await web3.eth.net.getId();
-            const deployedNetworkRegistry = TeSCRegistryImplementation.networks[networkId];
             const contractRegistry = new web3.eth.Contract(
-                TeSCRegistryImplementation.abi,
-                deployedNetworkRegistry && deployedNetworkRegistry.address,
+                TeSCRegistry.abi,
+                process.env.REACT_APP_REGISTRY_ADDRESS,
             );
             setContractRegistry(contractRegistry)
             try {
