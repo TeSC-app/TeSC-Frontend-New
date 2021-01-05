@@ -1,5 +1,5 @@
 import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
-import { Input, Form, Label, Button, Segment, Dimmer, Loader } from 'semantic-ui-react';
+import { Input, Form, Label, Button, Segment, Dimmer, Loader, Popup } from 'semantic-ui-react';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { formatDate, parseDate } from 'react-day-picker/moment';
@@ -38,6 +38,7 @@ const DeploymentForm = ({ initInputs }) => {
     const [fingerprint, setFingerprint] = useState(!initInputs || parseInt(initInputs.fingerprint, 16) === 0 ? '' : initInputs.fingerprint);
 
     const [isMetamaskOpen, setIsMetamaskOpen] = useState(false);
+    const [isMatchedOriginalDomain, setIsMatchedOriginalDomain] = useState(false);
 
     const [privateKeyPEM, setPrivateKeyPEM] = useState('');
 
@@ -49,18 +50,6 @@ const DeploymentForm = ({ initInputs }) => {
     const prevSignature = useRef(signature);
     const prevFingerprint = useRef(fingerprint);
     const prevPrivateKeyPEM = useRef(privateKeyPEM);
-
-    // useEffect(() => {
-    //     if (initInputs && initInputs.contractAddress) {
-    //         setContractAddress(initInputs.contractAddress);
-    //         setDomain(initInputs.domain);
-    //         handleExpiryChange(new Date(parseInt(initInputs.expiry) * 1000))
-    //         // setExpiry(expiry);
-    //         setFlags(initInputs.flags);
-    //         // setSignature(initInputs.signature);
-    //         setFingerprint(parseInt(initInputs.fingerprint, 16) === 0 ? '' : initInputs.fingerprint)
-    //     }
-    // }, []);
 
     const getCurrentDomain = useCallback(() => !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain,
         [domainHashed, domain, flags]);
@@ -155,7 +144,7 @@ const DeploymentForm = ({ initInputs }) => {
                 computeSignature();
             }
         })();
-    }, [expiry, contractAddress, flags, signature, domain, privateKeyPEM, computeSignature, 
+    }, [expiry, contractAddress, flags, signature, domain, privateKeyPEM, computeSignature,
         fingerprint, getCurrentDomain, makeDeploymentTx, initInputs, makeUpdateTx, web3]);
 
     const handleSubmit = async (e) => {
@@ -208,26 +197,46 @@ const DeploymentForm = ({ initInputs }) => {
     };
 
     const renderFlagCheckboxes = () => {
+        
         return Object.entries(FLAG_POSITIONS).map(([flagName, i]) =>
             <Form.Checkbox
                 key={i}
                 checked={!!flags.get(i)}
                 label={flagName}
                 onClick={() => handleFlagsChange(i)}
-                disabled={!domain || !expiry}
+                disabled={(!initInputs && (!domain || !expiry)) || (initInputs && !isMatchedOriginalDomain)}
             />
         );
+    };
+
+    const handleEnterOriginalDomain = (originalDomain) => {
+        setDomain(originalDomain);
+        if(originalDomain && web3.utils.sha3(originalDomain).substring(2) === domainHashed) {
+            setIsMatchedOriginalDomain(true);
+        }
     };
 
     return (
         <React.Fragment>
             <Form style={{ width: '80%', margin: '40px auto' }}>
+                {initInputs && !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) && !isMatchedOriginalDomain && (
+                    <Form.Field>
+                        { !domain && (<Label pointing='below'>The domain in this contract is hashed, the original domain is required to proceed with the update</Label>)}
+                        <Input
+                            label='Original domain'
+                            value={domain}
+                            placeholder='www.mysite.com'
+                            onChange={e => handleEnterOriginalDomain(e.target.value)}
+                            style={{ width: '100%', margin: '5px' }}
+                        />
+                    </Form.Field>
+                )}
                 <Form.Group widths='equal'>
                     <Form.Field>
                         <label>Domain  <span style={{ color: 'red' }}>*</span></label>
                         <Input
                             value={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain}
-                            disabled={!!domain && !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)}
+                            disabled={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)}
                             placeholder='www.mysite.com'
                             onChange={e => setDomain(e.target.value)}
                             onBlur={() => computeSignature()}
