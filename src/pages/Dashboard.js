@@ -8,7 +8,7 @@ import DashboardEntry from '../components/DashboardEntry';
 import FeedbackMessage from '../components/FeedbackMessage'
 
 const Dashboard = () => {
-    const { web3 } = useContext(AppContext);
+    const { web3, selectedAccount } = useContext(AppContext);
     const [tescsIsInRegistry, setTescsIsInRegistry] = useState([])
     const [contractRegistry, setContractRegistry] = useState()
     const [sysMsg, setSysMsg] = useState(null)
@@ -28,37 +28,36 @@ const Dashboard = () => {
 
     useEffect(() => {
         const init = async () => {
+            
             try {
                 const contractRegistry = new web3.eth.Contract(
                     TeSCRegistry.abi,
                     process.env.REACT_APP_REGISTRY_ADDRESS,
                 );
                 setContractRegistry(contractRegistry)
-                const tescs = JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress));
+                const tescs = JSON.parse(localStorage.getItem(selectedAccount))
                 if (tescs) {
-                    const result = await Promise.all(tescs.map(async ({ contractAddress, domain, expiry, isFavourite, own }) => ({ contractAddress: contractAddress, domain: domain, expiry: expiry, isFavourite: isFavourite, own: own, isInRegistry: await contractRegistry.methods.isContractRegistered(contractAddress).call() })))
+                    const result = contractRegistry ? await Promise.all(tescs.map(async ({ contractAddress, domain, expiry, isFavourite, own }) => ({ contractAddress: contractAddress, domain: domain, expiry: expiry, isFavourite: isFavourite, own: own, isInRegistry: await contractRegistry.methods.isContractRegistered(contractAddress).call() }))) : tescs
                     setTescsIsInRegistry(result)
                 }
             }
             catch (error) {
-                console.error(error);
+                const tescs = JSON.parse(localStorage.getItem(selectedAccount));
+                setTescsIsInRegistry(tescs)
             }
         }
         init()
-    }, [web3.currentProvider.selectedAddress, web3.eth.Contract, web3.eth.net])
+    }, [selectedAccount, web3.eth.Contract, web3.eth.net])
 
 
     const renderRows = () => {
-        if (!tescsIsInRegistry)
-            return []
-
         return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isInRegistry, isFavourite, own }, index) => (
             <DashboardEntry key={contractAddress}
                 contractAddress={contractAddress}
                 domain={domain}
                 expiry={expiry}
                 isInRegistry={isInRegistry}
-                currentAccount={web3.currentProvider.selectedAddress}
+                selectedAccount={selectedAccount}
                 contractRegistry={contractRegistry}
                 assignSysMsg={assignSysMsgFromEntry}
                 isFavourite={isFavourite}

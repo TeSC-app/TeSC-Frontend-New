@@ -9,7 +9,7 @@ import {
     estimateRegistryRemoveCost
 } from '../utils/tesc';
 
-function DashboardEntry({ web3, contractAddress, domain, expiry, isFavourite, own, index, tescsIsInRegistry, contractRegistry, currentAccount, isInRegistry, assignSysMsg, handleBlocking }) {
+function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry, isFavourite, own, index, tescsIsInRegistry, contractRegistry, isInRegistry, assignSysMsg, handleBlocking }) {
 
     const [isInRegistryNew, setIsInRegistryNew] = useState(isInRegistry)
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false)
@@ -18,20 +18,20 @@ function DashboardEntry({ web3, contractAddress, domain, expiry, isFavourite, ow
 
     useEffect(() => {
         isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false);
-    }, [isFavourite, setTescIsInFavourites, currentAccount]);
+    }, [isFavourite, setTescIsInFavourites]);
 
     useEffect(() => {
         const runEffect = async () => {
             if (!isInRegistryNew && own) {
-                const estCostAdd = await estimateRegistryAddCost(web3, contractRegistry, domain, contractAddress);
+                const estCostAdd = contractRegistry ? await estimateRegistryAddCost(web3, selectedAccount, contractRegistry, domain, contractAddress) : 0;
                 setCostEstimatedAdd(estCostAdd);
             } else if (isInRegistryNew && own) {
-                const estCostRemove = await estimateRegistryRemoveCost(web3, contractRegistry, domain, contractAddress);
+                const estCostRemove = contractRegistry ? await estimateRegistryRemoveCost(web3, selectedAccount, contractRegistry, domain, contractAddress) : 0;
                 setCostEstimatedRemove(estCostRemove);
             }
         }
         runEffect()
-    }, [web3, contractAddress, contractRegistry, domain, isInRegistryNew, own])
+    }, [web3, contractAddress, selectedAccount, contractRegistry, domain, isInRegistryNew, own])
 
     const addToRegistry = async () => {
         handleBlocking(true)
@@ -39,7 +39,7 @@ function DashboardEntry({ web3, contractAddress, domain, expiry, isFavourite, ow
             try {
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
                 if (!isContractRegistered) {
-                    await contractRegistry.methods.add(domain, contractAddress).send({ from: currentAccount, gas: '2000000' })
+                    await contractRegistry.methods.add(domain, contractAddress).send({ from: selectedAccount, gas: '2000000' })
                         .on('receipt', async (txReceipt) => {
                             assignSysMsg(buildPositiveMsg({
                                 header: 'Entry added to the registry',
@@ -71,7 +71,7 @@ function DashboardEntry({ web3, contractAddress, domain, expiry, isFavourite, ow
             try {
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
                 if (isContractRegistered) {
-                    await contractRegistry.methods.remove(domain, contractAddress).send({ from: currentAccount, gas: '2000000' })
+                    await contractRegistry.methods.remove(domain, contractAddress).send({ from: selectedAccount, gas: '2000000' })
                         .on('receipt', async (txReceipt) => {
                             assignSysMsg(buildPositiveMsg({
                                 header: 'Entry removed from the registry',
@@ -105,7 +105,7 @@ function DashboardEntry({ web3, contractAddress, domain, expiry, isFavourite, ow
             tescsIsInRegistry[index]['isFavourite'] = true
             setTescIsInFavourites(true)
         }
-        localStorage.setItem(currentAccount, JSON.stringify(tescsIsInRegistry));
+        localStorage.setItem(selectedAccount, JSON.stringify(tescsIsInRegistry));
     }
 
     const renderRegistryButtons = () => {

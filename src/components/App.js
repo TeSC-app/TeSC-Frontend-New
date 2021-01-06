@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Route } from 'react-router-dom';
 import { Container, Loader, Dimmer } from 'semantic-ui-react';
 import 'semantic-ui-css/semantic.min.css';
@@ -18,6 +18,15 @@ const App = ({ web3 }) => {
 
     const [sysMsg, setSysMsg] = useState(null);
     const [screenBlocked, setScreenBlocked] = useState(false);
+    const [selectedAccount, setSelectedAccount] = useState(web3.currentProvider.selectedAddress)
+
+    useEffect(() => {
+        const init = async () => {
+            const [selectedAccount,] = await web3.eth.getAccounts()
+            setSelectedAccount(selectedAccount)
+        }
+        init()
+    })
 
     const handleDismissMessage = () => {
         setSysMsg(null);
@@ -47,7 +56,8 @@ const App = ({ web3 }) => {
                 handleBlockScreen,
                 sysMsg,
                 showMessage,
-                handleDismissMessage
+                handleDismissMessage,
+                selectedAccount
             }}
             >
                 <Navbar handleCollapseSidebar={handleCollapseSidebar} />
