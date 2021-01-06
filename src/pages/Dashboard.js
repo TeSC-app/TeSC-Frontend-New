@@ -49,7 +49,7 @@ const Dashboard = () => {
             }
         }
         init()
-    }, [currentAccount, web3.eth, web3.eth.Contract, web3.eth.net])
+    }, [currentAccount, selectedAccount, web3.eth, web3.eth.Contract, web3.eth.net])
 
 
     const renderRows = () => {
@@ -72,15 +72,15 @@ const Dashboard = () => {
     };
 
     const filterTescs = () => {
-        setTescsIsInRegistry(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)).filter(tesc => tesc.isFavourite === true))
+        setTescsIsInRegistry(JSON.parse(localStorage.getItem(currentAccount)).filter(tesc => tesc.isFavourite === true))
     }
 
     const showAllTescs = () => {
-        setTescsIsInRegistry(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)))
+        setTescsIsInRegistry(JSON.parse(localStorage.getItem(currentAccount)))
     }
 
     const showOwnTescs = () => {
-        setTescsIsInRegistry(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)).filter(tesc => tesc.own === true))
+        setTescsIsInRegistry(JSON.parse(localStorage.getItem(currentAccount)).filter(tesc => tesc.own === true))
     }
 
     return (
