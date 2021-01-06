@@ -13,6 +13,7 @@ const Dashboard = () => {
     const [contractRegistry, setContractRegistry] = useState()
     const [sysMsg, setSysMsg] = useState(null)
     const [blocking, setBlocking] = useState(false)
+    const [currentAccount, setCurrentAccount] = useState(selectedAccount)
 
     const handleDismissMessage = () => {
         setSysMsg(null);
@@ -28,26 +29,27 @@ const Dashboard = () => {
 
     useEffect(() => {
         const init = async () => {
-            
+            const [currentAccount, ] = await web3.eth.getAccounts()
             try {
                 const contractRegistry = new web3.eth.Contract(
                     TeSCRegistry.abi,
                     process.env.REACT_APP_REGISTRY_ADDRESS,
                 );
                 setContractRegistry(contractRegistry)
-                const tescs = JSON.parse(localStorage.getItem(selectedAccount))
+                setCurrentAccount(currentAccount.toLowerCase())
+                const tescs = JSON.parse(localStorage.getItem(currentAccount.toLowerCase()))
                 if (tescs) {
                     const result = contractRegistry ? await Promise.all(tescs.map(async ({ contractAddress, domain, expiry, isFavourite, own }) => ({ contractAddress: contractAddress, domain: domain, expiry: expiry, isFavourite: isFavourite, own: own, isInRegistry: await contractRegistry.methods.isContractRegistered(contractAddress).call() }))) : tescs
                     setTescsIsInRegistry(result)
                 }
             }
             catch (error) {
-                const tescs = JSON.parse(localStorage.getItem(selectedAccount));
+                const tescs = JSON.parse(localStorage.getItem(currentAccount.toLowerCase()));
                 setTescsIsInRegistry(tescs)
             }
         }
         init()
-    }, [selectedAccount, web3.eth.Contract, web3.eth.net])
+    }, [currentAccount, web3.eth, web3.eth.Contract, web3.eth.net])
 
 
     const renderRows = () => {
@@ -57,7 +59,7 @@ const Dashboard = () => {
                 domain={domain}
                 expiry={expiry}
                 isInRegistry={isInRegistry}
-                selectedAccount={selectedAccount}
+                selectedAccount={currentAccount}
                 contractRegistry={contractRegistry}
                 assignSysMsg={assignSysMsgFromEntry}
                 isFavourite={isFavourite}
