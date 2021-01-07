@@ -8,8 +8,8 @@ import {
     estimateRegistryAddCost
 } from '../utils/tesc';
 
-function RegistryAdd() {
-    const { web3, selectedAccount } = useContext(AppContext)
+function RegistryAdd({ selectedAccount }) {
+    const { web3 } = useContext(AppContext)
     const [domain, setDomain] = useState('')
     const [contractAddress, setContractAddress] = useState('')
     const [sysMsg, setSysMsg] = useState(null)
@@ -38,9 +38,9 @@ function RegistryAdd() {
                 const tescDomain = await tescContract.methods.getDomain().call()
                 setTescDomain(tescDomain)
                 //tescContracOwner is mixed-case and selected wallet address is lower case
-                if (domain === tescDomain && tescContractOwner && tescContractOwner.toLowerCase() === selectedAccount && !isContractRegistered) {
+                if (domain === tescDomain && tescContractOwner && tescContractOwner === selectedAccount && !isContractRegistered) {
                     setValidInput(true)
-                    const estCostAdd = await estimateRegistryAddCost(web3, contractRegistry, domain, contractAddress);
+                    const estCostAdd = await estimateRegistryAddCost(web3, selectedAccount, contractRegistry, domain, contractAddress);
                     setCostEstimatedAdd(estCostAdd);
                 }
             } catch (error) {
@@ -63,7 +63,7 @@ function RegistryAdd() {
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
                 setIsContractRegistered(isContractRegistered)
                 if (!isContractRegistered) {
-                    if (tescContractOwner && tescContractOwner.toLowerCase() === selectedAccount) {
+                    if (tescContractOwner && tescContractOwner === selectedAccount) {
                         await contractRegistry.methods.add(domain, contractAddress).send({ from: selectedAccount, gas: '2000000' })
                         .on('receipt', async (txReceipt) => {
                             setSysMsg(buildPositiveMsg({
@@ -132,7 +132,7 @@ function RegistryAdd() {
                 </Form.Group>
                 <Button disabled={!domain || !contractAddress} onClick={handleSubmit} floated='right' positive>Add entry</Button>
                 { domain === tescDomain && tescContractOwner &&
-                 tescContractOwner.toLowerCase() === selectedAccount && 
+                 tescContractOwner === selectedAccount && 
                  !isContractRegistered && validInput && (
                     <Label as="span" tag className='costEstimateLabel'>
                         {costEstimatedAdd.toFixed(5)} <span className='costEstimateCurrencyETH'>ETH</span>

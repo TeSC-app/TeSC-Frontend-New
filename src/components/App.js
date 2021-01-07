@@ -18,12 +18,22 @@ const App = ({ web3 }) => {
 
     const [sysMsg, setSysMsg] = useState(null);
     const [screenBlocked, setScreenBlocked] = useState(false);
+    const [noWalletAddress, setNoWalletAddress] = useState(true)
     const [selectedAccount, setSelectedAccount] = useState(web3.currentProvider.selectedAddress)
 
     useEffect(() => {
         const init = async () => {
             const [selectedAccount,] = await web3.eth.getAccounts()
             setSelectedAccount(selectedAccount)
+            window.ethereum.on('accountsChanged', function (accounts) {
+                if (!accounts[0]) {
+                    setNoWalletAddress(true)
+                } else {
+                    setNoWalletAddress(false)
+                    setSelectedAccount(accounts[0])
+                }
+            })
+            window.ethereum.on('chainChanged', (_chainId) => window.location.reload());
         }
         init()
     })
@@ -56,19 +66,22 @@ const App = ({ web3 }) => {
                 handleBlockScreen,
                 sysMsg,
                 showMessage,
-                handleDismissMessage,
-                selectedAccount
+                handleDismissMessage
             }}
             >
-                <Navbar handleCollapseSidebar={handleCollapseSidebar} />
+                <Navbar noWalletAddress={noWalletAddress} selectedAccount={selectedAccount} handleCollapseSidebar={handleCollapseSidebar} />
                 <div className='layout'>
                     <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} />
                     <Container className="page">
-                        <Route path="/" component={Dashboard} exact />
+                        <Route path="/" exact render={props => {
+                            return <Dashboard {...props} selectedAccount={selectedAccount} noWalletAddress={noWalletAddress} />
+                        }} />
                         <Route path="/tesc/new" component={TeSCNew} exact />
                         <Route path="/tesc/inspect" component={TeSCInspect} exact />
                         <Route path="/registry/inspect" component={RegistryInspect} exact />
-                        <Route path="/registry/add" component={RegistryAdd} exact />
+                        <Route path="/registry/add" exact render={props => {
+                            return <RegistryAdd {...props} selectedAccount={selectedAccount} />
+                        }} />
                     </Container>
                 </div>
                 <Dimmer active={screenBlocked}>

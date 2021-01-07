@@ -7,8 +7,8 @@ import '../styles/Dashboard.scss'
 import DashboardEntry from '../components/DashboardEntry';
 import FeedbackMessage from '../components/FeedbackMessage'
 
-const Dashboard = () => {
-    const { web3, selectedAccount } = useContext(AppContext);
+const Dashboard = ({selectedAccount, noWalletAddress}) => {
+    const { web3 } = useContext(AppContext);
     const [tescsIsInRegistry, setTescsIsInRegistry] = useState([])
     const [contractRegistry, setContractRegistry] = useState()
     const [sysMsg, setSysMsg] = useState(null)
@@ -29,31 +29,35 @@ const Dashboard = () => {
 
     useEffect(() => {
         const init = async () => {
-            const [currentAccount, ] = await web3.eth.getAccounts()
             try {
                 const contractRegistry = new web3.eth.Contract(
                     TeSCRegistry.abi,
                     process.env.REACT_APP_REGISTRY_ADDRESS,
                 );
                 setContractRegistry(contractRegistry)
-                setCurrentAccount(currentAccount.toLowerCase())
-                const tescs = JSON.parse(localStorage.getItem(currentAccount.toLowerCase()))
+                const tescs = currentAccount ? JSON.parse(localStorage.getItem(currentAccount.toLowerCase())) : []
                 if (tescs) {
                     const result = contractRegistry ? await Promise.all(tescs.map(async ({ contractAddress, domain, expiry, isFavourite, own }) => ({ contractAddress: contractAddress, domain: domain, expiry: expiry, isFavourite: isFavourite, own: own, isInRegistry: await contractRegistry.methods.isContractRegistered(contractAddress).call() }))) : tescs
                     setTescsIsInRegistry(result)
                 }
+                window.ethereum.on('accountsChanged', function (accounts) {
+                    if (accounts[0]) {
+                        setTescsIsInRegistry(JSON.parse(localStorage.getItem(accounts[0])))
+                        setCurrentAccount(accounts[0])
+                    }
+                })
             }
             catch (error) {
-                const tescs = JSON.parse(localStorage.getItem(currentAccount.toLowerCase()));
+                const tescs = currentAccount ? JSON.parse(localStorage.getItem(currentAccount.toLowerCase())) : []
                 setTescsIsInRegistry(tescs)
             }
         }
         init()
-    }, [currentAccount, selectedAccount, web3.eth, web3.eth.Contract, web3.eth.net])
+    }, [currentAccount, web3.eth, web3.eth.Contract, web3.eth.net])
 
 
     const renderRows = () => {
-        return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isInRegistry, isFavourite, own }, index) => (
+        if (tescsIsInRegistry) return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isInRegistry, isFavourite, own }, index) => (
             <DashboardEntry key={contractAddress}
                 contractAddress={contractAddress}
                 domain={domain}
@@ -72,15 +76,15 @@ const Dashboard = () => {
     };
 
     const filterTescs = () => {
-        setTescsIsInRegistry(JSON.parse(localStorage.getItem(currentAccount)).filter(tesc => tesc.isFavourite === true))
+        JSON.parse(localStorage.getItem(currentAccount.toLowerCase())) ? setTescsIsInRegistry(JSON.parse(localStorage.getItem(currentAccount.toLowerCase())).filter(tesc => tesc.isFavourite === true)) : setTescsIsInRegistry([])
     }
 
     const showAllTescs = () => {
-        setTescsIsInRegistry(JSON.parse(localStorage.getItem(currentAccount)))
+        JSON.parse(localStorage.getItem(currentAccount.toLowerCase())) ? setTescsIsInRegistry(JSON.parse(localStorage.getItem(currentAccount.toLowerCase()))) : setTescsIsInRegistry([])
     }
 
     const showOwnTescs = () => {
-        setTescsIsInRegistry(JSON.parse(localStorage.getItem(currentAccount)).filter(tesc => tesc.own === true))
+        JSON.parse(localStorage.getItem(currentAccount.toLowerCase())) ? setTescsIsInRegistry(JSON.parse(localStorage.getItem(currentAccount.toLowerCase())).filter(tesc => tesc.own === true)) : setTescsIsInRegistry([])
     }
 
     return (
@@ -121,7 +125,7 @@ const Dashboard = () => {
                 </Table.Header>
                 {(
                     <Table.Body>
-                        {renderRows()}
+                        {noWalletAddress && !currentAccount ? null : renderRows()}
                     </Table.Body>
                 )}
             </Table>
