@@ -1,11 +1,24 @@
-import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
-import { Input, Form, Label, Button, Segment, Dimmer, Loader, Popup } from 'semantic-ui-react';
+import React, { Fragment, useState, useContext, useCallback, useEffect, useRef } from 'react';
+import { Input, Form, Label, Button as BtnSuir, Segment, Dimmer, Loader, Popup, Radio, Header, TextArea, Divider, Icon } from 'semantic-ui-react';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { formatDate, parseDate } from 'react-day-picker/moment';
 
 import moment from 'moment';
 import BitSet from 'bitset';
+
+import { FaFileSignature } from 'react-icons/fa';
+
+import { makeStyles } from '@material-ui/core/styles';
+import Stepper from '@material-ui/core/Stepper';
+import Step from '@material-ui/core/Step';
+import StepLabel from '@material-ui/core/StepLabel';
+import StepContent from '@material-ui/core/StepContent';
+import Button from '@material-ui/core/Button';
+import Paper from '@material-ui/core/Paper';
+import Typography from '@material-ui/core/Typography';
+
+
 
 import AppContext from '../../appContext';
 import { buildNegativeMsg, buildPositiveMsg } from "../FeedbackMessage";
@@ -24,6 +37,32 @@ import {
     FLAG_POSITIONS,
 } from '../../utils/tesc';
 window.BitSet = BitSet;
+
+
+
+const useStyles = makeStyles((theme) => ({
+    root: {
+        width: '100%',
+    },
+    button: {
+        marginTop: theme.spacing(1),
+        marginRight: theme.spacing(1),
+    },
+    actionsContainer: {
+        marginBottom: theme.spacing(2),
+    },
+    resetContainer: {
+        padding: theme.spacing(3),
+    },
+}));
+
+function getSteps() {
+    return ['Create Claim', 'Create Signature', 'Add Certificate Fingerprint', 'Review and Confirm'];
+}
+
+
+
+
 
 const DeploymentForm = ({ initInputs }) => {
     const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
@@ -44,6 +83,8 @@ const DeploymentForm = ({ initInputs }) => {
 
     const [costEstimated, setCostEstimated] = useState(null);
     const [costPaid, setCostPaid] = useState(null);
+
+    const [sigType, setSigType] = useState(null);
 
     const prevExpiry = useRef(expiry);
     const prevFlags = useRef(flags.toString());
@@ -194,15 +235,17 @@ const DeploymentForm = ({ initInputs }) => {
         }
         handleBlockScreen(false);
         setIsMetamaskOpen(false);
+        handleNext();
     };
 
     const renderFlagCheckboxes = () => {
-        
-        return Object.entries(FLAG_POSITIONS).map(([flagName, i]) =>
+
+        return Object.entries(FLAG_POSITIONS).filter(([flagName, i]) => i === 0).map(([flagName, i]) =>
             <Form.Checkbox
                 key={i}
                 checked={!!flags.get(i)}
-                label={flagName}
+                // label={flagName}
+                label='Hash domain'
                 onClick={() => handleFlagsChange(i)}
                 disabled={(!initInputs && (!domain || !expiry)) || (initInputs && !isMatchedOriginalDomain)}
             />
@@ -211,14 +254,247 @@ const DeploymentForm = ({ initInputs }) => {
 
     const handleEnterOriginalDomain = (originalDomain) => {
         setDomain(originalDomain);
-        if(originalDomain && web3.utils.sha3(originalDomain).substring(2) === domainHashed) {
+        if (originalDomain && web3.utils.sha3(originalDomain).substring(2) === domainHashed) {
             setIsMatchedOriginalDomain(true);
         }
     };
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    const classes = useStyles();
+    const [activeStep, setActiveStep] = React.useState(0);
+    const steps = getSteps();
+
+    const handleNext = () => {
+        setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    };
+
+    const handleBack = () => {
+        setActiveStep((prevActiveStep) => prevActiveStep - 1);
+    };
+
+    const handleReset = () => {
+        setActiveStep(0);
+    };
+
+    function getStepContent(step) {
+        switch (step) {
+            case 0:
+                return {
+                    component: (
+                        <Fragment>
+                            <Form.Field>
+                                <label>Domain  <span style={{ color: 'red' }}>*</span></label>
+                                <Input
+                                    value={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain}
+                                    disabled={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)}
+                                    placeholder='www.mysite.com'
+                                    onChange={e => setDomain(e.target.value)}
+                                    onBlur={() => computeSignature()}
+                                    icon='world'
+                                />
+                            </Form.Field>
+                            <Form.Field>
+                                {renderFlagCheckboxes()}
+                            </Form.Field>
+
+
+                            <Form.Field>
+                                <label>Expiry <span style={{ color: 'red' }}>*</span></label>
+                                <DayPickerInput
+                                    value={expiry ? formatDate(new Date(expiry * 1000), 'DD/MM/YYYY') : null}
+                                    onBlur={() => computeSignature()}
+                                    onDayChange={handleExpiryChange}
+                                    format="DD/MM/YYYY"
+                                    formatDate={formatDate}
+                                    parseDate={parseDate}
+                                    placeholder='dd/mm/yyyy'
+                                    dayPickerProps={{
+                                        disabledDays: {
+                                            before: new Date()
+                                        },
+                                        readOnly: true
+                                    }}
+                                    inputProps={{ readOnly: true }}
+                                    component={props => <Input icon='calendar alternate outline' {...props} />}
+                                />
+                            </Form.Field>
+                        </Fragment>
+                    ),
+                    next: !!getCurrentDomain() && !!expiry
+                };
+            case 1:
+                return {
+                    component: (
+                        <Fragment>
+                            <Header as='h4'>Signature <span style={{ color: 'red' }}>*</span></Header>
+                            <Form.Field>
+                                <Radio
+                                    label="Compute the signature automatically using private key of TLS/SSL certifiticate"
+                                    name='radioGroup'
+                                    value='auto'
+                                    checked={sigType === 'auto'}
+                                    onChange={(e, { value }) => setSigType(value)}
+                                />
+                            </Form.Field>
+                            <Form.Field>
+                                <Radio
+                                    label='Compute the signature manually'
+                                    name='radioGroup'
+                                    value='manual'
+                                    checked={sigType === 'manual'}
+                                    onChange={(e, { value }) => setSigType(value)}
+                                />
+                            </Form.Field>
+                            {sigType !== null && (
+                                <Divider horizontal>
+                                    <Header as='h5'>
+                                        <Icon name='signup' />
+                                        Add Signature
+                                </Header>
+                                </Divider>
+                            )}
+                            {sigType === 'auto' && (
+                                <Form.Field>
+                                    <div style={{ paddingTop: '5px' }}>
+                                        <FilePicker
+                                            label='Choose certificate  key'
+                                            onPickFile={handlePickPrivateKey}
+                                            isDisabled={!getCurrentDomain() || !expiry}
+                                        />
+                                    </div>
+                                    <div><em>Pick the certificate private key file to automatically compute the signature</em></div>
+
+                                    <Segment style={{ wordBreak: 'break-all', minHeight: '7em' }} placeholder>
+                                        {signature}
+                                    </Segment>
+                                </Form.Field>
+                            )}
+                            {sigType === 'manual' && (
+                                <Form.Field>
+                                    <p>Please use this command line to generate the signature: <br />
+                                        <b>echo -n {`0x254dffcd3277c0b1660f6d42efbb754edababc2b.1637937718`} | openssl dgst -RSA-SHA256 -sign {'<your_private_key_file>'} | openssl base64 | cat</b>
+                                    </p>
+
+                                    <TextArea style={{ wordBreak: 'break-all', minHeight: '7em' }} placeholder>
+                                        {signature}
+                                    </TextArea>
+                                </Form.Field>
+                            )}
+                        </Fragment>
+                    ),
+                    next: !!signature
+                };
+            case 2:
+                return {
+                    component: (<FingerprintSegment
+                        inputs={{ contractAddress, domain, expiry, flags, signature, fingerprint: initInputs ? initInputs.fingerprint : '' }}
+                        onGetFingerprint={handleGetFingerprint}
+                    />),
+                    next: true
+                };
+            case 3:
+                return {
+                    component: (
+                        <Fragment>
+                            {!!costEstimated && !!signature && (
+                                <div style={{ float: 'right', right: '100%' }}>
+                                    <Label tag style={{ color: 'royalblue', }}>
+                                        {costEstimated.toFixed(5)} <span style={{ fontSize: '0.75em' }}>ETH</span>
+                                    </Label>
+                                </div>
+                            )}
+                        </Fragment>
+                    )
+                };
+            case 4:
+                return {
+                    component: (
+                        <Fragment>
+                        </Fragment>
+                    )
+                }
+            default:
+                return 'Unknown step';
+        }
+    }
+
     return (
         <React.Fragment>
-            <Form style={{ width: '80%', margin: '40px auto' }}>
+
+            <Form style={{ width: '80%', margin: '40px auto' }} className={classes.root}>
+
+                <Stepper activeStep={activeStep} orientation="vertical">
+                    {steps.map((label, index) => (
+                        <Step key={label}>
+                            <StepLabel><h4>{label}</h4></StepLabel>
+
+                            <StepContent>
+                                <Segment raised color='purple' style={{ margin: '1% 10%', padding: '3%' }}>
+                                    <Typography>{getStepContent(index).component}</Typography>
+                                </Segment>
+                                <div className={classes.actionsContainer} style={{ float: 'right', margin: 'auto 10%' }}>
+                                    <div>
+                                        <BtnSuir
+                                            basic
+                                            disabled={activeStep === 0}
+                                            onClick={handleBack}
+                                        >
+                                            Back
+                                        </BtnSuir>
+                                        {activeStep !== steps.length - 1 ?
+                                            (
+                                                <BtnSuir
+                                                    basic
+                                                    disabled={!getStepContent(index).next}
+                                                    color="purple"
+                                                    onClick={handleNext}
+                                                >
+                                                    {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
+                                                </BtnSuir>
+                                            ) : (
+                                                <BtnSuir
+                                                    icon='play circle'
+                                                    basic
+                                                    onClick={handleSubmit}
+                                                    disabled={!signature || !privateKeyPEM}
+                                                    positive
+                                                    content={!initInputs ? 'Deploy' : 'Update'}
+                                                />
+
+                                            )}
+                                    </div>
+                                </div>
+
+                            </StepContent>
+                        </Step>
+                    ))}
+                </Stepper>
+                {activeStep === steps.length && (
+                    <Paper square elevation={0} className={classes.resetContainer}>
+                        <Typography>All steps completed - you&apos;re finished</Typography>
+                        <Button onClick={handleReset} className={classes.button}>
+                            Reset
+                        </Button>
+                    </Paper>
+                )}
+            </Form>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            {/* <Form style={{ width: '80%', margin: '40px auto' }}>
                 {initInputs && !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) && !isMatchedOriginalDomain && (
                     <Form.Field>
                         { !domain && (<Label pointing='below'>The domain in this contract is hashed, the original domain is required to proceed with the update</Label>)}
@@ -303,7 +579,7 @@ const DeploymentForm = ({ initInputs }) => {
                 )}
                 <br />
                 <br />
-                <Button
+                <BtnSuir
                     onClick={handleSubmit}
                     disabled={!signature || !privateKeyPEM}
                     floated='right'
@@ -311,12 +587,12 @@ const DeploymentForm = ({ initInputs }) => {
                     style={{ width: '20%', marginTop: '0px' }}
                 >
                     {!initInputs ? 'Deploy' : 'Update'}
-                </Button>
+                </BtnSuir>
 
                 <Dimmer active={!!initInputs && isMetamaskOpen} inverted>
                     <Loader indeterminate content='Waiting for transaction to finish...' />
                 </Dimmer>
-            </Form>
+            </Form> */}
         </React.Fragment>
     );
 };
