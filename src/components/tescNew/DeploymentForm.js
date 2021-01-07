@@ -391,9 +391,8 @@ const DeploymentForm = ({ initInputs }) => {
                 return {
                     component: (
                         <FingerprintSegment
-                            inputs={{ contractAddress, domain, expiry, flags, signature, fingerprint: initInputs ? initInputs.fingerprint : '' }}
+                            inputs={{ contractAddress, domain, expiry, flags, signature, fingerprint: initInputs ? initInputs.fingerprint : fingerprint }}
                             onGetFingerprint={handleGetFingerprint}
-                            activated={!!fingerprint}
                         />
                     ),
                     next: true
