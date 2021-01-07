@@ -13,7 +13,6 @@ const Dashboard = ({selectedAccount, noWalletAddress}) => {
     const [contractRegistry, setContractRegistry] = useState()
     const [sysMsg, setSysMsg] = useState(null)
     const [blocking, setBlocking] = useState(false)
-    const [currentAccount, setCurrentAccount] = useState(selectedAccount)
 
     const handleDismissMessage = () => {
         setSysMsg(null);
@@ -35,35 +34,30 @@ const Dashboard = ({selectedAccount, noWalletAddress}) => {
                     process.env.REACT_APP_REGISTRY_ADDRESS,
                 );
                 setContractRegistry(contractRegistry)
-                const tescs = currentAccount ? JSON.parse(localStorage.getItem(currentAccount.toLowerCase())) : []
-                if (tescs) {
-                    const result = contractRegistry ? await Promise.all(tescs.map(async ({ contractAddress, domain, expiry, isFavourite, own }) => ({ contractAddress: contractAddress, domain: domain, expiry: expiry, isFavourite: isFavourite, own: own, isInRegistry: await contractRegistry.methods.isContractRegistered(contractAddress).call() }))) : tescs
-                    setTescsIsInRegistry(result)
-                }
-                window.ethereum.on('accountsChanged', function (accounts) {
-                    if (accounts[0]) {
-                        setTescsIsInRegistry(JSON.parse(localStorage.getItem(accounts[0])))
-                        setCurrentAccount(accounts[0])
-                    }
+                const tescs = selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []
+                setTescsIsInRegistry(tescs)
+                window.ethereum.on('accountsChange', (accounts) => {
+                    const tescs = selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []
+                    setTescsIsInRegistry(tescs)
                 })
             }
             catch (error) {
-                const tescs = currentAccount ? JSON.parse(localStorage.getItem(currentAccount.toLowerCase())) : []
+                const tescs = selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []
                 setTescsIsInRegistry(tescs)
             }
         }
         init()
-    }, [currentAccount, web3.eth, web3.eth.Contract, web3.eth.net])
+    }, [selectedAccount, web3.eth, web3.eth.Contract, web3.eth.net])
 
 
     const renderRows = () => {
-        if (tescsIsInRegistry) return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isInRegistry, isFavourite, own }, index) => (
+        if (tescsIsInRegistry) return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isFavourite, own, isInRegistry }, index) => (
             <DashboardEntry key={contractAddress}
                 contractAddress={contractAddress}
                 domain={domain}
                 expiry={expiry}
                 isInRegistry={isInRegistry}
-                selectedAccount={currentAccount}
+                selectedAccount={selectedAccount}
                 contractRegistry={contractRegistry}
                 assignSysMsg={assignSysMsgFromEntry}
                 isFavourite={isFavourite}
@@ -76,15 +70,15 @@ const Dashboard = ({selectedAccount, noWalletAddress}) => {
     };
 
     const filterTescs = () => {
-        JSON.parse(localStorage.getItem(currentAccount.toLowerCase())) ? setTescsIsInRegistry(JSON.parse(localStorage.getItem(currentAccount.toLowerCase())).filter(tesc => tesc.isFavourite === true)) : setTescsIsInRegistry([])
+        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescsIsInRegistry(JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())).filter(tesc => tesc.isFavourite === true)) : setTescsIsInRegistry([])
     }
 
     const showAllTescs = () => {
-        JSON.parse(localStorage.getItem(currentAccount.toLowerCase())) ? setTescsIsInRegistry(JSON.parse(localStorage.getItem(currentAccount.toLowerCase()))) : setTescsIsInRegistry([])
+        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescsIsInRegistry(JSON.parse(localStorage.getItem(selectedAccount.toLowerCase()))) : setTescsIsInRegistry([])
     }
 
     const showOwnTescs = () => {
-        JSON.parse(localStorage.getItem(currentAccount.toLowerCase())) ? setTescsIsInRegistry(JSON.parse(localStorage.getItem(currentAccount.toLowerCase())).filter(tesc => tesc.own === true)) : setTescsIsInRegistry([])
+        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescsIsInRegistry(JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())).filter(tesc => tesc.own === true)) : setTescsIsInRegistry([])
     }
 
     return (
@@ -125,7 +119,7 @@ const Dashboard = ({selectedAccount, noWalletAddress}) => {
                 </Table.Header>
                 {(
                     <Table.Body>
-                        {noWalletAddress && !currentAccount ? null : renderRows()}
+                        {noWalletAddress && !selectedAccount ? null : renderRows()}
                     </Table.Body>
                 )}
             </Table>

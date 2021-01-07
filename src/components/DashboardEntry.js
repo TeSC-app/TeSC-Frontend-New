@@ -47,6 +47,7 @@ function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                             }));
                             setIsInRegistryNew(true)
+                            localStorage.setItem(selectedAccount.toLowerCase(), JSON.stringify(JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())).map(({ contractAddress, domain, expiry, isFavourite, own, isInRegistry }) => ({contractAddress, domain, expiry, isFavourite, own, isInRegistry:true}))))
                         });
                 } else {
                     assignSysMsg(buildNegativeMsg({
@@ -79,6 +80,7 @@ function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                             }));
                             setIsInRegistryNew(false)
+                            localStorage.setItem(selectedAccount.toLowerCase(), JSON.stringify(JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())).map(({ contractAddress, domain, expiry, isFavourite, own, isInRegistry }) => ({ contractAddress, domain, expiry, isFavourite, own, isInRegistry: false }))))
                         });
                 } else {
                     assignSysMsg(buildPositiveMsg({
@@ -105,7 +107,7 @@ function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry
             tescsIsInRegistry[index]['isFavourite'] = true
             setTescIsInFavourites(true)
         }
-        localStorage.setItem(selectedAccount, JSON.stringify(tescsIsInRegistry));
+        localStorage.setItem(selectedAccount.toLowerCase(), JSON.stringify(tescsIsInRegistry));
     }
 
     const renderRegistryButtons = () => {
