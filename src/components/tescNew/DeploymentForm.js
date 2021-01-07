@@ -25,6 +25,7 @@ import { buildNegativeMsg, buildPositiveMsg } from "../FeedbackMessage";
 import FilePicker from '../FilePicker';
 import FingerprintSegment from './FingerprintSegment';
 import DeploymentOutput from './DeploymentOutput';
+import TescDataTable from '../tesc/TescDataTable';
 
 import TeSC from '../../ethereum/build/contracts/ERCXXXImplementation.json';
 import {
@@ -68,6 +69,7 @@ const DeploymentForm = ({ initInputs }) => {
     const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
 
     const [contractAddress, setContractAddress] = useState(initInputs ? initInputs.contractAddress.toLowerCase() : '');
+    // const predictedContractAddress = useRef()
 
     const [domain, setDomain] = useState(initInputs && !initInputs.flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? initInputs.domain : '');
     const [expiry, setExpiry] = useState(initInputs ? initInputs.expiry : null);
@@ -387,18 +389,25 @@ const DeploymentForm = ({ initInputs }) => {
                 };
             case 2:
                 return {
-                    component: (<FingerprintSegment
-                        inputs={{ contractAddress, domain, expiry, flags, signature, fingerprint: initInputs ? initInputs.fingerprint : '' }}
-                        onGetFingerprint={handleGetFingerprint}
-                    />),
+                    component: (
+                        <FingerprintSegment
+                            inputs={{ contractAddress, domain, expiry, flags, signature, fingerprint: initInputs ? initInputs.fingerprint : '' }}
+                            onGetFingerprint={handleGetFingerprint}
+                            activated={!!fingerprint}
+                        />
+                    ),
                     next: true
                 };
             case 3:
                 return {
                     component: (
                         <Fragment>
+                            <TescDataTable
+                                data={{ contractAddress, domain: getCurrentDomain(), expiry, flags, signature, fingerprint }}
+                            />
                             {!!costEstimated && !!signature && (
                                 <div style={{ float: 'right', right: '100%' }}>
+                                    Cost estimation:
                                     <Label tag style={{ color: 'royalblue', }}>
                                         {costEstimated.toFixed(5)} <span style={{ fontSize: '0.75em' }}>ETH</span>
                                     </Label>
@@ -407,13 +416,6 @@ const DeploymentForm = ({ initInputs }) => {
                         </Fragment>
                     )
                 };
-            case 4:
-                return {
-                    component: (
-                        <Fragment>
-                        </Fragment>
-                    )
-                }
             default:
                 return 'Unknown step';
         }

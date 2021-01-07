@@ -12,8 +12,8 @@ import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
 import { buildNegativeMsg } from "../components/FeedbackMessage";
 import DeploymentForm from "../components/tescNew/DeploymentForm";
 import PageHeader from "../components/PageHeader";
+import TescDataTable from "../components/tesc/TescDataTable";
 
-window.axios = axios;
 
 const TeSCInspect = ({ location }) => {
     const { web3, showMessage } = useContext(AppContext);
@@ -33,13 +33,6 @@ const TeSCInspect = ({ location }) => {
     const [verifResult, setVerifResult] = useState(null);
 
 
-    const [tescIsInFavourites, setTescsIsInFavourites] = useState(false);
-    const [tescs, setTescs] = useState(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
-
-
-    useEffect(() => {
-        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
-    }, [web3.currentProvider.selectedAddress]);
 
     const fetchTescData = async (address) => {
         showMessage(null);
@@ -58,14 +51,7 @@ const TeSCInspect = ({ location }) => {
 
             setContractOwner((await contract.methods.owner().call()).toLowerCase());
 
-            //favourites
-            console.log(tescs);
-            for (const tesc of tescs) {
-                if (tesc.contractAddress === address) {
-                    setTescsIsInFavourites(tesc.isFavourite);
-                    break;
-                }
-            }
+
         } catch (err) {
             showMessage(buildNegativeMsg({
                 header: 'Unable to read data from smart contract',
@@ -74,30 +60,7 @@ const TeSCInspect = ({ location }) => {
         };
     };
 
-    const addRemoveFavourites = (address) => {
-        let tescsNew;
-        tescs ? tescsNew = tescs : tescsNew = [];
-        let found = false;
-        for (const tesc of tescsNew) {
-            if (tesc.contractAddress === address) {
-                found = true;
-                if (tesc.isFavourite) {
-                    tesc.isFavourite = false;
-                    setTescsIsInFavourites(false);
-                } else {
-                    tesc.isFavourite = true;
-                    setTescsIsInFavourites(true);
-                }
-                localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
-                break;
-            }
-        }
-        if (!found) {
-            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false });
-            localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
-            setTescsIsInFavourites(true);
-        }
-    };
+
 
     const verifyTesc = useCallback(async () => {
         if (isDomainHashed !== null && (!isDomainHashed || (isDomainHashed && plainDomainSubmitted))) {
@@ -170,21 +133,10 @@ const TeSCInspect = ({ location }) => {
 
     const handleCloseTescUpdate = (e) => {
         showMessage(null);
-        console.log("CONTRACT ADDRESS", contractAddress)
+        console.log("CONTRACT ADDRESS", contractAddress);
         fetchTescData(contractAddress);
     };
 
-    const renderFlagCheckboxes = () => {
-        return Object.entries(FLAG_POSITIONS).map(([flagName, i]) => (
-            <div key={i} style={{ paddingBottom: '5px' }}>
-                <Checkbox
-                    checked={!!flags.get(i)}
-                    label={flagName}
-                    disabled
-                />
-            </div>
-        ));
-    };
 
     return (
         <div>
@@ -212,57 +164,9 @@ const TeSCInspect = ({ location }) => {
                         domainFromChain && expiry && signature && flags &&
                         (
                             <Grid.Column width={10}>
-                                <Table basic='very' celled collapsing>
-                                    <Table.Body>
-                                        <Table.Row>
-                                            <Table.Cell>
-                                                <b>Domain</b>
-                                            </Table.Cell>
-                                            <Table.Cell>{domainFromChain}</Table.Cell>
-                                        </Table.Row>
-                                        <Table.Row>
-                                            <Table.Cell>
-                                                <b>Expiry</b>
-                                            </Table.Cell>
-                                            <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
-                                        </Table.Row>
-                                        <Table.Row>
-                                            <Table.Cell>
-                                                <b>Flags</b>
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                {renderFlagCheckboxes()}
-                                            </Table.Cell>
-                                        </Table.Row>
-                                        <Table.Row>
-                                            <Table.Cell>
-                                                <b>Signature</b>
-                                            </Table.Cell>
-                                            <Table.Cell style={{ wordBreak: 'break-all' }}>
-                                                {signature}
-                                            </Table.Cell>
-                                        </Table.Row>
-                                        <Table.Row>
-                                            <Table.Cell>
-                                                <b>Fingerprint</b>
-                                            </Table.Cell>
-                                            <Table.Cell style={{ wordBreak: 'break-all' }}>
-                                                {parseInt(fingerprint, 16) === 0 ? 'Not available' : fingerprint.substring(2)}
-                                            </Table.Cell>
-                                        </Table.Row>
-                                        <Table.Row>
-                                            <Table.Cell>
-                                                <b>Favourite</b>
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
-                                                    trigger={<Button icon="heart" className={tescIsInFavourites ? "favourite" : "notFavourite"}
-                                                        onClick={() => addRemoveFavourites(contractAddress)} />} />
-                                            </Table.Cell>
-                                        </Table.Row>
-                                    </Table.Body>
-
-                                </Table>
+                                <TescDataTable
+                                    data={{contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint}}
+                                />
 
                             </Grid.Column>
 
@@ -325,7 +229,7 @@ const TeSCInspect = ({ location }) => {
                         }
                     </Grid.Column>
                     {web3.currentProvider.selectedAddress === contractOwner && domainFromChain && expiry && signature && flags && (
-                        <Grid.Row style={{ width: `${1000/16}%` }}>
+                        <Grid.Row style={{ width: `${1000 / 16}%` }}>
                             <Grid.Column width={10} >
                                 <Modal
                                     closeIcon
