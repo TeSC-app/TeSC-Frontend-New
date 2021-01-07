@@ -19,21 +19,23 @@ const App = ({ web3 }) => {
     const [sysMsg, setSysMsg] = useState(null);
     const [screenBlocked, setScreenBlocked] = useState(false);
     const [noWalletAddress, setNoWalletAddress] = useState(true)
-    const [selectedAccount, setSelectedAccount] = useState(web3.currentProvider.selectedAddress)
+    const [selectedAccount, setSelectedAccount] = useState(null)
 
     useEffect(() => {
         const init = async () => {
+            if (window.ethereum) {
             const [selectedAccount,] = await web3.eth.getAccounts()
             setSelectedAccount(selectedAccount)
-            window.ethereum.on('accountsChanged', function (accounts) {
-                if (!accounts[0]) {
-                    setNoWalletAddress(true)
-                } else {
-                    setNoWalletAddress(false)
-                    setSelectedAccount(accounts[0])
-                }
-            })
-            window.ethereum.on('chainChanged', (_chainId) => window.location.reload());
+                window.ethereum.on('accountsChanged', function (accounts) {
+                    if (!accounts[0]) {
+                        setNoWalletAddress(true)
+                    } else {
+                        setNoWalletAddress(false)
+                        setSelectedAccount(accounts[0])
+                    }
+                })
+                window.ethereum.on('chainChanged', (_chainId) => window.location.reload());
+            }
         }
         init()
     })
