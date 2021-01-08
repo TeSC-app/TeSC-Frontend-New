@@ -1,17 +1,16 @@
 import React, { useContext, useState, useEffect } from 'react'
 import { Table, Icon } from 'semantic-ui-react';
-import SearchComponent from '../components/SearchComponent';
 import AppContext from '../appContext';
 import isValidDomain from 'is-valid-domain';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
 import moment from 'moment'
+import SearchBox from '../components/SearchBox';
 
 function RegistryInspect() {
     const { web3 } = useContext(AppContext);
     const [contractRegistry, setContractRegistry] = useState(undefined);
     const [domain, setDomain] = useState('')
-    const [searchDisabled, setSearchDisabled] = useState(true);
     const [entries, setEntries] = useState([])
     const [submitted, setSubmitted] = useState(false)
 
@@ -31,11 +30,10 @@ function RegistryInspect() {
         init()
     }, [web3.eth.Contract, web3.eth.net])
 
-    const handleInput = event => {
+    const handleInput = domain => {
         setSubmitted(false);
-        setDomain(event.target.value);
+        setDomain(domain);
         //check if domain is valid by using the library
-        isValidDomain(event.target.value) ? setSearchDisabled(false) : setSearchDisabled(true);
     }
 
     const handleSubmit = async () => {
@@ -96,7 +94,13 @@ function RegistryInspect() {
     return (
         <div>
             <h2>Explore Smart Contracts associated to a domain</h2>
-            <SearchComponent handleInput={handleInput} handleSubmit={handleSubmit} domain={domain} searchDisabled={searchDisabled} />
+            <SearchBox
+                onChange={handleInput}
+                onSubmit={handleSubmit}
+                value={domain}
+                placeholder='www.mysite.com'
+                label='Domain'
+                icon='search' />
             {renderTable()}
         </div>
     )

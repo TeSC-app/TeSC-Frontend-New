@@ -8,6 +8,7 @@ import {
     estimateRegistryAddCost
 } from '../utils/tesc';
 import moment from 'moment';
+import SearchBox from '../components/SearchBox';
 
 function RegistryAdd({ selectedAccount }) {
     const { web3 } = useContext(AppContext)
@@ -120,6 +121,10 @@ function RegistryAdd({ selectedAccount }) {
         setBlocking(false)
     };
 
+    const handleChange = (contractAddress) => {
+        setContractAddress(contractAddress)
+    }
+
     return (
         <div>
             <Form>
@@ -135,17 +140,11 @@ function RegistryAdd({ selectedAccount }) {
                         </Grid.Column>
                     </Grid.Row>
                 </Grid>
-                <Form.Group widths='equal'>
-                    <Form.Field>
-                        <label>Contract address</label>
-                        <Input
-                            value={contractAddress}
-                            placeholder='0x123456...'
-                            onChange={e => setContractAddress(e.target.value)}
-                        />
-                    </Form.Field>
-
-                </Form.Group>
+                <SearchBox
+                    onChange={handleChange}
+                    value={contractAddress}
+                    placeholder='0x123456...'
+                    label='Contract Address' />
                 {validInput ?
                     <Grid>
                         <Grid.Row>

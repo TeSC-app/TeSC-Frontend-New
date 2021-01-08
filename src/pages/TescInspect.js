@@ -200,6 +200,8 @@ const TeSCInspect = ({ location }) => {
                     onChange={handleChangeAddress}
                     placeholder='0x254dffcd3277c0b1660f6d42efbb754edababc2b'
                     onSubmit={handleSubmitAddress}
+                    label='TeSC Address'
+                    icon='search'
                 />
                 {/* <Form onSubmit={handleSubmitAddress}>
                     <Form.Field>
