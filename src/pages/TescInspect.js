@@ -194,29 +194,15 @@ const TeSCInspect = ({ location }) => {
             <PageHeader
                 title='Inspect TeSC'
             />
-            <div centered='true' style={{ marginBottom: '50px', marginTop: '50px', textAlign: 'center' }}>
                 <SearchBox 
                     value={contractAddress}
+                    label='TeSC Address'
                     onChange={handleChangeAddress}
                     placeholder='0x254dffcd3277c0b1660f6d42efbb754edababc2b'
                     onSubmit={handleSubmitAddress}
                     label='TeSC Address'
                     icon='search'
                 />
-                {/* <Form onSubmit={handleSubmitAddress}>
-                    <Form.Field>
-                        <Input
-                            value={contractAddress}
-                            label='TeSC Address'
-                            placeholder='0x254dffcd3277c0b1660f6d42efbb754edababc2b'
-                            onChange={e => { handleChangeAddress(e.target.value); }}
-                            size='large'
-                            icon='search'
-                            style={{ width: '75%' }}
-                        />
-                    </Form.Field>
-                </Form> */}
-            </div>
             <Grid style={{ margin: '0 auto' }}>
                 <Grid.Row>
                     {
