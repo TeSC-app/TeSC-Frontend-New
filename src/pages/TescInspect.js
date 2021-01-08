@@ -32,6 +32,8 @@ const TeSCInspect = ({ location }) => {
 
     const [verifResult, setVerifResult] = useState(null);
 
+    const [tescIsInFavourites, setTescsIsInFavourites] = useState(false);
+    const [tescs, setTescs] = useState(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
 
 
     const fetchTescData = async (address) => {
@@ -51,6 +53,15 @@ const TeSCInspect = ({ location }) => {
 
             setContractOwner((await contract.methods.owner().call()).toLowerCase());
 
+
+            //favourites
+            console.log(tescs);
+            for (const tesc of tescs) {
+                if (tesc.contractAddress === contractAddress) {
+                    setTescsIsInFavourites(tesc.isFavourite);
+                    break;
+                }
+            }
 
         } catch (err) {
             showMessage(buildNegativeMsg({
@@ -138,6 +149,35 @@ const TeSCInspect = ({ location }) => {
     };
 
 
+    useEffect(() => {
+        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
+    }, [web3.currentProvider.selectedAddress]);
+
+    const addRemoveFavourites = (address) => {
+        let tescsNew;
+        tescs ? tescsNew = tescs : tescsNew = [];
+        let found = false;
+        for (const tesc of tescsNew) {
+            if (tesc.contractAddress === address) {
+                found = true;
+                if (tesc.isFavourite) {
+                    tesc.isFavourite = false;
+                    setTescsIsInFavourites(false);
+                } else {
+                    tesc.isFavourite = true;
+                    setTescsIsInFavourites(true);
+                }
+                localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+                break;
+            }
+        }
+        if (!found) {
+            tescsNew.push({ contractAddress: address, domainFromChain, expiry, isFavourite: true, own: false });
+            localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+            setTescsIsInFavourites(true);
+        }
+    };
+
     return (
         <div>
             <PageHeader
@@ -165,14 +205,11 @@ const TeSCInspect = ({ location }) => {
                         (
                             <Grid.Column width={10}>
                                 <TescDataTable
-                                    data={{contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint}}
+                                    data={{ contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint }}
                                 />
-
                             </Grid.Column>
-
                         )
                     }
-
 
                     <Grid.Column width={6} centered='true'>
                         {domainFromChain && signature &&
@@ -228,13 +265,27 @@ const TeSCInspect = ({ location }) => {
                             )
                         }
                     </Grid.Column>
-                    {web3.currentProvider.selectedAddress === contractOwner && domainFromChain && expiry && signature && flags && (
-                        <Grid.Row style={{ width: `${1000 / 16}%` }}>
+
+                    <Grid.Row style={{ width: `${1000 / 16}%` }}>
+                        <Grid.Column width={6}>
+                            <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
+                                trigger={
+                                    <Button
+                                        basic
+                                        color='pink'
+                                        icon="heart" 
+                                        className={tescIsInFavourites ? "favourite" : "notFavourite"}
+                                        onClick={() => addRemoveFavourites(contractAddress)}
+                                        content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
+                                        style={{ float: 'right' }}
+                                    />} />
+                        </Grid.Column>
+                        {web3.currentProvider.selectedAddress === contractOwner && domainFromChain && expiry && signature && flags && (
                             <Grid.Column width={10} >
                                 <Modal
                                     closeIcon
                                     // dimmer='blurring'
-                                    trigger={<Button primary style={{ float: 'right' }}>Update TeSC</Button>}
+                                    trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
                                     onClose={handleCloseTescUpdate}
                                 >
                                     <Modal.Header>Update TLS-endorsed Smart Contract</Modal.Header>
@@ -245,8 +296,8 @@ const TeSCInspect = ({ location }) => {
                                     </Modal.Content>
                                 </Modal>
                             </Grid.Column>
-                        </Grid.Row>
-                    )}
+                        )}
+                    </Grid.Row>
                 </Grid.Row>
             </Grid>
         </div>

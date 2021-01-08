@@ -2,9 +2,10 @@ import React, { Fragment, useState, useRef } from 'react';
 import { Label, Button } from 'semantic-ui-react';
 
 
-const FilePicker = ({ label, onPickFile, isDisabled=false, }) => {
+const FilePicker = ({ label, onPickFile, isDisabled = false, input }) => {
     const fileInputRef = useRef(null);
-    const [fileName, setFileName] = useState('');
+    const [fileName, setFileName] = useState(input && input.fileName ? input.fileName : '');
+    const [content, setContent] = useState(input && input.content ? input.content : '');
 
     /* https://stackoverflow.com/a/56377153 */
     const handlePickFile = (event) => {
@@ -12,10 +13,11 @@ const FilePicker = ({ label, onPickFile, isDisabled=false, }) => {
 
         const reader = new FileReader();
         reader.onload = async (e) => {
-            setFileName(fileInputRef.current.files[0].name)
-            onPickFile(e.target.result)
+            setFileName(fileInputRef.current.files[0].name);
+            setContent(e.target.result);
+            onPickFile(fileInputRef.current.files[0].name, e.target.result);
         };
-        if(event.target.files.length > 0){
+        if (event.target.files.length > 0) {
             reader.readAsText(event.target.files[0]);
         }
     };
