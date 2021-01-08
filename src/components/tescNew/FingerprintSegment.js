@@ -1,5 +1,5 @@
 import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
-import { Form, Dimmer, Loader, Segment, Label } from 'semantic-ui-react';
+import { Form, Dimmer, Loader, Segment, Label, Popup, Icon } from 'semantic-ui-react';
 
 import axios from 'axios';
 import { Certificate } from '@fidm/x509';
@@ -39,7 +39,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
         setFingerprint('');
         setCertPEM('');
         onGetFingerprint('');
-        prevFingerprint.current = ''
+        prevFingerprint.current = '';
     }, [onGetFingerprint]);
 
     const handleChangeSliderState = async () => {
@@ -182,13 +182,24 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
 
     return (
         <div>
+            <p>
+                <b>Fingerprint </b>
+                <Popup
+                    inverted
+                    content='In case the certificate cannot be retrieved from your website e.g. the website is under maintenance, the verifier is still able to use the fingerprint of the TLS/SSL domain certificate to retrieve it from Certificate Transparancy. Therefore, this serves as a backup option for certificate retreival during the off-chain verification process. (optional)'
+                    trigger={<Icon name='question circle' />}
+                />
+                (optional) 
+            </p>
+
             <Form.Checkbox
                 toggle
                 checked={sliderState}
-                label='Use certificate fingerprint (optional)'
+                label='Use certificate fingerprint'
                 onClick={handleChangeSliderState}
                 disabled={!signature.current}
             />
+
             {sliderState && (fingerprint || filePickerDisplayed) &&
                 <Segment style={{ maxWidth: '100%', width: 'max-content' }}>
                     {filePickerDisplayed && !fingerprint && (<FilePicker label='Choose certificate' onPickFile={handlePickCert} isDisabled={!sliderState} />)}

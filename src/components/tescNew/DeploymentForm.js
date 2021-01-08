@@ -69,7 +69,7 @@ const DeploymentForm = ({ initInputs }) => {
 
     const [domain, setDomain] = useState(initInputs && !initInputs.flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? initInputs.domain : '');
     const [expiry, setExpiry] = useState(initInputs ? initInputs.expiry : null);
-    const [signature, setSignature] = useState(initInputs ? initInputs.signature : '');
+    const [signature, setSignature] = useState('');
     const [flags, setFlags] = useState(initInputs ? initInputs.flags : new BitSet('0x00'));
     const [domainHashed, setDomainHashed] = useState(initInputs && !!initInputs.flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? initInputs.domain : '');
     const [fingerprint, setFingerprint] = useState(!initInputs || parseInt(initInputs.fingerprint, 16) === 0 ? '' : initInputs.fingerprint);
@@ -131,11 +131,10 @@ const DeploymentForm = ({ initInputs }) => {
             signature
         );
     }, [contractAddress, expiry, flags, signature, fingerprint, getCurrentDomain, web3.eth.Contract]);
-    // 
+    
     const handleFlagsChange = (i) => {
         const newFlags = new BitSet(flags.flip(i).toString());
         setFlags(newFlags);
-        console.log(newFlags.toString());
         if (i === FLAG_POSITIONS.DOMAIN_HASHED) {
             if (domain) {
                 setDomainHashed(web3.utils.sha3(domain).substring(2));
@@ -153,7 +152,6 @@ const DeploymentForm = ({ initInputs }) => {
     };
 
     const handleExpiryChange = (date) => {
-        console.log('DATE EXPIRY', date);
         const mDate = moment.utc(date);
         mDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
         setExpiry(mDate.unix());
@@ -174,7 +172,6 @@ const DeploymentForm = ({ initInputs }) => {
                 if (signature) {
                     const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx();
                     if (!initInputs || contractAddress) {
-                        console.log(initInputs);
                         const estCost = await estimateDeploymentCost(web3, tx);
                         setCostEstimated(estCost);
                     }
@@ -189,7 +186,6 @@ const DeploymentForm = ({ initInputs }) => {
                 prevPrivateKeyPEM.current = prevPrivateKeyPEM;
             }
         })();
-        console.log('USE EFFECT', privateKeyPEM)
         if (privateKeyPEM) {
             computeSignature();
         }
@@ -202,7 +198,6 @@ const DeploymentForm = ({ initInputs }) => {
         setIsMetamaskOpen(true);
 
         showMessage(null);
-        setContractAddress('');
 
         const account = web3.currentProvider.selectedAddress;
         const curDomain = getCurrentDomain();
@@ -214,7 +209,9 @@ const DeploymentForm = ({ initInputs }) => {
                 await tx.send({ from: account, gas: '2000000' })
                     .on('receipt', async (txReceipt) => {
                         setCostPaid(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether'));
-                        setContractAddress(txReceipt.contractAddress);
+                        if(txReceipt.contractAddress) {
+                            setContractAddress();
+                        }
                         setActiveStep(activeStep + 1);
                         success = true;
 
@@ -261,7 +258,6 @@ const DeploymentForm = ({ initInputs }) => {
                     disabled={(!initInputs && (!domain)) || (initInputs && !isMatchedOriginalDomain)}
                     slider
                 />
-
         );
     };
 
@@ -285,7 +281,6 @@ const DeploymentForm = ({ initInputs }) => {
         navigator.clipboard.writeText(`echo -n ${futureContractAddress}.${getCurrentDomain()}.${expiry}.${flagsToBytes24Hex(flags)} | openssl dgst -RSA-SHA256 -sign <path_to_private_key_file> | openssl base64 | cat`);
     };
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     const classes = useStyles();
     const [activeStep, setActiveStep] = React.useState(0);
@@ -312,7 +307,7 @@ const DeploymentForm = ({ initInputs }) => {
                                     Domain  <span style={{ color: 'red' }}>*</span> 
                                     <Popup
                                         inverted
-                                        content='The domain to the website you would like to bind with this TLS-endorsed Smart Contract (required)'
+                                        content='The domain of the website you would like to bind with this TLS-endorsed Smart Contract (required)'
                                         trigger={<Icon name='question circle' />}
                                     />
                                 </label>
@@ -335,7 +330,7 @@ const DeploymentForm = ({ initInputs }) => {
                                     Expiry <span style={{ color: 'red' }}>*</span>
                                     <Popup
                                         inverted 
-                                        content='The expiry date, on which this TeSC is expired, stored as Unix timestamp'
+                                        content='The expiry date, on which this TeSC is expired, stored as Unix timestamp (required)'
                                         trigger={<Icon name='question circle' />}
                                     />
                                 </label>
@@ -359,7 +354,7 @@ const DeploymentForm = ({ initInputs }) => {
                             </Form.Field>
                         </Fragment>
                     ),
-                    completed: !!getCurrentDomain() && !!expiry,
+                    completed: initInputs? (getCurrentDomain() !== initInputs.domain) || (expiry !== initInputs.expiry) : !!getCurrentDomain() && !!expiry ,
                     reachable: true
                 };
             case 1:
@@ -370,13 +365,13 @@ const DeploymentForm = ({ initInputs }) => {
                                 <b>Signature</b> <span style={{ color: 'red' }}>*</span>
                                 <Popup
                                     inverted 
-                                    content='Using the private key of the website certificate, you can sign the Claim created in the last step.'
+                                    content='Using the private key of the website certificate, you can sign the Claim created in the last step (required)'
                                     trigger={<Icon name='question circle' />}
                                 />
                             </p>
                             <Form.Field>
                                 <Radio
-                                    label="Compute the signature automatically using private key of TLS/SSL certifiticate"
+                                    label="Compute the signature automatically by picking TLS/SSL private key file"
                                     name='radioGroup'
                                     value='auto'
                                     checked={sigInputType === 'auto'}
@@ -385,7 +380,7 @@ const DeploymentForm = ({ initInputs }) => {
                             </Form.Field>
                             <Form.Field>
                                 <Radio
-                                    label='Compute the signature manually'
+                                    label='Compute the signature manually using command line'
                                     name='radioGroup'
                                     value='manual'
                                     checked={sigInputType === 'manual'}
@@ -420,7 +415,7 @@ const DeploymentForm = ({ initInputs }) => {
                             {sigInputType === 'manual' && (
                                 <Form.Field>
                                     <p style={{ wordBreak: 'break-all' }}>
-                                        Please use this command line to generate the signature in your terminal:
+                                        Please use this command line to generate the signature in your terminal, then copy and paste it into the text box below:
                                         
                                         <br />
                                         <br />
@@ -452,7 +447,7 @@ const DeploymentForm = ({ initInputs }) => {
                         </Fragment>
                     ),
                     completed: !!signature,
-                    reachable: !!signature || getStepContent(0).completed
+                    reachable: initInputs? getStepContent(0).completed : !!signature || getStepContent(0).completed 
                 };
             case 2:
                 return {
@@ -482,13 +477,12 @@ const DeploymentForm = ({ initInputs }) => {
                             )}
                         </Fragment>
                     ),
-                    completed: !!contractAddress,
-                    reachable: !!contractAddress || getStepContent(1).completed
+                    completed: !!costPaid,
+                    reachable: getStepContent(1).completed || !!costPaid  
                 };
             case 4:
                 return {
-                    component: (
-                        // { contractAddress && !initInputs && 
+                    component: costPaid && (
                         <Grid.Row style={{ minWidth: 'max-content', paddingTop: '2%' }}>
                             <DeploymentOutput contractAddress={contractAddress} costPaid={costPaid} />
                         </Grid.Row>
@@ -517,6 +511,7 @@ const DeploymentForm = ({ initInputs }) => {
     };
 
     const handleNext = () => {
+        console.log('fingerprint', fingerprint)
         const newActiveStep =
             isLastStep() && !allStepsCompleted()
                 ? // It's the last step, but not all steps have been completed
@@ -537,7 +532,6 @@ const DeploymentForm = ({ initInputs }) => {
 
     const handleReset = () => {
         setActiveStep(0);
-        // setCompleted(new Set());
         setContractAddress('');
         setFutureContractAddress('');
         setDomain('');
@@ -590,7 +584,7 @@ const DeploymentForm = ({ initInputs }) => {
                             </Form>
 
                             <div className={classes.actionsContainer} style={{ float: 'right', height: 'min-content', padding: '1.5% 0' }}>
-                                {contractAddress && (
+                                {costPaid && !initInputs && (
                                     <BtnSuir
                                         basic
                                         onClick={handleReset}
@@ -608,7 +602,7 @@ const DeploymentForm = ({ initInputs }) => {
                                     Back
                                 </BtnSuir>
 
-                                {((activeStep < 3 && !contractAddress) || (activeStep <= 3 && contractAddress)) && (
+                                {((activeStep < 3 && !costPaid) || (activeStep <= 3 && costPaid)) && (
                                     <BtnSuir
                                         basic
                                         color="purple"
@@ -618,7 +612,7 @@ const DeploymentForm = ({ initInputs }) => {
                                         Next
                                     </BtnSuir>
                                 )}
-                                {activeStep === 3 && !contractAddress && (
+                                {activeStep === 3 && !costPaid && (
                                     <BtnSuir
                                         icon='play circle'
                                         basic
