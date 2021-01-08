@@ -10,6 +10,7 @@ import AppContext from '../appContext';
 import { FLAG_POSITIONS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc';
 import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
 import { buildNegativeMsg } from "../components/FeedbackMessage";
+import SearchBox from "../components/SearchBox";
 import DeploymentForm from "../components/tescNew/DeploymentForm";
 import PageHeader from "../components/PageHeader";
 import TescDataTable from "../components/tesc/TescDataTable";
@@ -194,7 +195,13 @@ const TeSCInspect = ({ location }) => {
                 title='Inspect TeSC'
             />
             <div centered='true' style={{ marginBottom: '50px', marginTop: '50px', textAlign: 'center' }}>
-                <Form onSubmit={handleSubmitAddress}>
+                <SearchBox 
+                    value={contractAddress}
+                    onChange={handleChangeAddress}
+                    placeholder='0x254dffcd3277c0b1660f6d42efbb754edababc2b'
+                    onSubmit={handleSubmitAddress}
+                />
+                {/* <Form onSubmit={handleSubmitAddress}>
                     <Form.Field>
                         <Input
                             value={contractAddress}
@@ -206,7 +213,7 @@ const TeSCInspect = ({ location }) => {
                             style={{ width: '75%' }}
                         />
                     </Form.Field>
-                </Form>
+                </Form> */}
             </div>
             <Grid style={{ margin: '0 auto' }}>
                 <Grid.Row>

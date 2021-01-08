@@ -2,7 +2,7 @@ import React from 'react';
 import { Input, Form } from 'semantic-ui-react';
 
 
-const SearchBox = ({ value, onChange, placeholder, onSubmit }) => {
+const SearchBox = ({ value, onChange, placeholder, onSubmit }) => (
     <Form onSubmit={onSubmit}>
         <Form.Field>
             <Input
@@ -15,8 +15,7 @@ const SearchBox = ({ value, onChange, placeholder, onSubmit }) => {
                 style={{ width: '75%' }}
             />
         </Form.Field>
-    </Form>;
-
-};
+    </Form>
+);
 
 export default SearchBox;
