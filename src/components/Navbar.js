@@ -34,7 +34,7 @@ const Navbar = ({ handleCollapseSidebar, noWalletAddress, selectedAccount }) => 
                 />
                 <Menu.Menu position='right'>
                     <Label className='metamaskLabel'>
-                        <Image src='images/metamask.png' size='tiny' /> {renderMetaMaskLabel()}
+                        <Image src='../images/metamask.png' size='tiny' /> {renderMetaMaskLabel()}
                     </Label>
                 </Menu.Menu>
             </Menu>
