@@ -194,7 +194,6 @@ const TeSCInspect = ({ location }) => {
             <PageHeader
                 title='Inspect TeSC'
             />
-            <div centered='true' style={{ marginBottom: '50px', marginTop: '50px', textAlign: 'center' }}>
                 <SearchBox 
                     value={contractAddress}
                     label='TeSC Address'
@@ -202,7 +201,6 @@ const TeSCInspect = ({ location }) => {
                     placeholder='0x254dffcd3277c0b1660f6d42efbb754edababc2b'
                     onSubmit={handleSubmitAddress}
                 />
-            </div>
             <Grid style={{ margin: '0 auto' }}>
                 <Grid.Row>
                     {
