@@ -266,39 +266,42 @@ const TeSCInspect = ({ location }) => {
                         }
                     </Grid.Column>
 
-                    <Grid.Row style={{ width: `${1000 / 16}%` }}>
-                        <Grid.Column width={6}>
-                            <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
-                                trigger={
-                                    <Button
-                                        basic
-                                        color='pink'
-                                        icon="heart" 
-                                        className={tescIsInFavourites ? "favourite" : "notFavourite"}
-                                        onClick={() => addRemoveFavourites(contractAddress)}
-                                        content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
-                                        style={{ float: 'right' }}
-                                    />} />
-                        </Grid.Column>
-                        {web3.currentProvider.selectedAddress === contractOwner && domainFromChain && expiry && signature && flags && (
-                            <Grid.Column width={10} >
-                                <Modal
-                                    closeIcon
-                                    // dimmer='blurring'
-                                    trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
-                                    onClose={handleCloseTescUpdate}
-                                >
-                                    <Modal.Header>Update TLS-endorsed Smart Contract</Modal.Header>
-                                    <Modal.Content>
-                                        <DeploymentForm
-                                            initInputs={{ contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint: fingerprint.substring(2) }}
-                                        />
-                                    </Modal.Content>
-                                </Modal>
+                    {domainFromChain && expiry && signature && flags && (
+                        <Grid.Row style={{ width: `${1000 / 16}%` }}>
+                            {web3.currentProvider.selectedAddress === contractOwner && (
+                                <Grid.Column width={10} >
+                                    <Modal
+                                        closeIcon
+                                        // dimmer='blurring'
+                                        trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
+                                        onClose={handleCloseTescUpdate}
+                                    >
+                                        <Modal.Header>Update TLS-endorsed Smart Contract</Modal.Header>
+                                        <Modal.Content>
+                                            <DeploymentForm
+                                                initInputs={{ contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint: fingerprint.substring(2) }}
+                                            />
+                                        </Modal.Content>
+                                    </Modal>
+                                </Grid.Column>
+                            )}
+                            <Grid.Column width={6}>
+                                <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
+                                    trigger={
+                                        <Button
+                                            basic
+                                            color='pink'
+                                            icon="heart"
+                                            className={tescIsInFavourites ? "favourite" : "notFavourite"}
+                                            onClick={() => addRemoveFavourites(contractAddress)}
+                                            content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
+                                            style={{ float: 'right' }}
+                                        />} />
                             </Grid.Column>
-                        )}
-                    </Grid.Row>
+                        </Grid.Row>
+                    )}
                 </Grid.Row>
+
             </Grid>
         </div>
     );

@@ -61,7 +61,7 @@ const useStyles = makeStyles((theme) => ({
 
 
 function getSteps() {
-    return ['Create Claim', 'Create Signature', 'Add Certificate Fingerprint', 'Review and Confirm', 'Done'];
+    return ['Create Claim', 'Create Signature', 'Add Certificate Fingerprint', 'Review and Confirm', 'Receipt'];
 }
 
 
@@ -212,7 +212,7 @@ const DeploymentForm = ({ initInputs }) => {
         const account = web3.currentProvider.selectedAddress;
         const curDomain = getCurrentDomain();
 
-
+        let success = false;
         if (curDomain && expiry && signature) {
             try {
                 const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx();
@@ -221,6 +221,7 @@ const DeploymentForm = ({ initInputs }) => {
                         setCostPaid(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether'));
                         setContractAddress(txReceipt.contractAddress);
                         setActiveStep(activeStep + 1);
+                        success = true;
 
                         showMessage(buildPositiveMsg({
                             header: 'Smart Contract successfully deployed',
@@ -249,21 +250,23 @@ const DeploymentForm = ({ initInputs }) => {
         }
         handleBlockScreen(false);
         setIsMetamaskOpen(false);
-        if (!isLastStep()) {
+        if (success) {
             handleNext();
         }
     };
 
     const renderFlagCheckboxes = () => {
         return Object.entries(FLAG_POSITIONS).filter(([flagName, i]) => i === 0).map(([flagName, i]) =>
-            <Form.Checkbox
-                key={i}
-                checked={!!flags.get(i)}
-                // label={flagName}
-                label='Hash domain'
-                onClick={() => handleFlagsChange(i)}
-                disabled={(!initInputs && (!domain)) || (initInputs && !isMatchedOriginalDomain)}
-            />
+                <Form.Checkbox
+                    key={i}
+                    checked={!!flags.get(i)}
+                    // label={flagName}
+                    label='Hash domain'
+                    onClick={() => handleFlagsChange(i)}
+                    disabled={(!initInputs && (!domain)) || (initInputs && !isMatchedOriginalDomain)}
+                    slider
+                />
+
         );
     };
 
@@ -299,8 +302,25 @@ const DeploymentForm = ({ initInputs }) => {
                 return {
                     component: (
                         <Fragment>
+                        {/* <div style={{fontSize:'1.2em'}}>
+                            <p>{'In this step, you could provide information to compute the claim of the form <contract_address>.<domain>.<expiry><flags>'}</p>
+                            <ul>
+                                <li>{`contract_address: This will be automatically computed in advanced for you using the current nonce of your wallet`}</li>
+                                <li>{`domain: The domain to the website you would like to bind with this TLS-endorsed Smart Contract`}</li>
+                                <li>{`expiry: The expiry date, on which this TeSC is expired, stored as Unix timestamp`}</li>
+                                <li>{`flags: Currently only we only support a single flag to hash the provided domain input for your privacy`}</li>
+                            </ul>
+                        </div> */}
+
                             <Form.Field>
-                                <label>Domain  <span style={{ color: 'red' }}>*</span></label>
+                                <label>
+                                    Domain  <span style={{ color: 'red' }}>*</span> 
+                                    <Popup
+                                        inverted
+                                        content='The domain to the website you would like to bind with this TLS-endorsed Smart Contract (required)'
+                                        trigger={<Icon name='question circle' />}
+                                    />
+                                </label>
                                 <Input
                                     value={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain}
                                     disabled={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)}
@@ -316,7 +336,14 @@ const DeploymentForm = ({ initInputs }) => {
 
 
                             <Form.Field>
-                                <label>Expiry <span style={{ color: 'red' }}>*</span></label>
+                                <label>
+                                    Expiry <span style={{ color: 'red' }}>*</span>
+                                    <Popup
+                                        inverted 
+                                        content='The expiry date, on which this TeSC is expired, stored as Unix timestamp'
+                                        trigger={<Icon name='question circle' />}
+                                    />
+                                </label>
                                 <DayPickerInput
                                     value={expiry ? formatDate(new Date(expiry * 1000), 'DD/MM/YYYY') : null}
                                     onBlur={() => computeSignature()}
@@ -344,7 +371,14 @@ const DeploymentForm = ({ initInputs }) => {
                 return {
                     component: (
                         <Fragment>
-                            <Header as='h4'>Signature <span style={{ color: 'red' }}>*</span></Header>
+                            <p>
+                                <b>Signature</b> <span style={{ color: 'red' }}>*</span>
+                                <Popup
+                                    inverted 
+                                    content='Using the private key of the website certificate, you can sign the Claim created in the last step.'
+                                    trigger={<Icon name='question circle' />}
+                                />
+                            </p>
                             <Form.Field>
                                 <Radio
                                     label="Compute the signature automatically using private key of TLS/SSL certifiticate"
@@ -423,7 +457,7 @@ const DeploymentForm = ({ initInputs }) => {
                         </Fragment>
                     ),
                     completed: !!signature,
-                    reachable: !!signature || getStepContent(0).reachable
+                    reachable: !!signature || getStepContent(0).completed
                 };
             case 2:
                 return {
@@ -454,7 +488,7 @@ const DeploymentForm = ({ initInputs }) => {
                         </Fragment>
                     ),
                     completed: !!contractAddress,
-                    reachable: !!contractAddress || getStepContent(2).reachable
+                    reachable: !!contractAddress || getStepContent(1).completed
                 };
             case 4:
                 return {
