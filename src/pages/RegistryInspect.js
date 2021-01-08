@@ -3,7 +3,7 @@ import { Table, Icon } from 'semantic-ui-react';
 import SearchComponent from '../components/SearchComponent';
 import AppContext from '../appContext';
 import isValidDomain from 'is-valid-domain';
-import TeSCRegistryImplementation from '../ethereum/build/contracts/TeSCRegistryImplementation.json';
+import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
 import moment from 'moment'
 
@@ -18,11 +18,9 @@ function RegistryInspect() {
     useEffect(() => {
         const init = async () => {
             try {
-                const networkId = await web3.eth.net.getId();
-                const deployedNetworkRegistry = TeSCRegistryImplementation.networks[networkId];
                 const contractRegistry = new web3.eth.Contract(
-                    TeSCRegistryImplementation.abi,
-                    deployedNetworkRegistry && deployedNetworkRegistry.address,
+                    TeSCRegistry.abi,
+                    process.env.REACT_APP_REGISTRY_ADDRESS,
                 );
                 setContractRegistry(contractRegistry);
             }

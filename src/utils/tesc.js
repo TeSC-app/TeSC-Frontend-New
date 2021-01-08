@@ -62,19 +62,17 @@ export const hexStringToBitSet = (hexStr) => {
 
 
 export const estimateDeploymentCost = async (web3, tx) => {
-    console.log("TX", tx)
-
     const gasEstimation = await tx.estimateGas({ from: web3.currentProvider.selectedAddress, gas: '2000000' });
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 };
 
-export const estimateRegistryAddCost = async (web3, contractRegistry, domain, contractTeSCAddress) => {
-    const gasEstimation = await contractRegistry.methods.add(domain, contractTeSCAddress).estimateGas({ from: web3.currentProvider.selectedAddress, gas: '2000000' });
+export const estimateRegistryAddCost = async (web3, selectedAccount, contractRegistry, domain, contractTeSCAddress) => {
+    const gasEstimation = await contractRegistry.methods.add(domain, contractTeSCAddress).estimateGas({ from: selectedAccount, gas: '2000000' });
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 }
 
-export const estimateRegistryRemoveCost = async (web3, contractRegistry, domain, contractTeSCAddress) => {
-    const gasEstimation = await contractRegistry.methods.remove(domain, contractTeSCAddress).estimateGas({ from: web3.currentProvider.selectedAddress, gas: '2000000' });
+export const estimateRegistryRemoveCost = async (web3, selectedAccount, contractRegistry, domain, contractTeSCAddress) => {
+    const gasEstimation = await contractRegistry.methods.remove(domain, contractTeSCAddress).estimateGas({ from: selectedAccount, gas: '2000000' });
     console.log(`Gas estimation is ${gasEstimation}`)
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 }
@@ -85,7 +83,7 @@ export const storeTesc = ({ account, claim }) => {
     if (!tescs) {
         tescs = [];
     }
-    tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true });
+    tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, isInRegistry: false });
     localStorage.setItem(account, JSON.stringify(tescs));
 };
 

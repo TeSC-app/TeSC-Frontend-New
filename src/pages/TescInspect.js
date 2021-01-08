@@ -13,6 +13,7 @@ import { buildNegativeMsg } from "../components/FeedbackMessage";
 import DeploymentForm from "../components/tescNew/DeploymentForm";
 import PageHeader from "../components/PageHeader";
 import TescDataTable from "../components/tesc/TescDataTable";
+import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 
 
 const TeSCInspect = ({ location }) => {
@@ -34,7 +35,17 @@ const TeSCInspect = ({ location }) => {
 
     const [tescIsInFavourites, setTescsIsInFavourites] = useState(false);
     const [tescs, setTescs] = useState(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
+    const [contractRegistry, setContractRegistry] = useState(null)
 
+
+    useEffect(() => {
+        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
+        const contractRegistry = new web3.eth.Contract(
+            TeSCRegistry.abi,
+            process.env.REACT_APP_REGISTRY_ADDRESS,
+        );
+        setContractRegistry(contractRegistry)
+    }, [web3.currentProvider.selectedAddress, web3.eth.Contract]);
 
     const fetchTescData = async (address) => {
         showMessage(null);
@@ -71,7 +82,31 @@ const TeSCInspect = ({ location }) => {
         };
     };
 
-
+    const addRemoveFavourites = async (address) => {
+        let tescsNew;
+        tescs ? tescsNew = tescs : tescsNew = [];
+        let found = false;
+        for (const tesc of tescsNew) {
+            if (tesc.contractAddress === address) {
+                found = true;
+                if (tesc.isFavourite) {
+                    tesc.isFavourite = false;
+                    setTescsIsInFavourites(false);
+                } else {
+                    tesc.isFavourite = true;
+                    setTescsIsInFavourites(true);
+                }
+                localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+                break;
+            }
+        }
+        if (!found) {
+            const isInRegistry = contractRegistry ? await contractRegistry.methods.isContractRegistered(address).call() : false
+            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false, isInRegistry });
+            localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+            setTescsIsInFavourites(true);
+        }
+    };
 
     const verifyTesc = useCallback(async () => {
         if (isDomainHashed !== null && (!isDomainHashed || (isDomainHashed && plainDomainSubmitted))) {
@@ -152,31 +187,6 @@ const TeSCInspect = ({ location }) => {
     useEffect(() => {
         setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
     }, [web3.currentProvider.selectedAddress]);
-
-    const addRemoveFavourites = (address) => {
-        let tescsNew;
-        tescs ? tescsNew = tescs : tescsNew = [];
-        let found = false;
-        for (const tesc of tescsNew) {
-            if (tesc.contractAddress === address) {
-                found = true;
-                if (tesc.isFavourite) {
-                    tesc.isFavourite = false;
-                    setTescsIsInFavourites(false);
-                } else {
-                    tesc.isFavourite = true;
-                    setTescsIsInFavourites(true);
-                }
-                localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
-                break;
-            }
-        }
-        if (!found) {
-            tescsNew.push({ contractAddress: address, domainFromChain, expiry, isFavourite: true, own: false });
-            localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
-            setTescsIsInFavourites(true);
-        }
-    };
 
     return (
         <div>
@@ -291,7 +301,7 @@ const TeSCInspect = ({ location }) => {
                                         <Button
                                             basic
                                             color='pink'
-                                            icon="heart"
+                                            icon={tescIsInFavourites? 'heart' : 'heart outline'}
                                             className={tescIsInFavourites ? "favourite" : "notFavourite"}
                                             onClick={() => addRemoveFavourites(contractAddress)}
                                             content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}

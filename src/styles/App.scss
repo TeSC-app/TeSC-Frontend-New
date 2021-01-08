@@ -127,12 +127,32 @@ $navbar-height: 48.563px;
   }
 }
 
-.favourite {
+.favouriteDashboard {
   color: red !important;
-  // background-color: white !important;
+  background-color: white !important;
 }
 
-.notFavourite {
+.notFavouriteDashboard {
   color: grey !important;
-  // background-color: white !important;
+  background-color: white !important;
+}
+
+.metamaskLabel {
+  background-color: rgba(0,0,0,0) !important;
+  color: white !important;
+  display: flex !important;
+  align-items: center;
+}
+
+.connectMetaMask {
+  color: inherit !important;
+  transition: .1s opacity ease !important;
+  background-color: rgba(0,0,0,0) !important;
+  padding: 0 !important;
+  font-weight: normal !important;
+  font-size: small;
+}
+
+.connectMetaMask:hover {
+  color:rgba(216, 213, 213, 0.3) !important
 }

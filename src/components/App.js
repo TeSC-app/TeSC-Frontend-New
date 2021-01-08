@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Route } from 'react-router-dom';
 import { Container, Loader, Dimmer } from 'semantic-ui-react';
 import 'semantic-ui-css/semantic.min.css';
@@ -18,6 +18,27 @@ const App = ({ web3 }) => {
 
     const [sysMsg, setSysMsg] = useState(null);
     const [screenBlocked, setScreenBlocked] = useState(false);
+    const [noWalletAddress, setNoWalletAddress] = useState(true)
+    const [selectedAccount, setSelectedAccount] = useState(null)
+
+    useEffect(() => {
+        const init = async () => {
+            if (window.ethereum) {
+            const [selectedAccount,] = await web3.eth.getAccounts()
+            setSelectedAccount(selectedAccount)
+                window.ethereum.on('accountsChanged', function (accounts) {
+                    if (!accounts[0]) {
+                        setNoWalletAddress(true)
+                    } else {
+                        setNoWalletAddress(false)
+                        setSelectedAccount(accounts[0])
+                    }
+                })
+                window.ethereum.on('chainChanged', (_chainId) => window.location.reload());
+            }
+        }
+        init()
+    })
 
     const handleDismissMessage = () => {
         setSysMsg(null);
@@ -50,15 +71,19 @@ const App = ({ web3 }) => {
                 handleDismissMessage
             }}
             >
-                <Navbar handleCollapseSidebar={handleCollapseSidebar} />
+                <Navbar noWalletAddress={noWalletAddress} selectedAccount={selectedAccount} handleCollapseSidebar={handleCollapseSidebar} />
                 <div className='layout'>
                     <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} />
                     <Container className="page">
-                        <Route path="/" component={Dashboard} exact />
+                        <Route path="/" exact render={props => {
+                            return <Dashboard {...props} selectedAccount={selectedAccount} noWalletAddress={noWalletAddress} />
+                        }} />
                         <Route path="/tesc/new" component={TeSCNew} exact />
                         <Route path="/tesc/inspect" component={TeSCInspect} exact />
                         <Route path="/registry/inspect" component={RegistryInspect} exact />
-                        <Route path="/registry/add" component={RegistryAdd} exact />
+                        <Route path="/registry/add" exact render={props => {
+                            return <RegistryAdd {...props} selectedAccount={selectedAccount} />
+                        }} />
                     </Container>
                 </div>
                 <Dimmer active={screenBlocked}>
