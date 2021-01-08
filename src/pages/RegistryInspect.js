@@ -1,7 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react'
 import { Table, Icon } from 'semantic-ui-react';
 import AppContext from '../appContext';
-import isValidDomain from 'is-valid-domain';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
 import moment from 'moment'
@@ -100,7 +99,8 @@ function RegistryInspect() {
                 value={domain}
                 placeholder='www.mysite.com'
                 label='Domain'
-                icon='search' />
+                icon='search'
+                validInput={true} />
             {renderTable()}
         </div>
     )
