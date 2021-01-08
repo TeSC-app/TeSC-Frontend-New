@@ -12,6 +12,7 @@ import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
 import { buildNegativeMsg } from "../components/FeedbackMessage";
 import DeploymentForm from "../components/tescNew/DeploymentForm";
 import PageHeader from "../components/PageHeader";
+import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 
 window.axios = axios;
 
@@ -35,11 +36,17 @@ const TeSCInspect = ({ location }) => {
 
     const [tescIsInFavourites, setTescsIsInFavourites] = useState(false);
     const [tescs, setTescs] = useState(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
+    const [contractRegistry, setContractRegistry] = useState(null)
 
 
     useEffect(() => {
         setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
-    }, [web3.currentProvider.selectedAddress]);
+        const contractRegistry = new web3.eth.Contract(
+            TeSCRegistry.abi,
+            process.env.REACT_APP_REGISTRY_ADDRESS,
+        );
+        setContractRegistry(contractRegistry)
+    }, [web3.currentProvider.selectedAddress, web3.eth.Contract]);
 
     const fetchTescData = async (address) => {
         showMessage(null);
@@ -74,7 +81,7 @@ const TeSCInspect = ({ location }) => {
         };
     };
 
-    const addRemoveFavourites = (address) => {
+    const addRemoveFavourites = async (address) => {
         let tescsNew;
         tescs ? tescsNew = tescs : tescsNew = [];
         let found = false;
@@ -93,7 +100,8 @@ const TeSCInspect = ({ location }) => {
             }
         }
         if (!found) {
-            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false });
+            const isInRegistry = contractRegistry ? await contractRegistry.methods.isContractRegistered(address).call() : false
+            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false, isInRegistry });
             localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
             setTescsIsInFavourites(true);
         }
