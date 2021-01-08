@@ -30,27 +30,29 @@ function RegistryAdd({ selectedAccount }) {
                 process.env.REACT_APP_REGISTRY_ADDRESS,
             );
             setContractRegistry(contractRegistry)
-            window.ethereum.on('accountsChanged', async (accounts) => {
-                try {
-                    const tescContract = new web3.eth.Contract(ERCXXXImplementation.abi, contractAddress)
-                    const tescContractOwner = await tescContract.methods.owner.call().call()
-                    setTescContractOwner(tescContractOwner)
-                    const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
-                    setIsContractRegistered(isContractRegistered)
-                    const tescDomain = await tescContract.methods.getDomain().call()
-                    setTescDomain(tescDomain)
-                    const tescExpiry = await tescContract.methods.getExpiry().call()
-                    setExpiry(tescExpiry)
-                    if (tescDomain && tescContractOwner && tescContractOwner === accounts[0] && !isContractRegistered) {
-                        setValidInput(true)
-                        const estCostAdd = await estimateRegistryAddCost(web3, accounts[0], contractRegistry, tescDomain, contractAddress);
-                        setCostEstimatedAdd(estCostAdd);
+            if (window.ethereum) {
+                window.ethereum.on('accountsChanged', async (accounts) => {
+                    try {
+                        const tescContract = new web3.eth.Contract(ERCXXXImplementation.abi, contractAddress)
+                        const tescContractOwner = await tescContract.methods.owner.call().call()
+                        setTescContractOwner(tescContractOwner)
+                        const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
+                        setIsContractRegistered(isContractRegistered)
+                        const tescDomain = await tescContract.methods.getDomain().call()
+                        setTescDomain(tescDomain)
+                        const tescExpiry = await tescContract.methods.getExpiry().call()
+                        setExpiry(tescExpiry)
+                        if (tescDomain && tescContractOwner && tescContractOwner === accounts[0] && !isContractRegistered) {
+                            setValidInput(true)
+                            const estCostAdd = await estimateRegistryAddCost(web3, accounts[0], contractRegistry, tescDomain, contractAddress);
+                            setCostEstimatedAdd(estCostAdd);
+                        }
+                    } catch (error) {
+                        //console.log(error)
+                        setValidInput(false)
                     }
-                } catch (error) {
-                    //console.log(error)
-                    setValidInput(false)
-                }
-            })
+                })
+            }
             try {
                 const tescContract = new web3.eth.Contract(ERCXXXImplementation.abi, contractAddress)
                 const tescContractOwner = await tescContract.methods.owner.call().call()
@@ -144,7 +146,7 @@ function RegistryAdd({ selectedAccount }) {
                     </Form.Field>
 
                 </Form.Group>
-                { validInput ?
+                {validInput ?
                     <Grid>
                         <Grid.Row>
                             <Grid.Column>
