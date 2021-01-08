@@ -22,6 +22,7 @@ const TescDataTable = ({ data }) => {
                     checked={!!flags.get(i)}
                     label={flagName}
                     disabled
+                    slider
                 />
             </div>
         ));
