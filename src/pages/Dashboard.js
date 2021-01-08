@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useRef } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import 'react-day-picker/lib/style.css';
 import { Table, Grid, Dropdown, Dimmer, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
@@ -35,7 +35,6 @@ const Dashboard = ({selectedAccount, noWalletAddress}) => {
                     process.env.REACT_APP_REGISTRY_ADDRESS,
                 );
                 setContractRegistry(contractRegistry)
-                console.log('process.env.REACT_APP_REGISTRY_ADDRESS', process.env.REACT_APP_REGISTRY_ADDRESS)
                 const tescs = selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []
                 setTescsIsInRegistry(tescs)
                 window.ethereum.on('accountsChange', (accounts) => {

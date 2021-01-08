@@ -200,6 +200,8 @@ const TeSCInspect = ({ location }) => {
                     onChange={handleChangeAddress}
                     placeholder='0x254dffcd3277c0b1660f6d42efbb754edababc2b'
                     onSubmit={handleSubmitAddress}
+                    icon='search'
+                    validInput={true}
                 />
             <Grid style={{ margin: '0 auto' }}>
                 <Grid.Row>

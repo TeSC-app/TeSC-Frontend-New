@@ -47,7 +47,7 @@ function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                             }));
                             setIsInRegistryNew(true)
-                            localStorage.setItem(selectedAccount.toLowerCase(), JSON.stringify(JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())).map(({ contractAddress, domain, expiry, isFavourite, own, isInRegistry }) => ({contractAddress, domain, expiry, isFavourite, own, isInRegistry:true}))))
+                            localStorage.setItem(selectedAccount.toLowerCase(), JSON.stringify(JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())).map(({ contractAddress, domain, expiry, isFavourite, own, isInRegistry }) => ({ contractAddress, domain, expiry, isFavourite, own, isInRegistry: true }))))
                         });
                 } else {
                     assignSysMsg(buildNegativeMsg({
@@ -146,10 +146,10 @@ function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry
         <Table.Row key={contractAddress}>
             <Table.Cell>
                 <span className='contractAddressColumn'>
-                    <LinkTescInspect contractAddress={contractAddress} />
                     {
                         own ? <Popup content="Your contract" trigger={<Icon className="userIcon" name="user" color="blue" circular />} /> : null
                     }
+                    <LinkTescInspect contractAddress={contractAddress} />
                 </span>
             </Table.Cell>
             <Table.Cell>{renderDomain()}</Table.Cell>
@@ -163,8 +163,8 @@ function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry
             {
                 <Table.Cell textAlign="center">
                     <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
-                        trigger={<Button icon={tescIsInFavourites? 'heart' : 'heart outline'}
-                         className={tescIsInFavourites ? "favouriteDashboard" : "notFavouriteDashboard"}
+                        trigger={<Button icon={tescIsInFavourites ? 'heart' : 'heart outline'}
+                            className={tescIsInFavourites ? "favouriteDashboard" : "notFavouriteDashboard"}
                             onClick={addRemoveFavourites} />} />
                 </Table.Cell>
             }
