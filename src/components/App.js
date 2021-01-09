@@ -68,7 +68,8 @@ const App = ({ web3 }) => {
                 handleBlockScreen,
                 sysMsg,
                 showMessage,
-                handleDismissMessage
+                handleDismissMessage,
+                selectedAccount
             }}
             >
                 <Navbar noWalletAddress={noWalletAddress} selectedAccount={selectedAccount} handleCollapseSidebar={handleCollapseSidebar} />

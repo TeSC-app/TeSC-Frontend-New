@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 
-const LinkTescInspect = ({ contractAddress }) => (
+const LinkTescInspect = ({ contractAddress, content }) => (
     <Link
         style={{ opacity: 'unset' }}
         to={{
@@ -13,7 +13,7 @@ const LinkTescInspect = ({ contractAddress }) => (
             }
         }}
     >
-        {contractAddress}
+        {content ? content : contractAddress}
     </Link>
 );
 

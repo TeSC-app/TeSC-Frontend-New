@@ -56,7 +56,7 @@ function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry
             return (<Popup
                 inverted
                 content='Domain is hashed, please inspect the contract to run the verification'
-                trigger={<p>Unknown</p>}
+                trigger={<LinkTescInspect contractAddress={contractAddress} content='Domain required' />}
             />);
         }
         if (verified === null || verified === undefined) {
