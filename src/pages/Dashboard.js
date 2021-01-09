@@ -1,31 +1,48 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
 import 'react-day-picker/lib/style.css';
 import { Table, Grid, Dropdown, Dimmer, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
-import '../styles/Dashboard.scss'
+import '../styles/Dashboard.scss';
 import DashboardEntry from '../components/DashboardEntry';
-import FeedbackMessage from '../components/FeedbackMessage'
+import FeedbackMessage from '../components/FeedbackMessage';
 
-const Dashboard = ({selectedAccount, noWalletAddress}) => {
+const Dashboard = ({ selectedAccount, noWalletAddress }) => {
     const { web3 } = useContext(AppContext);
-    const [tescsIsInRegistry, setTescsIsInRegistry] = useState([])
-    const [contractRegistry, setContractRegistry] = useState(null)
+    const [contractRegistry, setContractRegistry] = useState(null);
     // const contractRegistry = useRef(new web3.eth.Contract(TeSCRegistry.abi, process.env.REACT_APP_REGISTRY_ADDRESS))
-    const [sysMsg, setSysMsg] = useState(null)
-    const [blocking, setBlocking] = useState(false)
+    const [sysMsg, setSysMsg] = useState(null);
+    const [blocking, setBlocking] = useState(false);
+
+    const [tescs, setTescs] = useState(selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []);
 
     const handleDismissMessage = () => {
         setSysMsg(null);
     };
 
     const assignSysMsgFromEntry = (sysMsg) => {
-        setSysMsg(sysMsg)
-    }
+        setSysMsg(sysMsg);
+    };
 
     const handleBlocking = (blockingState) => {
-        setBlocking(blockingState)
-    }
+        setBlocking(blockingState);
+    };
+
+    const loadStorage = useCallback(() => {
+        return JSON.parse(localStorage.getItem(selectedAccount.toLowerCase()));
+    }, [selectedAccount]);
+
+    const filterTescs = () => {
+        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescs(tescs.filter(tesc => tesc.isFavourite === true)) : setTescs([]);
+    };
+
+    const showAllTescs = () => {
+        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescs(loadStorage()) : setTescs([]);
+    };
+
+    const showOwnTescs = () => {
+        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescs(loadStorage().filter(tesc => tesc.own === true)) : setTescs([]);
+    };
 
     useEffect(() => {
         const init = async () => {
@@ -34,25 +51,26 @@ const Dashboard = ({selectedAccount, noWalletAddress}) => {
                     TeSCRegistry.abi,
                     process.env.REACT_APP_REGISTRY_ADDRESS,
                 );
-                setContractRegistry(contractRegistry)
-                const tescs = selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []
-                setTescsIsInRegistry(tescs)
+                setContractRegistry(contractRegistry);
                 window.ethereum.on('accountsChange', (accounts) => {
-                    const tescs = selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []
-                    setTescsIsInRegistry(tescs)
-                })
+                    setTescs(JSON.parse(localStorage.getItem(accounts[0].toLowerCase())));
+                });
             }
             catch (error) {
-                const tescs = selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []
-                setTescsIsInRegistry(tescs)
+                const tescs = selectedAccount ? loadStorage() : [];
+                setTescs(tescs);
+                console.log(error)
             }
-        }
-        init()
-    }, [selectedAccount, web3.eth, web3.eth.Contract, web3.eth.net])
+        };
+        init();
+    }, [selectedAccount, web3.eth, web3.eth.Contract, web3.eth.net, loadStorage]);
 
+    const handleChangeTescs = (tesc) => {
+        setTescs([...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), tesc])
+    }
 
     const renderRows = () => {
-        if (tescsIsInRegistry) return tescsIsInRegistry.map(({ contractAddress, domain, expiry, isFavourite, own, isInRegistry }, index) => (
+        if (tescs) return tescs.map(({ contractAddress, domain, expiry, isFavourite, own, isInRegistry }, index) => (
             <DashboardEntry key={contractAddress}
                 contractAddress={contractAddress}
                 domain={domain}
@@ -63,24 +81,16 @@ const Dashboard = ({selectedAccount, noWalletAddress}) => {
                 assignSysMsg={assignSysMsgFromEntry}
                 isFavourite={isFavourite}
                 index={index}
-                tescsIsInRegistry={tescsIsInRegistry}
+                tescsIsInRegistry={tescs}
+                onTescsChange={handleChangeTescs}
                 own={own}
                 web3={web3}
-                handleBlocking={handleBlocking} />
+                handleBlocking={handleBlocking}
+            />
         ));
     };
 
-    const filterTescs = () => {
-        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescsIsInRegistry(JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())).filter(tesc => tesc.isFavourite === true)) : setTescsIsInRegistry([])
-    }
 
-    const showAllTescs = () => {
-        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescsIsInRegistry(JSON.parse(localStorage.getItem(selectedAccount.toLowerCase()))) : setTescsIsInRegistry([])
-    }
-
-    const showOwnTescs = () => {
-        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescsIsInRegistry(JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())).filter(tesc => tesc.own === true)) : setTescsIsInRegistry([])
-    }
 
     return (
         <React.Fragment>
