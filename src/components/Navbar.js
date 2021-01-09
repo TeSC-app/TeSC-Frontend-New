@@ -1,7 +1,7 @@
 import React from 'react';
 import { Menu, Icon, Label, Image, Button } from 'semantic-ui-react';
 
-const Navbar = ({ handleCollapseSidebar, noWalletAddress, selectedAccount }) => {
+const Navbar = ({ handleCollapseSidebar, hasWalletAddress, selectedAccount }) => {
 
     //if metamask is installed but not connected
     const handleConnect = () => {
@@ -17,7 +17,7 @@ const Navbar = ({ handleCollapseSidebar, noWalletAddress, selectedAccount }) => 
     }
     const renderMetaMaskLabel = () => {
         if (window.ethereum) {
-            return noWalletAddress && !selectedAccount ? <Button className='connectMetaMask' onClick={handleConnect}>No wallet address detected</Button> : selectedAccount
+            return !hasWalletAddress && !selectedAccount ? <Button className='connectMetaMask' onClick={handleConnect}>No wallet address detected</Button> : selectedAccount
         } else {
             return <Button className='connectMetaMask' onClick={handleInstall}>Install MetaMask</Button>
         }

@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { Input, Table, Checkbox, Loader, Icon, Label, Grid, Card, Form, Dimmer, Popup, Button, Modal } from 'semantic-ui-react';
-
-
+import { Input, Loader, Icon, Label, Grid, Card, Form, Dimmer, Popup, Button, Modal } from 'semantic-ui-react';
 import BitSet from 'bitset';
-import moment from 'moment';
 import axios from 'axios';
-
 import AppContext from '../appContext';
 import { FLAG_POSITIONS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc';
 import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
@@ -16,28 +12,22 @@ import PageHeader from "../components/PageHeader";
 import TescDataTable from "../components/tesc/TescDataTable";
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 
-
 const TeSCInspect = ({ location }) => {
     const { web3, showMessage } = useContext(AppContext);
     const [contractAddress, setContractAddress] = useState('');
     const [contractOwner, setContractOwner] = useState('');
-
     const [domainFromChain, setDomainFromChain] = useState('');
     const [expiry, setExpiry] = useState('');
     const [signature, setSignature] = useState('');
     const [fingerprint, setFingerprint] = useState('');
     const [flags, setFlags] = useState(new BitSet('0x00'));
     const [isDomainHashed, setIsDomainHashed] = useState(null);
-
     const [plainDomain, setPlainDomain] = useState('');
     const [plainDomainSubmitted, setPlainDomainSubmitted] = useState(false);
-
     const [verifResult, setVerifResult] = useState(null);
-
     const [tescIsInFavourites, setTescsIsInFavourites] = useState(false);
     const [tescs, setTescs] = useState(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
     const [contractRegistry, setContractRegistry] = useState(null)
-
 
     useEffect(() => {
         setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
@@ -48,7 +38,7 @@ const TeSCInspect = ({ location }) => {
         setContractRegistry(contractRegistry)
     }, [web3.currentProvider.selectedAddress, web3.eth.Contract]);
 
-    const fetchTescData = async (address) => {
+    const fetchTescData = useCallback(async (address) => {
         showMessage(null);
         try {
             const contract = new web3.eth.Contract(TeSC.abi, address);
@@ -65,9 +55,6 @@ const TeSCInspect = ({ location }) => {
 
             setContractOwner((await contract.methods.owner().call()).toLowerCase());
 
-
-            //favourites
-            console.log(tescs);
             for (const tesc of tescs) {
                 if (tesc.contractAddress === contractAddress) {
                     setTescsIsInFavourites(tesc.isFavourite);
@@ -81,7 +68,7 @@ const TeSCInspect = ({ location }) => {
                 msg: err.message
             }));
         };
-    };
+    }, [contractAddress, showMessage, tescs, web3.eth.Contract]);
 
     const addRemoveFavourites = async (address) => {
         let tescsNew;
@@ -124,24 +111,7 @@ const TeSCInspect = ({ location }) => {
         verifyTesc();
     }, [contractAddress, plainDomainSubmitted, verifyTesc]);
 
-    useEffect(() => {
-        showMessage(null);
-        if (location.state) {
-            handleChangeAddress(location.state.contractAddress);
-        }
-    }, []);
-
-    const clearResults = () => {
-        setDomainFromChain(null);
-        setExpiry('');
-        setFlags(new BitSet('0x00'));
-        setSignature('');
-        setPlainDomain('');
-        setVerifResult(null);
-    };
-
-
-    const handleChangeAddress = async (address) => {
+    const handleChangeAddress = useCallback(async (address) => {
         setContractAddress(address);
         if (isValidContractAddress(address)) {
             try {
@@ -154,8 +124,23 @@ const TeSCInspect = ({ location }) => {
                 console.log(err);
             }
         }
-    };
+    }, [fetchTescData, showMessage]);
 
+    useEffect(() => {
+        showMessage(null);
+        if (location.state) {
+            handleChangeAddress(location.state.contractAddress);
+        }
+    }, [handleChangeAddress, location.state, showMessage]);
+
+    const clearResults = () => {
+        setDomainFromChain(null);
+        setExpiry('');
+        setFlags(new BitSet('0x00'));
+        setSignature('');
+        setPlainDomain('');
+        setVerifResult(null);
+    };
 
     const handleSubmitAddress = async (e) => {
         e.preventDefault();
@@ -301,7 +286,7 @@ const TeSCInspect = ({ location }) => {
                                             className={tescIsInFavourites ? "favourite" : "notFavourite"}
                                             onClick={() => addRemoveFavourites(contractAddress)}
                                             content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
-                                            style={{ float: 'right' }}
+                                            style={{ float: 'right', width: '30%' }}
                                         />} />
                             </Grid.Column>
                         </Grid.Row>

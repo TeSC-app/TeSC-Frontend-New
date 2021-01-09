@@ -41,9 +41,9 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar }) => {
                         Inspect
                     </MenuItem>
 
-                    <MenuItem onClick={(e) => handlePageNavigation(e, '/registry/add')} >
-                        Add entry
-                    </MenuItem>
+                    {/*<MenuItem onClick={(e) => handlePageNavigation(e, '/registry/add')} >
+                            Add entry
+                        </MenuItem>*/}
                 </SubMenu>
             </Menu>
         </ProSidebar>
