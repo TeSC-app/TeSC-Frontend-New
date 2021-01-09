@@ -1,19 +1,11 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { Input, Table, Checkbox, Loader, Icon, Label, Grid, Card, Form, Dimmer, Popup, Button, Modal } from 'semantic-ui-react';
-
-
+import React from 'react';
+import { Table, Checkbox } from 'semantic-ui-react';
 import moment from 'moment';
-
-import AppContext from '../../appContext';
-
-import { FLAG_POSITIONS, hexStringToBitSet, isValidContractAddress } from '../../utils/tesc';
-
-
+import { FLAG_POSITIONS } from '../../utils/tesc';
 
 const TescDataTable = ({ data }) => {
-    const { web3, showMessage } = useContext(AppContext);
 
-    const { contractAddress, domain, expiry, flags, signature, fingerprint } = data;
+    const { domain, expiry, flags, signature, fingerprint } = data;
 
     const renderFlagCheckboxes = () => {
         return Object.entries(FLAG_POSITIONS).filter(([flagName, i]) => i === 0).map(([flagName, i]) => (

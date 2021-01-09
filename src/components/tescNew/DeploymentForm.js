@@ -1,5 +1,5 @@
 import React, { Fragment, useState, useContext, useCallback, useEffect, useRef } from 'react';
-import { Input, Form, Label, Button as BtnSuir, Segment, Dimmer, Loader, Popup, Radio, Header, TextArea, Divider, Icon, Grid } from 'semantic-ui-react';
+import { Input, Form, Label, Button as BtnSuir, Segment, Popup, Radio, Header, TextArea, Divider, Icon, Grid } from 'semantic-ui-react';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { formatDate, parseDate } from 'react-day-picker/moment';

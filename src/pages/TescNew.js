@@ -1,9 +1,5 @@
-import React, {Fragement, useState } from 'react';
-import { Grid, Loader, Dimmer } from 'semantic-ui-react';
-
-
+import React from 'react';
 import 'react-day-picker/lib/style.css';
-
 import DeploymentForm from '../components/tescNew/DeploymentForm';
 import PageHeader from "../components/PageHeader";
 

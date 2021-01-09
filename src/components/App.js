@@ -18,8 +18,9 @@ const App = ({ web3 }) => {
 
     const [sysMsg, setSysMsg] = useState(null);
     const [screenBlocked, setScreenBlocked] = useState(false);
-    const [noWalletAddress, setNoWalletAddress] = useState(true)
+    const [hasWalletAddress, setHasWalletAddress] = useState(false)
     const [selectedAccount, setSelectedAccount] = useState(null)
+    const [hasAccountChanged, setHasAccountChanged] = useState(false)
 
     useEffect(() => {
         const init = async () => {
@@ -27,10 +28,12 @@ const App = ({ web3 }) => {
             const [selectedAccount,] = await web3.eth.getAccounts()
             setSelectedAccount(selectedAccount)
                 window.ethereum.on('accountsChanged', function (accounts) {
+                    setHasAccountChanged(true)
+                    console.log('CHANGE DETECTED')
                     if (!accounts[0]) {
-                        setNoWalletAddress(true)
+                        setHasWalletAddress(false)
                     } else {
-                        setNoWalletAddress(false)
+                        setHasWalletAddress(true)
                         setSelectedAccount(accounts[0])
                     }
                 })
@@ -61,6 +64,10 @@ const App = ({ web3 }) => {
         setToggled(!toggled);
     };
 
+    const handleAccountChanged = (newHasAccountChanged) => {
+        setHasAccountChanged(newHasAccountChanged)
+    }
+
     return (
         <BrowserRouter>
             <AppContext.Provider value={{
@@ -71,19 +78,19 @@ const App = ({ web3 }) => {
                 handleDismissMessage
             }}
             >
-                <Navbar noWalletAddress={noWalletAddress} selectedAccount={selectedAccount} handleCollapseSidebar={handleCollapseSidebar} />
+                <Navbar hasWalletAddress={hasWalletAddress} selectedAccount={selectedAccount} handleCollapseSidebar={handleCollapseSidebar} />
                 <div className='layout'>
                     <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} />
                     <Container className="page">
                         <Route path="/" exact render={props => {
-                            return <Dashboard {...props} selectedAccount={selectedAccount} noWalletAddress={noWalletAddress} />
+                            return <Dashboard {...props} selectedAccount={selectedAccount} hasAccountChanged={hasAccountChanged} handleAccountChanged={handleAccountChanged} />
                         }} />
                         <Route path="/tesc/new" component={TeSCNew} exact />
                         <Route path="/tesc/inspect" component={TeSCInspect} exact />
                         <Route path="/registry/inspect" component={RegistryInspect} exact />
-                        <Route path="/registry/add" exact render={props => {
+                        {/*<Route path="/registry/add" exact render={props => {
                             return <RegistryAdd {...props} selectedAccount={selectedAccount} />
-                        }} />
+                        }} />*/}
                     </Container>
                 </div>
                 <Dimmer active={screenBlocked}>
