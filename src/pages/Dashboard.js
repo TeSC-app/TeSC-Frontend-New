@@ -7,12 +7,11 @@ import '../styles/Dashboard.scss';
 import DashboardEntry from '../components/DashboardEntry';
 import FeedbackMessage from '../components/FeedbackMessage';
 
-const Dashboard = ({ selectedAccount, noWalletAddress }) => {
+const Dashboard = ({ selectedAccount }) => {
     const { web3 } = useContext(AppContext);
     const [contractRegistry, setContractRegistry] = useState(null);
     const [sysMsg, setSysMsg] = useState(null);
     const [blocking, setBlocking] = useState(false);
-
     const [tescs, setTescs] = useState(selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []);
 
     const handleDismissMessage = () => {
@@ -51,8 +50,11 @@ const Dashboard = ({ selectedAccount, noWalletAddress }) => {
                     process.env.REACT_APP_REGISTRY_ADDRESS,
                 );
                 setContractRegistry(contractRegistry);
-                window.ethereum.on('accountsChange', (accounts) => {
-                    setTescs(JSON.parse(localStorage.getItem(accounts[0].toLowerCase())));
+                setTescs(selectedAccount ? loadStorage() : []);
+                window.ethereum.on('accountsChanged', (accounts) => {
+                    setTescs(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
+                        JSON.parse(localStorage.getItem(accounts[0].toLowerCase())) :
+                        []);
                 });
             }
             catch (error) {
@@ -131,7 +133,7 @@ const Dashboard = ({ selectedAccount, noWalletAddress }) => {
                 </Table.Header>
                 {(
                     <Table.Body>
-                        {noWalletAddress && !selectedAccount ? null : renderRows()}
+                        {renderRows()}
                     </Table.Body>
                 )}
             </Table>
