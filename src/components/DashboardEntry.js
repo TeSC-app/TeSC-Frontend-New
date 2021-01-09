@@ -31,11 +31,7 @@ function DashboardEntry(props) {
                 const estCostAdd = contractRegistry ? await estimateRegistryAddCost(web3, selectedAccount, contractRegistry, domain, contractAddress) : 0;
                 setCostEstimatedAdd(estCostAdd);
             } else if (isInRegistry && own && selectedAccount && !hasAccountChanged) {
-                console.log(own)
-                console.log('remove cost est...')
-                console.log('remove cost est SelectedAccount', selectedAccount)
                 const estCostRemove = contractRegistry ? await estimateRegistryRemoveCost(web3, selectedAccount, contractRegistry, domain, contractAddress) : 0;
-                console.log('NO ISSUE remove')
                 setCostEstimatedRemove(estCostRemove);
             }
         };

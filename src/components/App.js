@@ -88,9 +88,9 @@ const App = ({ web3 }) => {
                         <Route path="/tesc/new" component={TeSCNew} exact />
                         <Route path="/tesc/inspect" component={TeSCInspect} exact />
                         <Route path="/registry/inspect" component={RegistryInspect} exact />
-                        <Route path="/registry/add" exact render={props => {
+                        {/*<Route path="/registry/add" exact render={props => {
                             return <RegistryAdd {...props} selectedAccount={selectedAccount} />
-                        }} />
+                        }} />*/}
                     </Container>
                 </div>
                 <Dimmer active={screenBlocked}>
