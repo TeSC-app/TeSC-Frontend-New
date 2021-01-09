@@ -10,7 +10,6 @@ import FeedbackMessage from '../components/FeedbackMessage';
 const Dashboard = ({ selectedAccount, noWalletAddress }) => {
     const { web3 } = useContext(AppContext);
     const [contractRegistry, setContractRegistry] = useState(null);
-    // const contractRegistry = useRef(new web3.eth.Contract(TeSCRegistry.abi, process.env.REACT_APP_REGISTRY_ADDRESS))
     const [sysMsg, setSysMsg] = useState(null);
     const [blocking, setBlocking] = useState(false);
 
@@ -59,15 +58,17 @@ const Dashboard = ({ selectedAccount, noWalletAddress }) => {
             catch (error) {
                 const tescs = selectedAccount ? loadStorage() : [];
                 setTescs(tescs);
-                console.log(error)
+                console.log(error);
             }
         };
         init();
     }, [selectedAccount, web3.eth, web3.eth.Contract, web3.eth.net, loadStorage]);
 
     const handleChangeTescs = (tesc) => {
-        setTescs([...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), tesc])
-    }
+        const updatedTescs = [...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), tesc];
+        setTescs(updatedTescs);
+        localStorage.setItem(selectedAccount.toLowerCase(), JSON.stringify(updatedTescs));
+    };
 
     const renderRows = () => {
         if (tescs) return tescs.map(({ contractAddress, domain, expiry, isFavourite, own, isInRegistry }, index) => (
