@@ -69,7 +69,7 @@ const Dashboard = (props) => {
 
     const handleChangeTescs = (tesc) => {
         const updatedTescs = [...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), tesc];
-        setTescs(updatedTescs);
+        setTescs(updatedTescs.sort((tescA, tescB) => tescA.createdAt.localeCompare(tescB.createdAt)));
         localStorage.setItem(selectedAccount.toLowerCase(), JSON.stringify(updatedTescs));
     };
 
@@ -107,6 +107,7 @@ const Dashboard = (props) => {
                 <Table.Header>
                     <Table.Row>
                         <Table.HeaderCell>Address</Table.HeaderCell>
+                        <Table.HeaderCell>Created At</Table.HeaderCell>
                         <Table.HeaderCell>Domain</Table.HeaderCell>
                         <Table.HeaderCell>Expiry</Table.HeaderCell>
                         <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>

@@ -14,7 +14,7 @@ import {
 
 function DashboardEntry(props) {
     const { web3, selectedAccount, tesc, contractRegistry, assignSysMsg, handleBlocking, onTescsChange, hasAccountChanged, handleAccountChanged } = props
-    const { contractAddress, domain, expiry, isFavourite, own, isInRegistry } = tesc
+    const { contractAddress, domain, expiry, isFavourite, own, isInRegistry, createdAt } = tesc
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
     const [costEstimatedRemove, setCostEstimatedRemove] = useState(0);
@@ -78,7 +78,7 @@ function DashboardEntry(props) {
                                 msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully added to the registry.
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                             }));
-                            onTescsChange({ contractAddress, domain, expiry, isFavourite, own, isInRegistry: true });
+                            onTescsChange({ contractAddress, domain, expiry, isFavourite, own, isInRegistry: true, createdAt });
                         });
                 } else {
                     assignSysMsg(buildNegativeMsg({
@@ -111,7 +111,7 @@ function DashboardEntry(props) {
                                 msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully removed from the registry.
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                             }));
-                            onTescsChange({ contractAddress, domain, expiry, isFavourite, own, isInRegistry: false });
+                            onTescsChange({ contractAddress, domain, expiry, isFavourite, own, isInRegistry: false, createdAt });
                         });
                 } else {
                     assignSysMsg(buildPositiveMsg({
@@ -139,7 +139,7 @@ function DashboardEntry(props) {
             isFavourite = true;
             setTescIsInFavourites(true);
         }
-        onTescsChange({ contractAddress, domain, expiry, isFavourite: isFavourite, own, isInRegistry });
+        onTescsChange({ contractAddress, domain, expiry, isFavourite: isFavourite, own, isInRegistry, createdAt });
     };
 
     const renderRegistryButtons = () => {
@@ -183,6 +183,7 @@ function DashboardEntry(props) {
                     <LinkTescInspect contractAddress={contractAddress} />
                 </span>
             </Table.Cell>
+            <Table.Cell>{createdAt}</Table.Cell>
             <Table.Cell>{renderDomain()}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
             <Table.Cell textAlign="center">

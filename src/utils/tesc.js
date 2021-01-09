@@ -1,6 +1,7 @@
 import RLP from 'rlp-browser';
 import { PrivateKey } from '@fidm/x509';
 import BitSet from 'bitset';
+import moment from 'moment'
 
 export const FLAG_POSITIONS = {
     DOMAIN_HASHED: 0,
@@ -83,7 +84,7 @@ export const storeTesc = ({ account, claim }) => {
     if (!tescs) {
         tescs = [];
     }
-    tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, isInRegistry: false });
+    tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, isInRegistry: false, createdAt: moment().format('DD/MM/YYYY HH:mm:ss') });
     localStorage.setItem(account, JSON.stringify(tescs));
 };
 
