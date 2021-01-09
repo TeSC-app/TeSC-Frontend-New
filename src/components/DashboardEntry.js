@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
-import { Table, Icon, Popup, Button } from 'semantic-ui-react';
+import axios from 'axios';
+
+import { Table, Icon, Popup, Button, Loader } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
 import LinkTescInspect from '../components/InternalLink';
 import {
     estimateRegistryAddCost,
-    estimateRegistryRemoveCost
+    estimateRegistryRemoveCost,
+    isSha3Hash
 } from '../utils/tesc';
 
 function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry, isFavourite, own, index, tescsIsInRegistry, contractRegistry, isInRegistry, assignSysMsg, handleBlocking }) {
@@ -15,6 +18,8 @@ function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
     const [costEstimatedRemove, setCostEstimatedRemove] = useState(0);
+
+    const [verified, setVerified] = useState(null);
 
     useEffect(() => {
         isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false);
@@ -32,6 +37,34 @@ function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry
         };
         runEffect();
     }, [web3, contractAddress, selectedAccount, contractRegistry, domain, isInRegistryNew, own]);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress.toLowerCase()}`);
+                console.log(response)
+                setVerified(response.data.verified)
+            } catch (error) {
+                console.log(error);
+                setVerified(false);
+            }
+        })();
+    }, [contractAddress]);
+
+    const renderVerifResult = () => {
+        if (domain && isSha3Hash(domain)) {
+            return (<Popup 
+                inverted 
+                content='Domain is hashed, please inspect the contract to run the verification' 
+                trigger={<p>Unknown</p>} 
+                />);
+        }
+        if (verified === null || verified === undefined) {
+            return <Loader active inline />;
+        }
+        return verified ? <Icon name="check" color="green" circular /> : <Icon name="delete" color="red" circular />;
+
+    };
 
     const addToRegistry = async () => {
         handleBlocking(true);
@@ -61,7 +94,7 @@ function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry
                     header: 'Unable to add entry to the registry',
                     msg: `${!domain ? 'Domain' : !contractAddress ? 'Contract address' : 'Some required input'} is empty`
                 }));
-                console.log(err)
+                console.log(err);
             }
         }
         handleBlocking(false);
@@ -115,18 +148,18 @@ function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry
         if (own) {
             return (
                 isInRegistryNew ?
-                    <Popup content={`Remove entry from the TeSC registry. This would cost around ${costEstimatedRemove.toFixed(5)} ETH.`}
-                        trigger={<Button basic color='red' onClick={removeFromRegistry} content='Remove' icon='minus' />} />
+                    <Popup inverted content={`Remove entry from the TeSC registry. This would cost around ${costEstimatedRemove.toFixed(5)} ETH.`}
+                        trigger={<Button basic color='red' onClick={removeFromRegistry} content='Remove' icon='delete' style={{width: '60%'}} />} />
                     :
-                    <Popup content={`Add entry to the TeSC registry. This would cost around ${costEstimatedAdd.toFixed(5)} ETH.`}
-                        trigger={<Button basic color='green' onClick={addToRegistry} content='Add' icon='plus' />}
+                    <Popup inverted content={`Add entry to the TeSC registry. This would cost around ${costEstimatedAdd.toFixed(5)} ETH.`}
+                        trigger={<Button basic color='blue' onClick={addToRegistry} content='Add' icon='plus' style={{width: '60%'}} />}
                     />
             );
         } else {
             return (
-                isInRegistryNew ? <Popup content='In the registry'
+                isInRegistryNew ? <Popup inverted content='In the registry'
                     trigger={<Icon name='checkmark' color='green' circular />} /> :
-                    <Popup content='Not in the registry'
+                    <Popup inverted content='Not in the registry'
                         trigger={<Icon name='delete' color='red' circular />} />
             );
         }
@@ -134,9 +167,9 @@ function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry
 
     const renderDomain = () => {
         if (domain.length === 64 && domain.split('.').length === 1) {
-            return (<Popup content={domain} trigger={<i>hashed domain</i>} />);
+            return (<Popup inverted content={domain} trigger={<i>{'< hashed >'}</i>} />);
         } else if (domain.length > 32) {
-            return (<Popup on="click" content={domain} trigger={<i className='cursorPointer'>{`${domain.substring(0, 6)}...${domain.substring(domain.length - 4, domain.length)}`}</i>} />);
+            return (<Popup inverted on="click" content={domain} trigger={<i className='cursorPointer'>{`${domain.substring(0, 6)}...${domain.substring(domain.length - 4, domain.length)}`}</i>} />);
         } else {
             return domain;
         }
@@ -147,7 +180,7 @@ function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry
             <Table.Cell>
                 <span className='contractAddressColumn'>
                     {
-                        own ? <Popup content="Your contract" trigger={<Icon className="userIcon" name="user" color="blue" circular />} /> : null
+                        own ? <Popup inverted content="You own this contract" trigger={<Icon className="userIcon" name="user" color="blue" circular />} /> : null
                     }
                     <LinkTescInspect contractAddress={contractAddress} />
                 </span>
@@ -155,14 +188,14 @@ function DashboardEntry({ web3, selectedAccount, contractAddress, domain, expiry
             <Table.Cell>{renderDomain()}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
             <Table.Cell textAlign="center">
-                <Icon name="delete" color="red" circular />
+                {renderVerifResult()}
             </Table.Cell>
             <Table.Cell textAlign="center">
                 {renderRegistryButtons()}
             </Table.Cell>
             {
                 <Table.Cell textAlign="center">
-                    <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
+                    <Popup inverted content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
                         trigger={<Button icon={tescIsInFavourites ? 'heart' : 'heart outline'}
                             className={tescIsInFavourites ? "favouriteDashboard" : "notFavouriteDashboard"}
                             onClick={addRemoveFavourites} />} />

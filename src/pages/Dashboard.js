@@ -102,7 +102,7 @@ const Dashboard = ({selectedAccount, noWalletAddress}) => {
                         <Table.HeaderCell>Address</Table.HeaderCell>
                         <Table.HeaderCell>Domain</Table.HeaderCell>
                         <Table.HeaderCell>Expiry</Table.HeaderCell>
-                        <Table.HeaderCell textAlign="center">Verification</Table.HeaderCell>
+                        <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
                         <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
                         <Table.HeaderCell textAlign="center">Favourites
                         <Dropdown

@@ -210,7 +210,7 @@ const DeploymentForm = ({ initInputs }) => {
                     .on('receipt', async (txReceipt) => {
                         setCostPaid(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether'));
                         if(txReceipt.contractAddress) {
-                            setContractAddress();
+                            setContractAddress(txReceipt.contractAddress);
                         }
                         setActiveStep(activeStep + 1);
                         success = true;
@@ -222,7 +222,11 @@ const DeploymentForm = ({ initInputs }) => {
 
                         storeTesc({
                             account,
-                            claim: { contractAddress: txReceipt.contractAddress, domain: curDomain, expiry }
+                            claim: { 
+                                contractAddress: initInputs? contractAddress : txReceipt.contractAddress, 
+                                domain: curDomain, 
+                                expiry 
+                            }
                         });
                     });
 

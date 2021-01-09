@@ -182,6 +182,7 @@ const TeSCInspect = ({ location }) => {
         showMessage(null);
         console.log("CONTRACT ADDRESS", contractAddress);
         fetchTescData(contractAddress);
+        verifyTesc();
     };
 
 

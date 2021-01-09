@@ -91,7 +91,7 @@ export const isValidContractAddress = (address, withReason = false) => {
     if (!withReason) {
         return (address.substring(0, 2) === '0x')
             && (address.length === 42)
-            && Boolean(address.match(/^0x[0-9a-f]+$/i));
+            && Boolean(address.match(/^0x[0-9a-fA-F]+$/i));
     }
 
     if (!address) {
@@ -105,6 +105,10 @@ export const isValidContractAddress = (address, withReason = false) => {
     }
     return true;
 };
+
+export const isSha3Hash = (str) => {
+    return str.length === 64 && Boolean(str.match(/^[0-9a-fA-F]+$/i))
+}
 
 export const formatClaim = ({ contractAddress, domain, expiry, flags }) => {
     return `${contractAddress}.${domain}.${expiry}.${flags}`;
