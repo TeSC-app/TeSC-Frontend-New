@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Grid, Label } from 'semantic-ui-react';
+import { Grid } from 'semantic-ui-react';
 
 import AppContext from '../appContext';
 import FeedbackMessage from "../components/FeedbackMessage";

@@ -32,7 +32,6 @@ function RegistryInspect() {
     const handleInput = domain => {
         setSubmitted(false);
         setDomain(domain);
-        //check if domain is valid by using the library
     }
 
     const handleSubmit = async () => {

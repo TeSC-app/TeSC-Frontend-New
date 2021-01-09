@@ -7,7 +7,8 @@ import '../styles/Dashboard.scss';
 import DashboardEntry from '../components/DashboardEntry';
 import FeedbackMessage from '../components/FeedbackMessage';
 
-const Dashboard = ({ selectedAccount }) => {
+const Dashboard = (props) => {
+    const { selectedAccount, hasAccountChanged, handleAccountChanged } = props
     const { web3 } = useContext(AppContext);
     const [contractRegistry, setContractRegistry] = useState(null);
     const [sysMsg, setSysMsg] = useState(null);
@@ -73,27 +74,20 @@ const Dashboard = ({ selectedAccount }) => {
     };
 
     const renderRows = () => {
-        if (tescs) return tescs.map(({ contractAddress, domain, expiry, isFavourite, own, isInRegistry }, index) => (
-            <DashboardEntry key={contractAddress}
-                contractAddress={contractAddress}
-                domain={domain}
-                expiry={expiry}
-                isInRegistry={isInRegistry}
+        if (tescs) return tescs.map((tesc) => (
+            <DashboardEntry key={tesc.contractAddress}
+                tesc={tesc}
                 selectedAccount={selectedAccount}
                 contractRegistry={contractRegistry}
                 assignSysMsg={assignSysMsgFromEntry}
-                isFavourite={isFavourite}
-                index={index}
-                tescsIsInRegistry={tescs}
                 onTescsChange={handleChangeTescs}
-                own={own}
                 web3={web3}
                 handleBlocking={handleBlocking}
+                hasAccountChanged={hasAccountChanged}
+                handleAccountChanged={handleAccountChanged}
             />
         ));
     };
-
-
 
     return (
         <React.Fragment>
