@@ -305,6 +305,19 @@ const DeploymentForm = ({ initInputs }) => {
                                 <li>{`flags: Currently only we only support a single flag to hash the provided domain input for your privacy`}</li>
                             </ul>
                         </div> */}
+                            <Form.Field>
+                                <p>
+                                    <b>Contract address: </b>
+                                    <span style={{ wordBreak: 'break-all' }}>{futureContractAddress} </span>
+                                    <Popup
+                                        inverted
+                                        content='The contract address is predetermined using the wallet address and the current nonce of the wallet'
+                                        trigger={<Icon name='question circle' />}
+                                    />
+                                    
+                                </p>
+                                {/* <Label color='black' >{futureContractAddress}</Label> */}
+                            </Form.Field>
 
                             <Form.Field>
                                 <label>
