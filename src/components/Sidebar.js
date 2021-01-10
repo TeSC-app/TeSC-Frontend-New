@@ -38,7 +38,7 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar }) => {
                 </SubMenu>
                 <SubMenu title="TeSC Registry" icon={<FaAddressBook size='1.5em' />} defaultOpen >
                     <MenuItem onClick={(e) => handlePageNavigation(e, "/registry/inspect")} >
-                        Inspect
+                        Explore
                     </MenuItem>
 
                     {/*<MenuItem onClick={(e) => handlePageNavigation(e, '/registry/add')} >

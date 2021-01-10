@@ -91,7 +91,8 @@ function RegistryInspect() {
 
     return (
         <div>
-            <h2>Explore Smart Contracts associated to a domain</h2>
+            <h2>Explore TeSC Registry</h2>
+            {/* Smart Contracts associated with Domain */}
             <SearchBox
                 onChange={handleInput}
                 onSubmit={handleSubmit}
