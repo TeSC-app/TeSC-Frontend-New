@@ -64,6 +64,8 @@ function getSteps() {
 const DeploymentForm = ({ initInputs }) => {
     const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
 
+    const defaultFingerprint = !initInputs || parseInt(initInputs.fingerprint, 16) === 0 ? '' : initInputs.fingerprint;
+
     const [contractAddress, setContractAddress] = useState(initInputs ? initInputs.contractAddress.toLowerCase() : '');
     const [futureContractAddress, setFutureContractAddress] = useState(initInputs ? initInputs.contractAddress.toLowerCase() : '');
 
@@ -72,7 +74,7 @@ const DeploymentForm = ({ initInputs }) => {
     const [signature, setSignature] = useState('');
     const [flags, setFlags] = useState(initInputs ? initInputs.flags : new BitSet('0x00'));
     const [domainHashed, setDomainHashed] = useState(initInputs && !!initInputs.flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? initInputs.domain : '');
-    const [fingerprint, setFingerprint] = useState(!initInputs || parseInt(initInputs.fingerprint, 16) === 0 ? '' : initInputs.fingerprint);
+    const [fingerprint, setFingerprint] = useState(defaultFingerprint);
 
     const [privateKeyPEM, setPrivateKeyPEM] = useState('');
     const [privateKeyFileName, setPrivateKeyFileName] = useState('');
@@ -114,6 +116,14 @@ const DeploymentForm = ({ initInputs }) => {
             setSignature('');
         }
     }, [privateKeyPEM, contractAddress, expiry, flags, getCurrentDomain, showMessage, initInputs, web3]);
+
+    const handleLoseDomainInputFocus = () => {
+        if (fingerprint) {
+            setFingerprint(defaultFingerprint)
+        }
+        computeSignature();
+        
+    }
 
     const makeDeploymentTx = useCallback(async () => {
         return await new web3.eth.Contract(TeSC.abi).deploy({
@@ -333,7 +343,7 @@ const DeploymentForm = ({ initInputs }) => {
                                     disabled={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)}
                                     placeholder='www.mysite.com'
                                     onChange={e => setDomain(e.target.value)}
-                                    onBlur={() => computeSignature()}
+                                    onBlur={() => handleLoseDomainInputFocus()}
                                     icon='world'
                                 />
                             </Form.Field>
@@ -470,7 +480,7 @@ const DeploymentForm = ({ initInputs }) => {
                 return {
                     component: (
                         <FingerprintSegment
-                            inputs={{ contractAddress, domain, expiry, flags, signature, fingerprint: initInputs ? initInputs.fingerprint : fingerprint }}
+                            inputs={{ contractAddress, domain, expiry, flags, signature, fingerprint }}
                             onGetFingerprint={handleGetFingerprint}
                         />
                     ),
