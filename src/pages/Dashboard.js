@@ -89,13 +89,12 @@ const Dashboard = (props) => {
                 <Table.Header>
                     <Table.Row>
                         <Table.HeaderCell>Address</Table.HeaderCell>
-                        <Table.HeaderCell>Created At</Table.HeaderCell>
                         <Table.HeaderCell>Domain</Table.HeaderCell>
                         <Table.HeaderCell>Expiry</Table.HeaderCell>
                         <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
                         <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
                         <Table.HeaderCell textAlign="center">Favourites
-                        <Dropdown
+                            <Dropdown
                                 icon='filter'
                                 floating
                                 button
@@ -105,7 +104,9 @@ const Dashboard = (props) => {
                                     <Dropdown.Item icon='heart' text='By favourite' onClick={filterTescs} />
                                     <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
                                 </Dropdown.Menu>
-                            </Dropdown></Table.HeaderCell>
+                            </Dropdown>
+                        </Table.HeaderCell>
+                        <Table.HeaderCell>Created At</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
                 {(

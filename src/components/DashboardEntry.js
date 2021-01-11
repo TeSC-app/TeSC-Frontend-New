@@ -186,7 +186,6 @@ function DashboardEntry(props) {
                     <LinkTescInspect contractAddress={contractAddress} />
                 </span>
             </Table.Cell>
-            <Table.Cell>{createdAt}</Table.Cell>
             <Table.Cell>{renderDomain()}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
             <Table.Cell textAlign="center">
@@ -203,6 +202,7 @@ function DashboardEntry(props) {
                             onClick={addRemoveFavourites} />} />
                 </Table.Cell>
             }
+            <Table.Cell>{createdAt}</Table.Cell>
         </Table.Row>
     );
 }
