@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import moment from 'moment';
 import axios from 'axios';
-
 import { Table, Icon, Popup, Button, Loader } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
+
+import AppContext from '../appContext';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
 import LinkTescInspect from '../components/InternalLink';
 import {
@@ -13,7 +14,9 @@ import {
 } from '../utils/tesc';
 
 function DashboardEntry(props) {
-    const { web3, selectedAccount, tesc, contractRegistry, assignSysMsg, handleBlocking, onTescsChange, hasAccountChanged, handleAccountChanged } = props
+    const { selectedAccount, tesc, contractRegistry, assignSysMsg, handleBlocking, onTescsChange, hasAccountChanged, handleAccountChanged } = props
+
+    const { web3, showMessage } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, isInRegistry, createdAt } = tesc
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
@@ -73,7 +76,7 @@ function DashboardEntry(props) {
                 if (!isContractRegistered) {
                     await contractRegistry.methods.add(domain, contractAddress).send({ from: selectedAccount, gas: '2000000' })
                         .on('receipt', async (txReceipt) => {
-                            assignSysMsg(buildPositiveMsg({
+                            showMessage(buildPositiveMsg({
                                 header: 'Entry added to the registry',
                                 msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully added to the registry.
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
@@ -81,13 +84,13 @@ function DashboardEntry(props) {
                             onTescsChange({ contractAddress, domain, expiry, isFavourite, own, isInRegistry: true, createdAt });
                         });
                 } else {
-                    assignSysMsg(buildNegativeMsg({
+                    showMessage(buildNegativeMsg({
                         header: 'Unable to add entry to the registry',
                         msg: `The address ${contractAddress} has already been added to the registry`
                     }));
                 }
             } catch (err) {
-                assignSysMsg(buildNegativeMsg({
+                showMessage(buildNegativeMsg({
                     code: err.code,
                     header: 'Unable to add entry to the registry',
                     msg: `${!domain ? 'Domain' : !contractAddress ? 'Contract address' : 'Some required input'} is empty`
@@ -106,7 +109,7 @@ function DashboardEntry(props) {
                 if (isContractRegistered) {
                     await contractRegistry.methods.remove(domain, contractAddress).send({ from: selectedAccount, gas: '2000000' })
                         .on('receipt', async (txReceipt) => {
-                            assignSysMsg(buildPositiveMsg({
+                            showMessage(buildPositiveMsg({
                                 header: 'Entry removed from the registry',
                                 msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully removed from the registry.
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
@@ -114,13 +117,13 @@ function DashboardEntry(props) {
                             onTescsChange({ contractAddress, domain, expiry, isFavourite, own, isInRegistry: false, createdAt });
                         });
                 } else {
-                    assignSysMsg(buildPositiveMsg({
+                    showMessage(buildPositiveMsg({
                         header: 'Unable to remove entry from the registry',
                         msg: `TLS-endorsed Smart Contract at address ${contractAddress} was not found in the registry`
                     }));
                 }
             } catch (err) {
-                assignSysMsg(buildNegativeMsg({
+                showMessage(buildNegativeMsg({
                     code: err.code,
                     header: 'Unable to remove entry from the registry',
                     msg: `${!domain ? 'Domain' : !contractAddress ? 'Contract address' : 'Some required input'} is invalid or empty`

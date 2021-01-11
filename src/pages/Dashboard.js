@@ -5,23 +5,15 @@ import AppContext from '../appContext';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import '../styles/Dashboard.scss';
 import DashboardEntry from '../components/DashboardEntry';
-import FeedbackMessage from '../components/FeedbackMessage';
+import PageHeader from '../components/PageHeader';
 
 const Dashboard = (props) => {
     const { selectedAccount, hasAccountChanged, handleAccountChanged } = props
     const { web3 } = useContext(AppContext);
     const [contractRegistry, setContractRegistry] = useState(null);
-    const [sysMsg, setSysMsg] = useState(null);
     const [blocking, setBlocking] = useState(false);
     const [tescs, setTescs] = useState(selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []);
 
-    const handleDismissMessage = () => {
-        setSysMsg(null);
-    };
-
-    const assignSysMsgFromEntry = (sysMsg) => {
-        setSysMsg(sysMsg);
-    };
 
     const handleBlocking = (blockingState) => {
         setBlocking(blockingState);
@@ -79,7 +71,6 @@ const Dashboard = (props) => {
                 tesc={tesc}
                 selectedAccount={selectedAccount}
                 contractRegistry={contractRegistry}
-                assignSysMsg={assignSysMsgFromEntry}
                 onTescsChange={handleChangeTescs}
                 web3={web3}
                 handleBlocking={handleBlocking}
@@ -91,18 +82,9 @@ const Dashboard = (props) => {
 
     return (
         <React.Fragment>
-            <Grid>
-                <Grid.Row style={{ height: '100%' }}>
-                    <Grid.Column width={6}>
-                        <h2>Dashboard</h2>
-                    </Grid.Column>
-                    <Grid.Column width={10}>
-                        <div style={{ float: 'right' }}>
-                            {sysMsg && <FeedbackMessage message={sysMsg} handleDismiss={handleDismissMessage} />}
-                        </div>
-                    </Grid.Column>
-                </Grid.Row>
-            </Grid>
+            <PageHeader
+                title='Dashboard'
+            />
             <Table>
                 <Table.Header>
                     <Table.Row>
