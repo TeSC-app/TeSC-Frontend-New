@@ -20,6 +20,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
     const [fingerprint, setFingerprint] = useState(!inputs.fingerprint || parseInt(inputs.fingerprint, 16) === 0 ? '' : inputs.fingerprint);
 
     const [certPEM, setCertPEM] = useState('');
+    const [certFileName, setCertFileName] = useState('');
     const [filePickerDisplayed, setFilePickerDisplayed] = useState(false);
 
     const domain = useRef(inputs.domain);
@@ -53,7 +54,8 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
         }
     };
 
-    const handlePickCert = useCallback(async (certPEM) => {
+    const handlePickCert = useCallback(async (fileName, certPEM) => {
+        setCertFileName(fileName);
         setCertPEM(certPEM);
         try {
             if (!cache.current[domain.current]) {
@@ -189,7 +191,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
                     content='In case the certificate cannot be retrieved from your website e.g. the website is under maintenance, the verifier is still able to use the fingerprint of the TLS/SSL domain certificate to retrieve it from Certificate Transparancy. Therefore, this serves as a backup option for certificate retreival during the off-chain verification process. (optional)'
                     trigger={<Icon name='question circle' />}
                 />
-                (optional) 
+                (optional)
             </p>
 
             <Form.Checkbox
@@ -202,7 +204,14 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
 
             {sliderState && (fingerprint || filePickerDisplayed) &&
                 <Segment style={{ maxWidth: '100%', width: 'max-content' }}>
-                    {filePickerDisplayed && !fingerprint && (<FilePicker label='Choose certificate' onPickFile={handlePickCert} isDisabled={!sliderState} />)}
+                    {filePickerDisplayed && !fingerprint && (
+                        <FilePicker 
+                            label='Choose certificate' 
+                            onPickFile={handlePickCert} 
+                            isDisabled={!sliderState}
+                            input={{fileName:certFileName, content: certPEM}}
+                        />
+                    )}
                     {sliderState && fingerprint && (<span style={{ wordBreak: 'break-all' }}><b>Fingerprint: <Label>{fingerprint}</Label></b></span>)
                     }
                     <Dimmer active={isWaiting} inverted>
