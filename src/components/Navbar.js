@@ -26,12 +26,12 @@ const Navbar = ({ handleCollapseSidebar, hasWalletAddress, selectedAccount }) =>
     return (
         <div className="navbar" >
             <Menu inverted size='huge' style={{ borderRadius: '0px' }}>
-                <Menu.Item onClick={handleCollapseSidebar} style={{ width: "60px" }}>
+                {/* <Menu.Item onClick={handleCollapseSidebar} style={{ width: "60px" }}>
                     <Icon name='bars' />
                 </Menu.Item>
                 <Menu.Item
                     name='home'
-                />
+                /> */}
                 <Menu.Menu position='right'>
                     <Label className='metamaskLabel'>
                         <Image src='../images/metamask.png' size='tiny' /> {renderMetaMaskLabel()}

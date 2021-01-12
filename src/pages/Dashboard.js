@@ -85,8 +85,8 @@ const Dashboard = (props) => {
             <PageHeader
                 title='Dashboard'
             />
-            <Table>
-                <Table.Header>
+            <Table color='purple'>
+                <Table.Header active style={{backgroundColor: 'purple'}}>
                     <Table.Row>
                         <Table.HeaderCell>Address</Table.HeaderCell>
                         <Table.HeaderCell>Domain</Table.HeaderCell>

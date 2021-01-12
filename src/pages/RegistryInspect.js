@@ -54,7 +54,7 @@ function RegistryInspect() {
     const renderTable = () => {
         if (entries.length > 0 && submitted) {
             return (
-                <Table>
+                <Table color='purple'>
                     <Table.Header>
                         <Table.Row>
                             <Table.HeaderCell>Address</Table.HeaderCell>

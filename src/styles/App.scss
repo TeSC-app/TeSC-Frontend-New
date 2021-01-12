@@ -1,10 +1,18 @@
-$sidebar-bg-color: #1d1d1d;
-$submenu-bg-color: rgba(255, 255, 255, 0.05);
-$submenu-bg-color-collapsed: rgba(29, 29, 29, 0.95);
-$sidebar-color: #adadad;
-$highlight-color: #d8d8d8;
-$icon-bg-color: rgba(255, 255, 255, 0.05);
-$icon-size: 35px;
+$sidebar-bg-color: rgba(29, 29, 29, 0.5) !default;
+$sidebar-color: #adadad !default;
+$sidebar-width: 270px !default;
+$sidebar-collapsed-width: 80px !default;
+$highlight-color: #d8d8d8 !default;
+$submenu-bg-color: rgba(29, 29, 29, 0.25) !default;
+// $submenu-bg-color-collapsed: #2b2b2b !default;
+$submenu-bg-color-collapsed: rgba(29, 29, 29, 0.35) !default;
+$icon-bg-color: rgba(29, 29, 29, 0.35) !default;
+$icon-size: 35px !default;
+$breakpoint-xs: 480px !default;
+$breakpoint-sm: 576px !default;
+$breakpoint-md: 768px !default;
+$breakpoint-lg: 992px !default;
+$breakpoint-xl: 1200px !default;
 
 $s-size: 1.2rem;
 $m-size: 1.6rem;
@@ -14,10 +22,6 @@ $xl-size: 4.8rem;
 $navbar-height: 48.563px;
 
 @import "~react-pro-sidebar/dist/scss/styles.scss";
-
-// body {
-//   height: 100vh;
-// }
 
 .root-container {
   height: 100vh;
@@ -29,14 +33,26 @@ $navbar-height: 48.563px;
   height: $navbar-height;
 }
 
+.main-segment-bg {
+  background-color: rgba(29, 29, 29, 0.4);
+  border-radius: 25px;
+}
+
 .layout {
-  height: calc(100vh - 48.563px);
+  // height: calc(100vh - 48.563px);
+  height: 100vh;
   width: 100vw;
   display: flex;
   position: relative;
+  background-image: url("../static/images/munich-1.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+
+  // .sidebar {
+  //   background: rgba(29, 29, 29, 0.5);
+  // }
 
   .btn-toggle {
-    cursor: pointer;
     width: 35px;
     height: 35px;
     background: #353535;
@@ -50,45 +66,49 @@ $navbar-height: 48.563px;
     display: none;
   }
 
-  // .sidebar-btn-wrapper {
-  //   display: flex;
-  //   align-items: center;
-  //   justify-content: center;
-  //   .sidebar-btn {
-  //     padding: 1px 1px;
-  //     border-radius: 40px;
-  //     background: rgba(255, 255, 255, 0.05);
-  //     color: #adadad;
-  //     text-decoration: none;
-  //     margin: 0 auto;
-  //     height: 35px;
-  //     display: flex;
-  //     align-items: center;
-  //     justify-content: center;
-  //     text-overflow: ellipsis;
-  //     overflow: hidden;
-  //     span {
-  //       margin-left: 5px;
-  //       font-size: 13px;
-  //     }
-  //     &:hover {
-  //       color: $highlight-color;
-  //     }
-  //   }
-  // }
+  .pro-sidebar-header {
+    cursor: pointer;
+  }
+
+  .sidebar-btn-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    .sidebar-btn {
+      padding: 1px 1px;
+      border-radius: 40px;
+      background: rgba(29, 29, 29, 0.4);
+      color: #adadad;
+      text-decoration: none;
+      margin: 0 auto;
+      height: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      span {
+        margin-left: 5px;
+        font-size: 13px;
+      }
+      &:hover {
+        color: $highlight-color;
+      }
+    }
+  }
 
 
   .collapsed {
     width: 60px;
     min-width: 60px;
-    // .sidebar-btn {
-    //   display: inline-block;
-    //   border-radius: 50%;
-    //   width: 35px;
-    //   height: 35px;
-    //   line-height: 40px;
-    //   padding: 0;
-    // }
+    .sidebar-btn {
+      display: inline-block;
+      border-radius: 50%;
+      width: 35px;
+      height: 35px;
+      line-height: 40px;
+      padding: 0;
+    }
   }
 
   .pro-sidebar {
@@ -97,6 +117,7 @@ $navbar-height: 48.563px;
           padding: 15px 25px 15px 10px;
       }
     }
+    z-index: 1;
   }
 
   .page {

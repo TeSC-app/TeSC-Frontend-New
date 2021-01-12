@@ -25,6 +25,8 @@ const FilePicker = ({ label, onPickFile, isDisabled = false, input }) => {
     return (
         <Fragment>
             <Button
+                basic
+                color='purple'
                 content={label}
                 labelPosition="left"
                 icon="file"

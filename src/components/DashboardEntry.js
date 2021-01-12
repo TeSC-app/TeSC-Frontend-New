@@ -14,9 +14,9 @@ import {
 } from '../utils/tesc';
 
 function DashboardEntry(props) {
-    const { selectedAccount, tesc, contractRegistry, assignSysMsg, handleBlocking, onTescsChange, hasAccountChanged, handleAccountChanged } = props
+    const { selectedAccount, tesc, contractRegistry, assignSysMsg, onTescsChange, hasAccountChanged, handleAccountChanged } = props
 
-    const { web3, showMessage } = useContext(AppContext);
+    const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, isInRegistry, createdAt } = tesc
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
@@ -69,7 +69,7 @@ function DashboardEntry(props) {
     };
 
     const addToRegistry = async () => {
-        handleBlocking(true);
+        handleBlockScreen(true);
         if (domain && contractAddress) {
             try {
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call();
@@ -98,11 +98,11 @@ function DashboardEntry(props) {
                 console.log(err);
             }
         }
-        handleBlocking(false);
+        handleBlockScreen(false);
     };
 
     const removeFromRegistry = async () => {
-        handleBlocking(true);
+        handleBlockScreen(true);
         if (domain && contractAddress) {
             try {
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call();
@@ -130,7 +130,7 @@ function DashboardEntry(props) {
                 }));
             }
         };
-        handleBlocking(false);
+        handleBlockScreen(false);
     };
 
     const addRemoveFavourites = () => {
