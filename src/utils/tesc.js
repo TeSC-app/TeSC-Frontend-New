@@ -18,7 +18,8 @@ export const predictContractAddress = async (web3) => {
     console.log("Sender address:", senderAddress);
 
     if (!senderAddress) {
-        throw new Error('Wallet address not found! Your wallet might not be connected to this site.');
+        // throw new Error('Wallet address not found! Your wallet might not be connected to this site.');
+        return;
     }
     const nonce = await web3.eth.getTransactionCount(senderAddress);
 

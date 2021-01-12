@@ -56,15 +56,15 @@ const useStyles = makeStyles((theme) => ({
 
 
 function getSteps() {
-    return ['Create Claim', 'Create Signature', 'Add Certificate Fingerprint', 'Review and Confirm', 'Receipt'];
+    return ['Create Claim', 'Create Signature', 'Add Certificate Fingerprint', 'Review and Deploy', 'Receipt'];
 }
 
 
 
 const DeploymentForm = ({ initInputs }) => {
-    const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
+    const { web3, showMessage, handleBlockScreen, account } = useContext(AppContext);
 
-    const defaultFingerprint = !initInputs || parseInt(initInputs.fingerprint, 16) === 0 ? '' : initInputs.fingerprint;
+    const defaultFingerprint = !initInputs || parseInt(initInputs.fisngerprint, 16) === 0 ? '' : initInputs.fingerprint;
 
     const [contractAddress, setContractAddress] = useState(initInputs ? initInputs.contractAddress.toLowerCase() : '');
     const [futureContractAddress, setFutureContractAddress] = useState(initInputs ? initInputs.contractAddress.toLowerCase() : '');
@@ -209,7 +209,7 @@ const DeploymentForm = ({ initInputs }) => {
 
         showMessage(null);
 
-        const account = web3.currentProvider.selectedAddress;
+        // const account = web3.currentProvider.selectedAddress;
         const curDomain = getCurrentDomain();
 
         let success = false;
@@ -306,6 +306,7 @@ const DeploymentForm = ({ initInputs }) => {
                 return {
                     component: (
                         <Fragment>
+                            <Header as='h3' content='Create Claim' style={{marginBottom: '30px'}} color='purple'/>
                         {/* <div style={{fontSize:'1.2em'}}>
                             <p>{'In this step, you could provide information to compute the claim of the form <contract_address>.<domain>.<expiry><flags>'}</p>
                             <ul>
@@ -388,6 +389,8 @@ const DeploymentForm = ({ initInputs }) => {
                 return {
                     component: (
                         <Fragment>
+                            <Header as='h3' content='Create Signature' style={{marginBottom: '30px'}} color='purple'/>
+
                             <p>
                                 <b>Signature</b> <span style={{ color: 'red' }}>*</span>
                                 <Popup
@@ -479,10 +482,13 @@ const DeploymentForm = ({ initInputs }) => {
             case 2:
                 return {
                     component: (
-                        <FingerprintSegment
-                            inputs={{ contractAddress, domain, expiry, flags, signature, fingerprint }}
-                            onGetFingerprint={handleGetFingerprint}
-                        />
+                        <Fragment>
+                            <Header as='h3' content='Add Certificate Fingerprint' style={{marginBottom: '30px'}} color='purple'/>
+                            <FingerprintSegment
+                                inputs={{ contractAddress, domain, expiry, flags, signature, fingerprint }}
+                                onGetFingerprint={handleGetFingerprint}
+                            />
+                        </Fragment>
                     ),
                     completed: getStepContent(0).completed && getStepContent(1).completed,
                     reachable: (getStepContent(0).completed && getStepContent(1).completed) || getStepContent(1).reachable
@@ -491,6 +497,7 @@ const DeploymentForm = ({ initInputs }) => {
                 return {
                     component: (
                         <Fragment>
+                            <Header as='h3' content='Review and Deploy' style={{marginBottom: '30px'}} color='purple'/>
                             <TescDataTable
                                 data={{ contractAddress, domain: getCurrentDomain(), expiry, flags, signature, fingerprint }}
                             />
@@ -509,10 +516,17 @@ const DeploymentForm = ({ initInputs }) => {
                 };
             case 4:
                 return {
-                    component: costPaid && (
-                        <Grid.Row style={{ minWidth: 'max-content', paddingTop: '2%' }}>
-                            <DeploymentOutput contractAddress={contractAddress} costPaid={costPaid} />
-                        </Grid.Row>
+                    component: (
+                        <Fragment>
+                            <Header as='h3' content='Receipt' style={{marginBottom: '30px'}} color='purple'/>
+                            {costPaid && 
+                                <Grid.Row style={{ minWidth: 'max-content', paddingTop: '2%' }}>
+                                    <DeploymentOutput contractAddress={contractAddress} costPaid={costPaid} />
+                                </Grid.Row>
+                            }
+                            
+
+                        </Fragment>
                     ),
                     completed: getStepContent(3).completed,
                     reachable: getStepContent(3).completed
@@ -580,12 +594,12 @@ const DeploymentForm = ({ initInputs }) => {
     return (
         <React.Fragment>
             <div className={classes.root}>
-                <Stepper alternativeLabel nonLinear activeStep={activeStep}>
+                <Stepper alternativeLabel nonLinear activeStep={activeStep} style={{background: 'none'}}>
                     {steps.map((label, index) => {
                         const stepProps = {};
                         const buttonProps = {};
                         if (isStepOptional(index)) {
-                            buttonProps.optional = <Typography variant="caption">Optional</Typography>;
+                            buttonProps.optional = <Typography variant="caption" style={{fontSize: '0.9em'}}>Optional</Typography>;
                         }
                         return (
                             <Step key={label} {...stepProps}>
@@ -595,7 +609,7 @@ const DeploymentForm = ({ initInputs }) => {
                                     disabled={!getStepContent(index).reachable}
                                     {...buttonProps}
                                 >
-                                    {label}
+                                    <span style={{fontSize: '1.2em'}}>{label}</span>
                                 </StepButton>
                             </Step>
                         );

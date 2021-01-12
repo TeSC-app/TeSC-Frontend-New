@@ -54,7 +54,7 @@ function RegistryInspect() {
     const renderTable = () => {
         if (entries.length > 0 && submitted) {
             return (
-                <Table>
+                <Table color='purple'>
                     <Table.Header>
                         <Table.Row>
                             <Table.HeaderCell>Address</Table.HeaderCell>
@@ -69,7 +69,7 @@ function RegistryInspect() {
                                     <Table.Cell>{contractInstance.address}</Table.Cell>
                                     <Table.Cell>{moment.unix(parseInt(contractInstance.expiry)).format('DD/MM/YYYY')}</Table.Cell>
                                     <Table.Cell textAlign="center">
-                                        <Icon name="delete" color="red" circular />
+                                        <Icon name="check" color="green" circular />
                                     </Table.Cell>
                                 </Table.Row>
                             ))

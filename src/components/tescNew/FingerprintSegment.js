@@ -12,7 +12,7 @@ import { predictContractAddress, formatClaim, flagsToBytes24Hex, FLAG_POSITIONS 
 
 
 const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
-    const { web3, showMessage } = useContext(AppContext);
+    const { web3, showMessage, account } = useContext(AppContext);
 
     const [isWaiting, setIsWaiting] = useState(false);
 
