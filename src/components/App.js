@@ -27,7 +27,7 @@ const App = ({ web3 }) => {
         const init = async () => {
             if (window.ethereum) {
                 const [selectedAccount,] = await web3.eth.getAccounts();
-                setAccount(selectedAccount.toLowerCase());
+                setAccount(selectedAccount && selectedAccount.toLowerCase());
                 window.ethereum.on('accountsChanged', function (accounts) {
                     setHasAccountChanged(true);
                     console.log('CHANGE DETECTED');
@@ -86,7 +86,7 @@ const App = ({ web3 }) => {
                     <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} handleCollapseSidebar={handleCollapseSidebar} />
                     <Container className="page">
                         <Segment className='main-segment-bg' padded='very'
-                            style={{height: '100vh', minHeight: 'max-content', background: 'rgba(255, 255, 255, 0.97)', borderRadius: '25px'}} 
+                            style={{ minHeight: 'max-content', background: 'rgba(255, 255, 255, 0.97)', borderRadius: '25px' }}
                         >
                             <Route path="/" exact render={props => {
                                 return <Dashboard {...props} selectedAccount={account} hasAccountChanged={hasAccountChanged} handleAccountChanged={handleAccountChanged} />;
