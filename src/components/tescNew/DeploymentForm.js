@@ -39,14 +39,14 @@ const useStyles = makeStyles((theme) => ({
     root: {
         width: '100%',
     },
-    button: {
-        marginRight: theme.spacing(1),
-    },
-    backButton: {
-        marginRight: theme.spacing(1),
+    active: {
+        color: 'purple',
+        backgroundColor: 'purple'
     },
     completed: {
         display: 'inline-block',
+        color: 'purple',
+        backgroundColor: 'purple'
     },
     instructions: {
         marginTop: theme.spacing(1),
@@ -629,7 +629,7 @@ const DeploymentForm = ({ initInputs }) => {
                                     <BtnSuir
                                         basic
                                         onClick={handleReset}
-                                        className={classes.button}
+                                        // className={classes.button}
                                         primary
                                     >
                                         Deploy another TeSC

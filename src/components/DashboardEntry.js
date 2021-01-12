@@ -14,7 +14,7 @@ import {
 } from '../utils/tesc';
 
 function DashboardEntry(props) {
-    const { selectedAccount, tesc, contractRegistry, assignSysMsg, onTescsChange, hasAccountChanged, handleAccountChanged } = props
+    const { selectedAccount, tesc, contractRegistry, onTescsChange, hasAccountChanged, handleAccountChanged } = props
 
     const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, isInRegistry, createdAt } = tesc

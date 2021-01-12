@@ -8,12 +8,13 @@ const SearchBox = ({ label, value, onChange, placeholder, onSubmit, icon }) => (
             <Form.Field>
                 <Input
                     value={value}
-                    label={label}
+                    label={{ content: label, color: 'purple' }}
                     placeholder={placeholder}
                     onChange={e => { onChange(e.target.value); }}
                     size='large'
                     icon={icon}
                     className='searchBoxInput'
+                    
                 />
             </Form.Field>
         </Form>

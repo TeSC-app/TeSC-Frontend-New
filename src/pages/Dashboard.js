@@ -11,13 +11,8 @@ const Dashboard = (props) => {
     const { selectedAccount, hasAccountChanged, handleAccountChanged } = props
     const { web3 } = useContext(AppContext);
     const [contractRegistry, setContractRegistry] = useState(null);
-    const [blocking, setBlocking] = useState(false);
     const [tescs, setTescs] = useState(selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []);
 
-
-    const handleBlocking = (blockingState) => {
-        setBlocking(blockingState);
-    };
 
     const loadStorage = useCallback(() => {
         return JSON.parse(localStorage.getItem(selectedAccount.toLowerCase()));
@@ -73,7 +68,6 @@ const Dashboard = (props) => {
                 contractRegistry={contractRegistry}
                 onTescsChange={handleChangeTescs}
                 web3={web3}
-                handleBlocking={handleBlocking}
                 hasAccountChanged={hasAccountChanged}
                 handleAccountChanged={handleAccountChanged}
             />
@@ -82,9 +76,7 @@ const Dashboard = (props) => {
 
     return (
         <React.Fragment>
-            <PageHeader
-                title='Dashboard'
-            />
+            <PageHeader title='Dashboard' />
             <Table color='purple'>
                 <Table.Header active style={{backgroundColor: 'purple'}}>
                     <Table.Row>
@@ -115,9 +107,6 @@ const Dashboard = (props) => {
                     </Table.Body>
                 )}
             </Table>
-            <Dimmer active={blocking}>
-                <Loader indeterminate content='Waiting for transaction to finish...' />
-            </Dimmer>
         </React.Fragment>
     );
 };

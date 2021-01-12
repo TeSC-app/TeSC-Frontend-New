@@ -5,6 +5,9 @@ import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
 import moment from 'moment'
 import SearchBox from '../components/SearchBox';
+import LinkTescInspect from '../components/InternalLink';
+import PageHeader from '../components/PageHeader';
+
 
 function RegistryInspect() {
     const { web3 } = useContext(AppContext);
@@ -66,7 +69,7 @@ function RegistryInspect() {
                         {
                             entries.map((contractInstance) => (
                                 <Table.Row key={contractInstance.address}>
-                                    <Table.Cell>{contractInstance.address}</Table.Cell>
+                                    <Table.Cell><LinkTescInspect contractAddress={contractInstance.address} /></Table.Cell>
                                     <Table.Cell>{moment.unix(parseInt(contractInstance.expiry)).format('DD/MM/YYYY')}</Table.Cell>
                                     <Table.Cell textAlign="center">
                                         <Icon name="check" color="green" circular />
@@ -91,7 +94,7 @@ function RegistryInspect() {
 
     return (
         <div>
-            <h2>Explore TeSC Registry</h2>
+            <PageHeader title='Explore TeSC Registry' />
             {/* Smart Contracts associated with Domain */}
             <SearchBox
                 onChange={handleInput}
