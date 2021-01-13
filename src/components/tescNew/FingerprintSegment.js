@@ -60,7 +60,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
         try {
             if (!cache.current[domain.current]) {
                 const cert = Certificate.fromPEM(certPEM);
-                if (!cert.dnsNames.includes(domain.current) || !cert.ipAddresses.includes(domain.current)) {
+                if (!cert.dnsNames.includes(domain.current) && !cert.ipAddresses.includes(domain.current)) {
                     throw new Error(`The selected certificate is not issued to domain ${domain.current}`);
                 }
 
