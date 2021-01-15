@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useState, useCallback } from 'react';
 import 'react-day-picker/lib/style.css';
-import { Table, Grid, Dropdown, Dimmer, Loader } from 'semantic-ui-react';
+
 import AppContext from '../appContext';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import '../styles/Dashboard.scss';
 import DashboardEntry from '../components/DashboardEntry';
 import PageHeader from '../components/PageHeader';
+import TableGeneral from '../components/TableGeneral';
 
 const Dashboard = (props) => {
     const { selectedAccount, hasAccountChanged, handleAccountChanged } = props
@@ -18,7 +19,7 @@ const Dashboard = (props) => {
         return JSON.parse(localStorage.getItem(selectedAccount.toLowerCase()));
     }, [selectedAccount]);
 
-    const filterTescs = () => {
+    const showFavouriteTescs = () => {
         localStorage.getItem(selectedAccount.toLowerCase()) ? setTescs(tescs.filter(tesc => tesc.isFavourite === true)) : setTescs([]);
     };
 
@@ -60,7 +61,7 @@ const Dashboard = (props) => {
         localStorage.setItem(selectedAccount.toLowerCase(), JSON.stringify(updatedTescs));
     };
 
-    const renderRows = () => {
+    const renderDashboardRows = () => {
         if (tescs) return tescs.map((tesc) => (
             <DashboardEntry key={tesc.contractAddress}
                 tesc={tesc}
@@ -74,41 +75,16 @@ const Dashboard = (props) => {
         ));
     };
 
+    const dashboardProps = { renderDashboardRows, showFavouriteTescs, showAllTescs, showOwnTescs }
+
     return (
         <React.Fragment>
             <PageHeader title='Dashboard' />
-            <Table color='purple'>
-                <Table.Header active style={{backgroundColor: 'purple'}}>
-                    <Table.Row>
-                        <Table.HeaderCell>Address</Table.HeaderCell>
-                        <Table.HeaderCell>Domain</Table.HeaderCell>
-                        <Table.HeaderCell>Expiry</Table.HeaderCell>
-                        <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
-                        <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
-                        <Table.HeaderCell textAlign="center">Favourites
-                            <Dropdown
-                                icon='filter'
-                                floating
-                                button
-                                className='icon dropdownFavourites'>
-                                <Dropdown.Menu>
-                                    <Dropdown.Item icon='redo' text='All' onClick={showAllTescs} />
-                                    <Dropdown.Item icon='heart' text='By favourite' onClick={filterTescs} />
-                                    <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
-                                </Dropdown.Menu>
-                            </Dropdown>
-                        </Table.HeaderCell>
-                        <Table.HeaderCell>Created At</Table.HeaderCell>
-                    </Table.Row>
-                </Table.Header>
-                {(
-                    <Table.Body>
-                        {renderRows()}
-                    </Table.Body>
-                )}
-            </Table>
+            <TableGeneral { ...dashboardProps} />
         </React.Fragment>
     );
+
+    
 };
 
 export default Dashboard;

@@ -86,7 +86,7 @@ const App = ({ web3 }) => {
                     <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} handleCollapseSidebar={handleCollapseSidebar} />
                     <Container className="page">
                         <Segment className='main-segment-bg' padded='very'
-                            style={{ minHeight: 'max-content', background: 'rgba(255, 255, 255, 0.97)', borderRadius: '25px' }}
+                            style={{height: '110vh', minHeight: 'max-content', background: 'rgba(255, 255, 255, 0.97)', borderRadius: '25px'}} 
                         >
                             <Route path="/" exact render={props => {
                                 return <Dashboard {...props} selectedAccount={account} hasAccountChanged={hasAccountChanged} handleAccountChanged={handleAccountChanged} />;
