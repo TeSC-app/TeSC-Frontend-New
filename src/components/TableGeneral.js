@@ -2,7 +2,7 @@ import React from 'react'
 import { Table, Dropdown } from 'semantic-ui-react';
 
 function TableGeneral(props) {
-    const { renderDashboardRows, showAllTescs, showFavouriteTescs, showOwnTescs } = props
+    const { renderDashboardRows, showAllTescs, showFavouriteTescs, showOwnTescs, isDashboard, isRegistryInspect, renderRegistryInspectRows } = props
     return (
         <Table color='purple'>
             <Table.Header active style={{ backgroundColor: 'purple' }}>
@@ -11,7 +11,7 @@ function TableGeneral(props) {
                     <Table.HeaderCell>Domain</Table.HeaderCell>
                     <Table.HeaderCell>Expiry</Table.HeaderCell>
                     <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
-                    <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
+                    {isDashboard ? <><Table.HeaderCell textAlign="center">Registry</Table.HeaderCell> 
                     <Table.HeaderCell textAlign="center">Favourites
                             <Dropdown
                             icon='filter'
@@ -25,12 +25,12 @@ function TableGeneral(props) {
                             </Dropdown.Menu>
                         </Dropdown>
                     </Table.HeaderCell>
-                    <Table.HeaderCell>Created At</Table.HeaderCell>
+                    <Table.HeaderCell>Created At</Table.HeaderCell></> : null}
                 </Table.Row>
             </Table.Header>
             {(
                 <Table.Body>
-                    {renderDashboardRows()}
+                    {isDashboard ? renderDashboardRows() : isRegistryInspect ? renderRegistryInspectRows() : null}
                 </Table.Body>
             )}
         </Table>

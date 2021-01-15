@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react'
-import { Table, Icon } from 'semantic-ui-react';
+import { Table, Icon, Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
@@ -7,6 +7,7 @@ import moment from 'moment'
 import SearchBox from '../components/SearchBox';
 import LinkTescInspect from '../components/InternalLink';
 import PageHeader from '../components/PageHeader';
+import TableGeneral from '../components/TableGeneral';
 
 
 function RegistryInspect() {
@@ -15,6 +16,7 @@ function RegistryInspect() {
     const [domain, setDomain] = useState('')
     const [entries, setEntries] = useState([])
     const [submitted, setSubmitted] = useState(false)
+    const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         const init = async () => {
@@ -34,6 +36,7 @@ function RegistryInspect() {
 
     const handleInput = domain => {
         setSubmitted(false);
+        setLoading(true)
         setDomain(domain);
     }
 
@@ -52,35 +55,29 @@ function RegistryInspect() {
         }
         setEntries(contractInstances);
         setSubmitted(true)
+        setLoading(false)
     }
 
+    const renderRegistryInspectRows = () => {
+        entries.map((contractInstance) => (
+            <Table.Row key={contractInstance.address}>
+                <Table.Cell><LinkTescInspect contractAddress={contractInstance.address} /></Table.Cell>
+                <Table.Cell>{moment.unix(parseInt(contractInstance.expiry)).format('DD/MM/YYYY')}</Table.Cell>
+                <Table.Cell textAlign="center">
+                    <Icon name="check" color="green" circular />
+                </Table.Cell>
+            </Table.Row>
+        ))
+    }
+
+    const tableProps = { renderRegistryInspectRows, isRegistryInspect: true}
+
     const renderTable = () => {
-        if (entries.length > 0 && submitted) {
+        if (entries.length > 0 && submitted && !loading) {
             return (
-                <Table color='purple'>
-                    <Table.Header>
-                        <Table.Row>
-                            <Table.HeaderCell>Address</Table.HeaderCell>
-                            <Table.HeaderCell>Expiry</Table.HeaderCell>
-                            <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
-                        </Table.Row>
-                    </Table.Header>
-                    <Table.Body>
-                        {
-                            entries.map((contractInstance) => (
-                                <Table.Row key={contractInstance.address}>
-                                    <Table.Cell><LinkTescInspect contractAddress={contractInstance.address} /></Table.Cell>
-                                    <Table.Cell>{moment.unix(parseInt(contractInstance.expiry)).format('DD/MM/YYYY')}</Table.Cell>
-                                    <Table.Cell textAlign="center">
-                                        <Icon name="check" color="green" circular />
-                                    </Table.Cell>
-                                </Table.Row>
-                            ))
-                        }
-                    </Table.Body>
-                </Table>
+                <TableGeneral {...tableProps} />
             )
-        } else if (entries.length === 0 && submitted) {
+        } else if (entries.length === 0 && submitted && !loading) {
             return (
                 <div className="ui placeholder segment">
                     <div className="ui icon header">
@@ -88,6 +85,15 @@ function RegistryInspect() {
                   We could not find a Smart Contract associated to this domain in the registry. Look for a different domain.
                 </div>
                 </div>
+            )
+        } else if (loading && submitted && entries.length===0) {
+            return (
+                <Segment>
+                    <Dimmer active={loading} inverted>
+                        <Loader size='large'>Loading results</Loader>
+                    </Dimmer>
+                    <Image src='https://react.semantic-ui.com/images/wireframe/paragraph.png' />
+                </Segment>
             )
         }
     }

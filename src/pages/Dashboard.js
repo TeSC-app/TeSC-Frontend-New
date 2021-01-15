@@ -75,16 +75,16 @@ const Dashboard = (props) => {
         ));
     };
 
-    const dashboardProps = { renderDashboardRows, showFavouriteTescs, showAllTescs, showOwnTescs }
+    const tableProps = { renderDashboardRows, showFavouriteTescs, showAllTescs, showOwnTescs, isDashboard: true }
 
     return (
         <React.Fragment>
             <PageHeader title='Dashboard' />
-            <TableGeneral { ...dashboardProps} />
+            <TableGeneral {...tableProps} />
         </React.Fragment>
     );
 
-    
+
 };
 
 export default Dashboard;
