@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react'
-import { Table, Icon, Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
+import { Table, Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
@@ -8,20 +8,7 @@ import SearchBox from '../components/SearchBox';
 import LinkTescInspect from '../components/InternalLink';
 import PageHeader from '../components/PageHeader';
 import TableGeneral from '../components/TableGeneral';
-import { makeStyles } from '@material-ui/core/styles';
-import Pagination from '@material-ui/lab/Pagination';
 import TableCellVerification from '../components/TableCellVerification';
-
-const useStyles = makeStyles((theme) => ({
-    root: {
-        '& > *': {
-            marginTop: theme.spacing(2),
-        },
-        display: 'flex',
-        justifyContent: 'center'
-    },
-}));
-
 
 function RegistryInspect() {
     const { web3 } = useContext(AppContext);
@@ -32,7 +19,6 @@ function RegistryInspect() {
     const [loading, setLoading] = useState(false)
     const [resultSizeInitial, setResultSizeInitial] = useState(0) 
     const [displayedEntries, setDisplayedEntries] = useState([])
-    const classesPagination = useStyles();
 
     useEffect(() => {
         const init = async () => {
@@ -72,12 +58,12 @@ function RegistryInspect() {
         }
         setResultSizeInitial(contractInstances.length)
         setAllEntries(contractInstances);
-        setDisplayedEntries(contractInstances.slice(0,8))
+        setDisplayedEntries(contractInstances.slice(0,7))
         setSubmitted(true)
         setLoading(false)
     }
 
-    const renderRegistryInspectRows = () => {
+    const renderRows = () => {
         return displayedEntries.map((contractInstance) => (
             <Table.Row key={contractInstance.address}>
                 <Table.Cell><LinkTescInspect contractAddress={contractInstance.address} /></Table.Cell>
@@ -88,20 +74,17 @@ function RegistryInspect() {
         ))
     }
 
-    const tableProps = { renderRegistryInspectRows, isRegistryInspect: true }
-
     const changePage = (event, value) => {
-        setDisplayedEntries(allEntries.slice((value-1)* 8, value * 8))
+        setDisplayedEntries(allEntries.slice((value - 1) * 7, value * 7))
     }
+
+    const tableProps = { renderRows, changePage, totalPages: Math.ceil(resultSizeInitial/7) }
 
     const renderTable = () => {
         if (allEntries.length > 0 && submitted && !loading) {
             return (
                 <div style={{justifyContent: 'center'}}>
                     <TableGeneral {...tableProps} />
-                    <div className={classesPagination.root}>
-                        <Pagination count={Math.ceil(resultSizeInitial / 8)} shape="rounded" onChange={changePage} />
-                    </div>
                 </div>
             )
         } else if (allEntries.length === 0 && submitted && !loading) {

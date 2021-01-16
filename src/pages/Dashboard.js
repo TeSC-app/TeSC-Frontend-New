@@ -13,22 +13,34 @@ const Dashboard = (props) => {
     const { web3 } = useContext(AppContext);
     const [contractRegistry, setContractRegistry] = useState(null);
     const [tescs, setTescs] = useState(selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []);
-
+    const [displayedEntries, setDisplayedEntries] = useState([])
+    const [filterOption, setFilterOption] = useState(0)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(Math.ceil(tescs.length/7))
 
     const loadStorage = useCallback(() => {
         return JSON.parse(localStorage.getItem(selectedAccount.toLowerCase()));
     }, [selectedAccount]);
 
-    const showFavouriteTescs = () => {
-        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescs(tescs.filter(tesc => tesc.isFavourite === true)) : setTescs([]);
+    const showAllTescs = () => {
+        setCurrentPage(1)
+        setFilterOption(0)
+        setTotalPages(Math.ceil(tescs.length/7))
+        localStorage.getItem(selectedAccount.toLowerCase()) ? setDisplayedEntries(loadStorage().slice(0, 7)) : setTescs([]);
     };
 
-    const showAllTescs = () => {
-        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescs(loadStorage()) : setTescs([]);
+    const showFavouriteTescs = () => {
+        setCurrentPage(1)
+        setFilterOption(1)
+        setTotalPages(Math.ceil(tescs.filter(tesc => tesc.isFavourite === true).length/7))
+        localStorage.getItem(selectedAccount.toLowerCase()) ? setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === true).slice(0, 7)) : setTescs([]);
     };
 
     const showOwnTescs = () => {
-        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescs(loadStorage().filter(tesc => tesc.own === true)) : setTescs([]);
+        setCurrentPage(1)
+        setFilterOption(2)
+        setTotalPages(Math.ceil(tescs.filter(tesc => tesc.own === true).length/7))
+        localStorage.getItem(selectedAccount.toLowerCase()) ? setDisplayedEntries(tescs.filter(tesc => tesc.own === true).slice(0, 7)) : setTescs([]);
     };
 
     useEffect(() => {
@@ -40,10 +52,15 @@ const Dashboard = (props) => {
                 );
                 setContractRegistry(contractRegistry);
                 setTescs(selectedAccount ? loadStorage() : []);
+                setDisplayedEntries(selectedAccount ? loadStorage().slice(0, 7) : [])
+                setTotalPages(Math.ceil(loadStorage().length/7))
                 window.ethereum.on('accountsChanged', (accounts) => {
                     setTescs(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
                         JSON.parse(localStorage.getItem(accounts[0].toLowerCase())) :
                         []);
+                    setDisplayedEntries(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
+                        JSON.parse(localStorage.getItem(accounts[0].toLowerCase())).slice(0, 7) :
+                        [])
                 });
             }
             catch (error) {
@@ -61,8 +78,8 @@ const Dashboard = (props) => {
         localStorage.setItem(selectedAccount.toLowerCase(), JSON.stringify(updatedTescs));
     };
 
-    const renderDashboardRows = () => {
-        if (tescs) return tescs.map((tesc) => (
+    const renderRows = () => {
+        if (displayedEntries) return displayedEntries.map((tesc) => (
             <DashboardEntry key={tesc.contractAddress}
                 tesc={tesc}
                 selectedAccount={selectedAccount}
@@ -75,7 +92,25 @@ const Dashboard = (props) => {
         ));
     };
 
-    const tableProps = { renderDashboardRows, showFavouriteTescs, showAllTescs, showOwnTescs, isDashboard: true }
+    const changePage = (event, value) => {
+        //check if there are filters applied
+        setCurrentPage(value)
+        setTotalPages(Math.ceil(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc).length/7))
+        setDisplayedEntries(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc)
+            .slice((value - 1) * 7, value * 7))
+    }
+
+    const tableProps = {
+        renderRows,
+        showFavouriteTescs,
+        showAllTescs,
+        showOwnTescs,
+        isDashboard: true,
+        changePage,
+        resultSizeInitial: tescs.length,
+        currentPage, 
+        totalPages
+    }
 
     return (
         <React.Fragment>

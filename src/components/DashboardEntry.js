@@ -14,12 +14,14 @@ import TableCellVerification from './TableCellVerification';
 
 function DashboardEntry(props) {
     const { selectedAccount, tesc, contractRegistry, onTescsChange, hasAccountChanged, handleAccountChanged } = props
-
     const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, isInRegistry, createdAt } = tesc
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
     const [costEstimatedRemove, setCostEstimatedRemove] = useState(0);
+    const [verified, setVerified] = useState(null)
+    //registry buttons need this state to get rerendered
+    const [isInRegistryUpdated, setIsInRegistryUpdated] = useState(isInRegistry)
 
     useEffect(() => {
         handleAccountChanged(false)
@@ -28,16 +30,20 @@ function DashboardEntry(props) {
 
     useEffect(() => {
         const runEffect = async () => {
-            if (!isInRegistry && own && selectedAccount && !hasAccountChanged) {
+            if (!isInRegistryUpdated && own && selectedAccount && !hasAccountChanged) {
                 const estCostAdd = contractRegistry ? await estimateRegistryAddCost(web3, selectedAccount, contractRegistry, domain, contractAddress) : 0;
                 setCostEstimatedAdd(estCostAdd);
-            } else if (isInRegistry && own && selectedAccount && !hasAccountChanged) {
+            } else if (isInRegistryUpdated && own && selectedAccount && !hasAccountChanged) {
                 const estCostRemove = contractRegistry ? await estimateRegistryRemoveCost(web3, selectedAccount, contractRegistry, domain, contractAddress) : 0;
                 setCostEstimatedRemove(estCostRemove);
             }
         };
         runEffect();
-    }, [web3, contractAddress, selectedAccount, contractRegistry, domain, isInRegistry, own, hasAccountChanged]);
+    }, [web3, contractAddress, selectedAccount, contractRegistry, domain, isInRegistryUpdated, own, hasAccountChanged]);
+
+    const handleVerified = (verified) => {
+        setVerified(verified)
+    }
 
     const addToRegistry = async () => {
         handleBlockScreen(true);
@@ -53,6 +59,7 @@ function DashboardEntry(props) {
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                             }));
                             onTescsChange({ contractAddress, domain, expiry, isFavourite, own, isInRegistry: true, createdAt });
+                            setIsInRegistryUpdated(true)
                         });
                 } else {
                     showMessage(buildNegativeMsg({
@@ -86,9 +93,10 @@ function DashboardEntry(props) {
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                             }));
                             onTescsChange({ contractAddress, domain, expiry, isFavourite, own, isInRegistry: false, createdAt });
+                            setIsInRegistryUpdated(false)
                         });
                 } else {
-                    showMessage(buildPositiveMsg({
+                    showMessage(buildNegativeMsg({
                         header: 'Unable to remove entry from the registry',
                         msg: `TLS-endorsed Smart Contract at address ${contractAddress} was not found in the registry`
                     }));
@@ -119,12 +127,12 @@ function DashboardEntry(props) {
     const renderRegistryButtons = () => {
         if (own) {
             return (
-                isInRegistry ?
+                isInRegistryUpdated ?
                     <Popup inverted content={`Remove entry from the TeSC registry. This would cost around ${costEstimatedRemove.toFixed(5)} ETH.`}
                         trigger={<Button basic color='red' onClick={removeFromRegistry} content='Remove' icon='delete' className='buttonRemove' />} />
                     :
                     <Popup inverted content={`Add entry to the TeSC registry. This would cost around ${costEstimatedAdd.toFixed(5)} ETH.`}
-                        trigger={<Button basic color='blue' onClick={addToRegistry} content='Add' icon='plus' className='buttonAdd' />}
+                        trigger={<Button basic disabled={!verified} color='blue' onClick={addToRegistry} content='Add' icon='plus' className='buttonAdd' />}
                     />
             );
         } else {
@@ -147,6 +155,8 @@ function DashboardEntry(props) {
         }
     };
 
+    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified }
+
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
@@ -159,7 +169,7 @@ function DashboardEntry(props) {
             </Table.Cell>
             <Table.Cell>{renderDomain()}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
-            <TableCellVerification domain={domain} contractAddress={contractAddress} />
+            <TableCellVerification {...tableCellVerifProps} />
             <Table.Cell textAlign="center">
                 {renderRegistryButtons()}
             </Table.Cell>

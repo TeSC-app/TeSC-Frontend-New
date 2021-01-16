@@ -7,8 +7,7 @@ import { Table, Popup, Loader, Icon } from 'semantic-ui-react';
 import LinkTescInspect from './InternalLink';
 
 function TableCellVerification(props) {
-    const { domain, contractAddress } = props
-    const [verified, setVerified] = useState(null);
+    const { domain, contractAddress, handleVerified, verified } = props
 
     const renderVerifResult = () => {
         if (domain && isSha3Hash(domain)) {
@@ -29,13 +28,13 @@ function TableCellVerification(props) {
             try {
                 const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress.toLowerCase()}`);
                 console.log(response);
-                setVerified(response.data.verified);
+                handleVerified(response.data.verified);
             } catch (error) {
                 console.log(error);
-                setVerified(false);
+                handleVerified(false);
             }
         })();
-    }, [contractAddress]);
+    }, [contractAddress, handleVerified]);
 
     return (
         <Table.Cell textAlign="center">
