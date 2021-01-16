@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import moment from 'moment';
-import axios from 'axios';
-import { Table, Icon, Popup, Button, Loader } from 'semantic-ui-react';
+import { Table, Icon, Popup, Button } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
 
 import AppContext from '../appContext';
@@ -10,8 +9,8 @@ import LinkTescInspect from '../components/InternalLink';
 import {
     estimateRegistryAddCost,
     estimateRegistryRemoveCost,
-    isSha3Hash
 } from '../utils/tesc';
+import TableCellVerification from './TableCellVerification';
 
 function DashboardEntry(props) {
     const { selectedAccount, tesc, contractRegistry, onTescsChange, hasAccountChanged, handleAccountChanged } = props
@@ -21,7 +20,6 @@ function DashboardEntry(props) {
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
     const [costEstimatedRemove, setCostEstimatedRemove] = useState(0);
-    const [verified, setVerified] = useState(null);
 
     useEffect(() => {
         handleAccountChanged(false)
@@ -40,33 +38,6 @@ function DashboardEntry(props) {
         };
         runEffect();
     }, [web3, contractAddress, selectedAccount, contractRegistry, domain, isInRegistry, own, hasAccountChanged]);
-
-    useEffect(() => {
-        (async () => {
-            try {
-                const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress.toLowerCase()}`);
-                console.log(response);
-                setVerified(response.data.verified);
-            } catch (error) {
-                console.log(error);
-                setVerified(false);
-            }
-        })();
-    }, [contractAddress]);
-
-    const renderVerifResult = () => {
-        if (domain && isSha3Hash(domain)) {
-            return (<Popup
-                inverted
-                content='Domain is hashed, please inspect the contract to run the verification'
-                trigger={<LinkTescInspect contractAddress={contractAddress} content='Domain required' />}
-            />);
-        }
-        if (verified === null || verified === undefined) {
-            return <Loader active inline />;
-        }
-        return verified ? <Icon name="check" color="green" circular /> : <Icon name="delete" color="red" circular />;
-    };
 
     const addToRegistry = async () => {
         handleBlockScreen(true);
@@ -188,9 +159,7 @@ function DashboardEntry(props) {
             </Table.Cell>
             <Table.Cell>{renderDomain()}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
-            <Table.Cell textAlign="center">
-                {renderVerifResult()}
-            </Table.Cell>
+            <TableCellVerification domain={domain} contractAddress={contractAddress} />
             <Table.Cell textAlign="center">
                 {renderRegistryButtons()}
             </Table.Cell>

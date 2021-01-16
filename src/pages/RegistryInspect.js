@@ -10,6 +10,7 @@ import PageHeader from '../components/PageHeader';
 import TableGeneral from '../components/TableGeneral';
 import { makeStyles } from '@material-ui/core/styles';
 import Pagination from '@material-ui/lab/Pagination';
+import TableCellVerification from '../components/TableCellVerification';
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -51,11 +52,12 @@ function RegistryInspect() {
 
     const handleInput = domain => {
         setSubmitted(false);
-        setLoading(true)
+        setLoading(false)
         setDomain(domain);
     }
 
     const handleSubmit = async () => {
+        setLoading(true)
         const contractAddresses = await contractRegistry.methods.getContractsFromDomain(domain).call();
         const contractInstances = [];
         //generate contracts out of the ERCXXX interface using the contract addresses so that the getExpiry method can be used
@@ -81,9 +83,7 @@ function RegistryInspect() {
                 <Table.Cell><LinkTescInspect contractAddress={contractInstance.address} /></Table.Cell>
                 <Table.Cell>{domain}</Table.Cell>
                 <Table.Cell>{moment.unix(parseInt(contractInstance.expiry)).format('DD/MM/YYYY')}</Table.Cell>
-                <Table.Cell textAlign="center">
-                    <Icon name="check" color="green" circular />
-                </Table.Cell>
+                <TableCellVerification domain={domain} contractAddress={contractInstance.address} />
             </Table.Row>
         ))
     }
@@ -113,7 +113,7 @@ function RegistryInspect() {
                 </div>
                 </div>
             )
-        } else if (loading && submitted && allEntries.length === 0) {
+        } else if (loading) {
             return (
                 <Segment>
                     <Dimmer active={loading} inverted>
