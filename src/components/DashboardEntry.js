@@ -155,7 +155,7 @@ function DashboardEntry(props) {
         }
     };
 
-    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified }
+    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified, isDashboard: true }
 
     return (
         <Table.Row key={contractAddress}>

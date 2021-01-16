@@ -17,7 +17,7 @@ function RegistryInspect() {
     const [allEntries, setAllEntries] = useState([])
     const [submitted, setSubmitted] = useState(false)
     const [loading, setLoading] = useState(false)
-    const [resultSizeInitial, setResultSizeInitial] = useState(0) 
+    const [totalPages, setTotalPages] = useState(0) 
     const [displayedEntries, setDisplayedEntries] = useState([])
 
     useEffect(() => {
@@ -56,7 +56,7 @@ function RegistryInspect() {
             //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
             contractInstances.push({ address: contractAddresses[i], expiry: expiry })
         }
-        setResultSizeInitial(contractInstances.length)
+        setTotalPages(Math.ceil(contractInstances.length/7))
         setAllEntries(contractInstances);
         setDisplayedEntries(contractInstances.slice(0,7))
         setSubmitted(true)
@@ -78,7 +78,7 @@ function RegistryInspect() {
         setDisplayedEntries(allEntries.slice((value - 1) * 7, value * 7))
     }
 
-    const tableProps = { renderRows, changePage, totalPages: Math.ceil(resultSizeInitial/7) }
+    const tableProps = { renderRows, changePage, totalPages }
 
     const renderTable = () => {
         if (allEntries.length > 0 && submitted && !loading) {
