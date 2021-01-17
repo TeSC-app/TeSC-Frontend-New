@@ -1,9 +1,7 @@
 import React, { useContext } from 'react';
-import { Grid, Header } from 'semantic-ui-react';
-
+import { Grid } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import FeedbackMessage from "../components/FeedbackMessage";
-
 
 const PageHeader = ({ title }) => {
     const { sysMsg, handleDismissMessage } = useContext(AppContext);
