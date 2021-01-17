@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react'
-import { Form, Button, Grid, Label, Table } from 'semantic-ui-react';
+import { Button, Grid, Icon, Label, Table } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import ERCXXXImplementation from '../ethereum/build/contracts/ERCXXXImplementation.json';
@@ -24,6 +24,14 @@ function RegistryAdd(props) {
     const [expiry, setExpiry] = useState('')
     const [validInput, setValidInput] = useState(false)
     const [inconsistentAddress, setInconsistentAddress] = useState(false)
+    const [submitted, setSubmitted] = useState(false)
+
+    const clearValues = () => {
+        setValidInput(false)
+        setTescDomain('')
+        setExpiry('')
+        setCostEstimatedAdd(0)
+    }
 
     const checkInput = useCallback(async (account) => {
         const contractRegistry = new web3.eth.Contract(
@@ -49,14 +57,10 @@ function RegistryAdd(props) {
                     setCostEstimatedAdd(estCostAdd);
                 }
             } else {
-                setValidInput(false)
-                setTescDomain('')
-                setExpiry('')
+                clearValues()
             }
         } catch (error) {
-            setValidInput(false)
-            setTescDomain('')
-            setExpiry('')
+            clearValues()
         }
     }, [contractAddress, web3])
 
@@ -125,88 +129,120 @@ function RegistryAdd(props) {
 
     const handleChange = (contractAddress) => {
         setContractAddress(contractAddress)
+        setSubmitted(false)
     }
 
-    const renderLabel = (errorCase, contractAddr = contractAddress) => {
+    const renderLabel = (inputCase, contractAddr = contractAddress) => {
         let reason;
-        switch (errorCase) {
-            case 'notFound': reason = 'Domain for this input not found'
+        switch (inputCase) {
+            case 'correct': reason = 'Your input is correct.'
                 break
-            case 'notOwner': reason = 'You are not the owner of the contract'
+            case 'notFound': reason = 'Domain for this input not found.'
                 break
-            case 'alreadyRegistered': reason = 'Contract has already been registered'
+            case 'notOwner': reason = 'You are not the owner of the contract.'
                 break
-            case 'tooLong': reason = 'Contract address must be 42 characters long (prefix 0x and 40 hexadecimal digits)'
+            case 'alreadyRegistered': reason = 'Contract has already been registered.'
+                break
+            case 'tooLong': reason = 'Contract address must be 42 characters long (prefix 0x and 40 hexadecimal digits).'
                 break
             case 'notDone': reason = `Input should be 42 characters long. ${contractAddr.length <= 42 ? 42 - contractAddr.length : 0} left.`
                 break
             default: reason = 'Wrong input'
         }
-        return (<div className='cost-estimation-registry'><i className={errorCase !== 'notDone' ? 'error-registry-add' : ''}>{reason}</i></div>)
+        return (
+            <div className='cost-estimation-registry'>
+                <Icon name={inputCase === 'correct' ? 'thumbs up outline' : 'thumbs down outline'}
+                    color={inputCase === 'correct' ? 'green' : 'red'} />
+                <Label basic className={inputCase !== 'correct' ? 'error-registry-add' : ''}>
+                    {reason}
+                </Label>
+            </div>)
     }
 
     const renderStatus = () => {
-        return validInput ? <Button disabled={!validInput} onClick={handleSubmit} floated='right' positive>Add entry</Button> :
-            !tescDomain && contractAddress.length === 42 ? renderLabel('notFound') :
-                tescDomain && inconsistentAddress && contractAddress.length === 42 ? renderLabel('notOwner') :
-                    isContractRegistered && contractAddress.length === 42 ? renderLabel('alreadyRegistered') :
-                        contractAddress.length > 42 ? renderLabel('tooLong') :
-                            renderLabel('notDone', contractAddress)
+        return !tescDomain && contractAddress.length === 42 ? renderLabel('notFound') :
+            tescDomain && inconsistentAddress && contractAddress.length === 42 ? renderLabel('notOwner') :
+                isContractRegistered && contractAddress.length === 42 ? renderLabel('alreadyRegistered') :
+                    contractAddress.length > 42 ? renderLabel('tooLong') :
+                        validInput ? renderLabel('correct') : renderLabel('notDone')
+    }
+
+    const handleInputSubmit = (e) => {
+        e.preventDefault()
+        setContractAddress(contractAddress)
+        setSubmitted(true)
+    }
+
+    const renderExpiry = () => {
+        return expiry !== '' ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : 'Empty expiry'
+    }
+
+    const renderDomain = () => {
+        return tescDomain !== '' ? tescDomain : 'Empty domain'
     }
 
     return (
         <div>
-            <Form>
-                <PageHeader title='Add TeSC contract to registry' />
-                <SearchBox
-                    onChange={handleChange}
-                    value={contractAddress}
-                    placeholder='0x123456...'
-                    label='Contract Address'
-                    validInput={validInput} />
-                <Grid className='table-status-add'>
-                    <Grid.Row>
-                        <Grid.Column>
-                            <Table celled collapsing>
-                                <Table.Body>
-                                    {validInput ?
+            <PageHeader title='Add TeSC contract to registry' />
+            <SearchBox
+                onChange={handleChange}
+                value={contractAddress}
+                placeholder='0x123456...'
+                label='Contract Address'
+                validInput={validInput}
+                onSubmit={handleInputSubmit}
+            />
+            <Grid className='table-status-add'>
+                <Grid.Row>
+                    <Grid.Column>
+                        <Table celled collapsing>
+                            <Table.Body>
+                                {validInput || submitted ?
                                     <>
-                                    <Table.Row>
-                                        <Table.Cell>
-                                            <b>Domain</b>
-                                        </Table.Cell>
-                                        <Table.Cell>{tescDomain}</Table.Cell>
-                                    </Table.Row>
-                                    <Table.Row>
-                                        <Table.Cell>
-                                            <b>Expiry</b>
-                                        </Table.Cell>
-                                        <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
-                                    </Table.Row>
+                                        <Table.Row>
+                                            <Table.Cell>
+                                                <b>Domain</b>
+                                            </Table.Cell>
+                                            <Table.Cell>{renderDomain()}</Table.Cell>
+                                        </Table.Row>
+                                        <Table.Row>
+                                            <Table.Cell>
+                                                <b>Expiry</b>
+                                            </Table.Cell>
+                                            <Table.Cell>{renderExpiry()}</Table.Cell>
+                                        </Table.Row>
                                         <Table.Row>
                                             <Table.Cell>
                                                 <b>Cost estimation</b>
                                             </Table.Cell>
                                             <Table.Cell>
-                                                <Label as="span" tag className='cost-estimate-label'>
+                                                <Label as="span" tag className='cost-estimate-label-registry'>
                                                     {costEstimatedAdd.toFixed(5)} <span className='cost-estimate-currency'>ETH</span>
                                                 </Label></Table.Cell>
-                                        </Table.Row></> : null
-                                    }
-                                    <Table.Row>
-                                        <Table.Cell>
-                                            <b>Status</b>
-                                        </Table.Cell>
-                                        <Table.Cell>
-                                            {renderStatus()}
-                                        </Table.Cell>
-                                    </Table.Row>
-                                </Table.Body>
-                            </Table>
-                        </Grid.Column>
-                    </Grid.Row>
-                </Grid>
-            </Form>
+                                        </Table.Row>
+                                        <Table.Row>
+                                            <Table.Cell>
+                                                <b>Status</b>
+                                            </Table.Cell>
+                                            <Table.Cell>
+                                                {renderStatus()}
+                                            </Table.Cell>
+                                        </Table.Row>
+                                        <Table.Row>
+                                            <Table.Cell>
+                                                <b>Add TeSC</b>
+                                            </Table.Cell>
+                                            <Table.Cell>
+                                                <Button disabled={!validInput} onClick={handleSubmit} floated='left' positive>Add entry</Button>
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    </> : null
+                                }
+                            </Table.Body>
+                        </Table>
+                    </Grid.Column>
+                </Grid.Row>
+            </Grid>
         </div>
     )
 }
