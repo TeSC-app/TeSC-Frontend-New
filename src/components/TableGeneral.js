@@ -41,7 +41,7 @@ function TableGeneral(props) {
                                     icon='filter'
                                     floating
                                     button
-                                    className='icon dropdownFavourites'>
+                                    className='icon dropdown-favourites'>
                                     <Dropdown.Menu>
                                         <Dropdown.Item icon='redo' text='All' onClick={showAllTescs} />
                                         <Dropdown.Item icon='heart' text='By favourite' onClick={showFavouriteTescs} />
@@ -58,9 +58,11 @@ function TableGeneral(props) {
                     </Table.Body>
                 )}
             </Table>
-            <div className={classesPagination.root}>
-                <Pagination count={totalPages} page={currentPage} shape="rounded" onChange={changePage} />
-            </div>
+            { totalPages > 0 ?
+                <div className={classesPagination.root}>
+                    <Pagination count={totalPages} page={currentPage} shape="rounded" onChange={changePage} />
+                </div> : null
+            }
         </>
     )
 }

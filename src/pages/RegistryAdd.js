@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react'
+import React, { useState, useContext, useEffect, useCallback } from 'react'
 import { Form, Button, Grid, Dimmer, Loader, Label, Table } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
@@ -11,11 +11,11 @@ import moment from 'moment';
 import SearchBox from '../components/SearchBox';
 import '../styles/Registry.scss';
 
-function RegistryAdd({ selectedAccount }) {
+function RegistryAdd(props) {
+    const { selectedAccount, handleBlockScreen, screenBlocked } = props
     const { web3 } = useContext(AppContext)
     const [contractAddress, setContractAddress] = useState('')
     const [sysMsg, setSysMsg] = useState(null)
-    const [blocking, setBlocking] = useState(false)
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0)
     const [contractRegistry, setContractRegistry] = useState(undefined)
     const [tescContractOwner, setTescContractOwner] = useState(undefined)
@@ -25,40 +25,15 @@ function RegistryAdd({ selectedAccount }) {
     const [validInput, setValidInput] = useState(false)
     const [inconsistentAddress, setInconsistentAddress] = useState(false)
 
-    //To predetermine the cost - only for valid input that would be able to be added to the registry
-    useEffect(() => {
-        const runEffect = async () => {
-            const contractRegistry = new web3.eth.Contract(
-                TeSCRegistry.abi,
-                process.env.REACT_APP_REGISTRY_ADDRESS,
-            );
-            setContractRegistry(contractRegistry)
-            if (window.ethereum) {
-                window.ethereum.on('accountsChanged', async (accounts) => {
-                    try {
-                        const tescContract = new web3.eth.Contract(ERCXXXImplementation.abi, contractAddress)
-                        const tescContractOwner = await tescContract.methods.owner.call().call()
-                        setTescContractOwner(tescContractOwner)
-                        const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
-                        setIsContractRegistered(isContractRegistered)
-                        const tescDomain = await tescContract.methods.getDomain().call()
-                        setTescDomain(tescDomain)
-                        const tescExpiry = await tescContract.methods.getExpiry().call()
-                        setExpiry(tescExpiry)
-                        setInconsistentAddress(tescContractOwner !== accounts[0])
-                        if (tescDomain && tescContractOwner && tescContractOwner === accounts[0] && !isContractRegistered) {
-                            setValidInput(true)
-                            const estCostAdd = await estimateRegistryAddCost(web3, accounts[0], contractRegistry, tescDomain, contractAddress);
-                            setCostEstimatedAdd(estCostAdd);
-                        }
-                    } catch (error) {
-                        //console.log(error)
-                        setValidInput(false)
-                    }
-                })
-            }
-            try {
-                const tescContract = new web3.eth.Contract(ERCXXXImplementation.abi, contractAddress)
+    const checkValidInput = useCallback(async (account) => {
+        const contractRegistry = new web3.eth.Contract(
+            TeSCRegistry.abi,
+            process.env.REACT_APP_REGISTRY_ADDRESS,
+        );
+        setContractRegistry(contractRegistry)
+        try {
+            const tescContract = new web3.eth.Contract(ERCXXXImplementation.abi, contractAddress)
+            if (tescContract && contractAddress.length === 42 && tescContract._address) {
                 const tescContractOwner = await tescContract.methods.owner.call().call()
                 setTescContractOwner(tescContractOwner)
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
@@ -67,19 +42,42 @@ function RegistryAdd({ selectedAccount }) {
                 setTescDomain(tescDomain)
                 const tescExpiry = await tescContract.methods.getExpiry().call()
                 setExpiry(tescExpiry)
-                setInconsistentAddress(tescContractOwner !== selectedAccount)
-                if (tescDomain && tescContractOwner && tescContractOwner === selectedAccount && !isContractRegistered) {
+                setInconsistentAddress(tescContractOwner !== account)
+                if (tescDomain && tescContractOwner && tescContractOwner === account && !isContractRegistered) {
                     setValidInput(true)
-                    const estCostAdd = await estimateRegistryAddCost(web3, selectedAccount, contractRegistry, tescDomain, contractAddress);
+                    const estCostAdd = await estimateRegistryAddCost(web3, account, contractRegistry, tescDomain, contractAddress);
                     setCostEstimatedAdd(estCostAdd);
                 }
+            } else {
+                setValidInput(false)
+            }
+        } catch (error) {
+            setValidInput(false)
+        }
+    }, [contractAddress, web3])
+
+    //To predetermine the cost - only for valid input that would be able to be added to the registry
+    useEffect(() => {
+        const runEffect = async () => {
+            if (window.ethereum) {
+                window.ethereum.on('accountsChanged', async (accounts) => {
+                    try {
+                        checkValidInput(accounts[0])
+                    } catch (error) {
+                        //console.log(error)
+                        setValidInput(false)
+                    }
+                })
+            }
+            try {
+                checkValidInput(selectedAccount)
             } catch (error) {
                 //console.log(error)
                 setValidInput(false)
             }
         }
         runEffect()
-    }, [web3, selectedAccount, contractAddress])
+    }, [web3, selectedAccount, checkValidInput])
 
     const handleDismissMessage = () => {
         setSysMsg(null);
@@ -88,7 +86,7 @@ function RegistryAdd({ selectedAccount }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (tescDomain.length > 0 && contractAddress) {
-            setBlocking(true)
+            handleBlockScreen(true)
             try {
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
                 setIsContractRegistered(isContractRegistered)
@@ -122,11 +120,29 @@ function RegistryAdd({ selectedAccount }) {
                 }))
             }
         }
-        setBlocking(false)
+        handleBlockScreen(false)
     };
 
     const handleChange = (contractAddress) => {
         setContractAddress(contractAddress)
+    }
+
+    const renderLabel = (errorCase, contractAddr = contractAddress) => {
+        let reason;
+        switch (errorCase) {
+            case 'notFound': reason = 'Domain for this contract not found'
+                break
+            case 'notOwner': reason = 'You are not the owner of the contract'
+                break
+            case 'alreadyRegistered': reason = 'Contract has already been registered'
+                break
+            case 'tooLong': reason = 'Contract address must be 42 characters long (prefix 0x and 40 hexadecimal digits)'
+                break
+            case 'notDone': reason = `Input should be 42 characters long. ${contractAddr.length <= 42 ? 42 - contractAddr.length : 0} left.`
+                break
+            default: reason = 'Wrong input'
+        }
+        return (<div className='cost-estimation-registry'><Label className='error-registry-add'>{reason}</Label></div>)
     }
 
     return (
@@ -150,50 +166,54 @@ function RegistryAdd({ selectedAccount }) {
                     placeholder='0x123456...'
                     label='Contract Address'
                     validInput={validInput} />
-                {validInput ?
-                    <Grid>
-                        <Grid.Row>
-                            <Grid.Column>
-                                <Table basic='very' celled collapsing>
-                                    <Table.Body>
+                <Grid className='table-status-add'>
+                    <Grid.Row>
+                        <Grid.Column>
+                            <Table celled collapsing>
+                                <Table.Body>
+                                    <Table.Row>
+                                        <Table.Cell>
+                                            <b>Domain</b>
+                                        </Table.Cell>
+                                        <Table.Cell>{tescDomain}</Table.Cell>
+                                    </Table.Row>
+                                    <Table.Row>
+                                        <Table.Cell>
+                                            <b>Expiry</b>
+                                        </Table.Cell>
+                                        <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
+                                    </Table.Row>
+                                    {validInput ?
                                         <Table.Row>
                                             <Table.Cell>
-                                                <b>Domain</b>
+                                                <b>Cost estimation</b>
                                             </Table.Cell>
-                                            <Table.Cell>{tescDomain}</Table.Cell>
-                                        </Table.Row>
-                                        <Table.Row>
                                             <Table.Cell>
-                                                <b>Expiry</b>
-                                            </Table.Cell>
-                                            <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
-                                        </Table.Row>
-                                    </Table.Body>
-                                </Table>
-                            </Grid.Column>
-                        </Grid.Row>
-                    </Grid> : null
-                }
-                <Button disabled={!validInput} onClick={handleSubmit} floated='right' positive>Add entry</Button>
-                {tescContractOwner &&
-                    tescContractOwner === selectedAccount &&
-                    !isContractRegistered && validInput && (
-                        <div className='costEstimationRegistry'>
-                            <span>Cost estimation:  </span>
-                            <Label as="span" tag className='costEstimateLabel'>
-                                {costEstimatedAdd.toFixed(5)} <span className='costEstimateCurrencyETH'>ETH</span>
-                            </Label>
-                        </div>)
-                }
-                {
-                    !tescDomain && contractAddress.length === 42 ? <div className='costEstimationRegistry'><Label className='errorRegistryAdd'>Domain for this contract not found</Label></div> :
-                        tescDomain && inconsistentAddress && contractAddress.length === 42 ? <div className='costEstimationRegistry'><Label className='errorRegistryAdd'>You are not the owner of the contract</Label></div> :
-                            isContractRegistered && contractAddress.length === 42 ? <div className='costEstimationRegistry'><Label className='errorRegistryAdd'>Contract has already been registered</Label></div> :
-                                validInput ? null :
-                                    contractAddress.length > 42 ? <div className='costEstimationRegistry'><Label className='errorRegistryAdd'>Contract address must be 42 characters long (prefix 0x and 40 hexadecimal digits)</Label></div> : <div className='costEstimationRegistry'><Label>Input should be 42 characters long. {contractAddress.length <= 42 ? 42 - contractAddress.length : 0} left.</Label></div>
-                }
+                                                <Label as="span" tag className='cost-estimate-label'>
+                                                    {costEstimatedAdd.toFixed(5)} <span className='cost-estimate-currency'>ETH</span>
+                                                </Label></Table.Cell>
+                                        </Table.Row> : null
+                                    }
+                                    <Table.Row>
+                                        <Table.Cell>
+                                            <b>Status</b>
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            {validInput ? <Button disabled={!validInput} onClick={handleSubmit} floated='right' positive>Add entry</Button> :
+                                                !tescDomain && contractAddress.length === 42 ? renderLabel('notFound') :
+                                                    tescDomain && inconsistentAddress && contractAddress.length === 42 ? renderLabel('notOwner') :
+                                                        isContractRegistered && contractAddress.length === 42 ? renderLabel('alreadyRegistered') :
+                                                            contractAddress.length > 42 ? renderLabel('tooLong') :
+                                                                renderLabel('notDone', contractAddress)}
+                                        </Table.Cell>
+                                    </Table.Row>
+                                </Table.Body>
+                            </Table>
+                        </Grid.Column>
+                    </Grid.Row>
+                </Grid>
             </Form>
-            <Dimmer active={blocking}>
+            <Dimmer active={screenBlocked}>
                 <Loader indeterminate content='Waiting for transaction to finish...' />
             </Dimmer>
         </div>

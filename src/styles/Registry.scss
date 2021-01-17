@@ -1,9 +1,13 @@
-.costEstimationRegistry {
+.cost-estimation-registry {
   float: right;
   display: flex;
   align-items: center
 }
 
-.errorRegistryAdd {
+.error-registry-add {
   color: red !important
+}
+
+.table-status-add {
+  text-align: -webkit-center;
 }

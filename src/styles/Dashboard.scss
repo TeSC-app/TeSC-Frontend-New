@@ -1,8 +1,8 @@
-.buttonAdd {
+.button-add {
     width: 75%
 }
 
-.buttonRemove {
+.button-remove {
     width: 75%;
     padding-left: 0.8em !important;
     padding-right: 0.8em !important;
@@ -10,25 +10,25 @@
     margin-right: 0.8em !important;
 }
 
-.dropdownFavourites {
+.dropdown-favourites {
     background-color: #f9fafb !important;
 }
 
-.userIcon {
+.user-icon {
     margin-left: 0.5em !important;
 }
 
-.costEstimateLabel {
+.cost-estimate-label {
     float: right;
     margin-top: 0.2em !important;
     color: royalblue !important
 }
 
-.costEstimateCurrencyETH {
+.cost-estimate-currency {
     font-size: 0.75em;
 }
 
-.contractAddressColumn {
+.contract-address-column {
     display: flex;
     align-items: center;
 }
@@ -38,6 +38,6 @@
     overflow: auto;
 }
 
-.cursorPointer {
+.cursor-pointer {
     cursor: pointer !important;
 }

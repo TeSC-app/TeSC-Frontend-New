@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Route } from 'react-router-dom';
 import { Container, Loader, Dimmer, Segment } from 'semantic-ui-react';
 import 'semantic-ui-css/semantic.min.css';
-import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import Dashboard from '../pages/Dashboard';
 import TeSCNew from '../pages/TescNew';
@@ -27,10 +26,9 @@ const App = ({ web3 }) => {
         const init = async () => {
             if (window.ethereum) {
                 const [selectedAccount,] = await web3.eth.getAccounts();
-                setAccount(selectedAccount && selectedAccount.toLowerCase());
+                setAccount(selectedAccount && selectedAccount);
                 window.ethereum.on('accountsChanged', function (accounts) {
                     setHasAccountChanged(true);
-                    console.log('CHANGE DETECTED');
                     if (!accounts[0]) {
                         setHasWalletAddress(false);
                     } else {
@@ -86,17 +84,23 @@ const App = ({ web3 }) => {
                     <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} handleCollapseSidebar={handleCollapseSidebar} />
                     <Container className="page">
                         <Segment className='main-segment-bg' padded='very'
-                            style={{height: '110vh', minHeight: 'max-content', background: 'rgba(255, 255, 255, 0.97)', borderRadius: '25px'}} 
+                            style={{ height: '110vh', minHeight: 'max-content', background: 'rgba(255, 255, 255, 0.97)', borderRadius: '25px' }}
                         >
                             <Route path="/" exact render={props => {
-                                return <Dashboard {...props} selectedAccount={account} hasAccountChanged={hasAccountChanged} handleAccountChanged={handleAccountChanged} />;
+                                return <Dashboard {...props}
+                                    selectedAccount={account && account.toLowerCase()}
+                                    hasAccountChanged={hasAccountChanged}
+                                    handleAccountChanged={handleAccountChanged} />;
                             }} />
                             <Route path="/tesc/new" component={TeSCNew} exact />
                             <Route path="/tesc/inspect" component={TeSCInspect} exact />
                             <Route path="/registry/inspect" component={RegistryInspect} exact />
-                            {/*<Route path="/registry/add" exact render={props => {
-                            return <RegistryAdd {...props} selectedAccount={selectedAccount} />
-                        }} />*/}
+                            <Route path="/registry/add" exact render={props => {
+                                return <RegistryAdd {...props}
+                                    selectedAccount={account}
+                                    handleBlockScreen={handleBlockScreen}
+                                    screenBlocked={screenBlocked} />
+                            }} />
 
                         </Segment>
                     </Container>

@@ -129,10 +129,10 @@ function DashboardEntry(props) {
             return (
                 isInRegistryUpdated ?
                     <Popup inverted content={`Remove entry from the TeSC registry. This would cost around ${costEstimatedRemove.toFixed(5)} ETH.`}
-                        trigger={<Button basic color='red' onClick={removeFromRegistry} content='Remove' icon='delete' className='buttonRemove' />} />
+                        trigger={<Button basic color='red' onClick={removeFromRegistry} content='Remove' icon='delete' className='button-remove' />} />
                     :
                     <Popup inverted content={`Add entry to the TeSC registry. This would cost around ${costEstimatedAdd.toFixed(5)} ETH.`}
-                        trigger={<Button basic disabled={!verified} color='blue' onClick={addToRegistry} content='Add' icon='plus' className='buttonAdd' />}
+                        trigger={<Button basic disabled={!verified} color='blue' onClick={addToRegistry} content='Add' icon='plus' className='button-add' />}
                     />
             );
         } else {
@@ -149,7 +149,7 @@ function DashboardEntry(props) {
         if (domain.length === 64 && domain.split('.').length === 1) {
             return (<Popup inverted content={domain} trigger={<i>{'< hashed >'}</i>} />);
         } else if (domain.length > 32) {
-            return (<Popup inverted on="click" content={domain} trigger={<i className='cursorPointer'>{`${domain.substring(0, 6)}...${domain.substring(domain.length - 4, domain.length)}`}</i>} />);
+            return (<Popup inverted on="click" content={domain} trigger={<i className='cursor-pointer'>{`${domain.substring(0, 6)}...${domain.substring(domain.length - 4, domain.length)}`}</i>} />);
         } else {
             return domain;
         }
@@ -160,9 +160,9 @@ function DashboardEntry(props) {
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
-                <span className='contractAddressColumn'>
+                <span className='contract-address-column'>
                     {
-                        own ? <Popup inverted content="You own this contract" trigger={<Icon className="userIcon" name="user" color="blue" circular />} /> : null
+                        own ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
                     }
                     <LinkTescInspect contractAddress={contractAddress} />
                 </span>
@@ -177,7 +177,7 @@ function DashboardEntry(props) {
                 <Table.Cell textAlign="center">
                     <Popup inverted content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
                         trigger={<Button icon={tescIsInFavourites ? 'heart' : 'heart outline'}
-                            className={tescIsInFavourites ? "favouriteDashboard" : "notFavouriteDashboard"}
+                            className={tescIsInFavourites ? "favourite-dashboard" : "not-favourite-dashboard"}
                             onClick={addRemoveFavourites} />} />
                 </Table.Cell>
             }

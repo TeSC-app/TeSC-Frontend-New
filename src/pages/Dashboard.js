@@ -16,7 +16,7 @@ const Dashboard = (props) => {
     const [displayedEntries, setDisplayedEntries] = useState([])
     const [filterOption, setFilterOption] = useState(0)
     const [currentPage, setCurrentPage] = useState(1)
-    const [totalPages, setTotalPages] = useState(Math.ceil(tescs.length/7))
+    const [totalPages, setTotalPages] = useState(tescs ? Math.ceil(tescs.length/7) : 0)
 
     const loadStorage = useCallback(() => {
         return JSON.parse(localStorage.getItem(selectedAccount.toLowerCase()));
@@ -107,7 +107,7 @@ const Dashboard = (props) => {
         showOwnTescs,
         isDashboard: true,
         changePage,
-        resultSizeInitial: tescs.length,
+        resultSizeInitial: tescs ? tescs.length : 0,
         currentPage, 
         totalPages
     }

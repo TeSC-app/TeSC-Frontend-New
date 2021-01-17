@@ -153,29 +153,24 @@ $navbar-height: 48.563px;
   color: #a333c8
 }
 
-
-
-
-
-
-.favouriteDashboard {
+.favourite-dashboard {
   color: red !important;
   background-color: white !important;
 }
 
-.notFavouriteDashboard {
+.not-favourite-dashboard {
   color: grey !important;
   background-color: white !important;
 }
 
-.metamaskLabel {
+.metamask-label {
   background-color: rgba(0,0,0,0) !important;
   color: white !important;
   display: flex !important;
   align-items: center;
 }
 
-.connectMetaMask {
+.connect-metamask {
   color: inherit !important;
   transition: .1s opacity ease !important;
   background-color: rgba(0,0,0,0) !important;
@@ -184,6 +179,6 @@ $navbar-height: 48.563px;
   font-size: small;
 }
 
-.connectMetaMask:hover {
+.connect-metamask:hover {
   color:rgba(216, 213, 213, 0.3) !important
 }

@@ -37,10 +37,10 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
     const renderMetaMaskLabel = () => {
         if (window.ethereum) {
             return !hasWalletAddress && !account ?
-                <Button className='connectMetaMask' onClick={handleConnect}>No wallet address detected</Button>
+                <Button className='connect-metamask' onClick={handleConnect}>No wallet address detected</Button>
                 : account;
         } else {
-            return <Button className='connectMetaMask' onClick={handleInstall}>Install MetaMask</Button>;
+            return <Button className='connect-metamask' onClick={handleInstall}>Install MetaMask</Button>;
         }
     };
 
@@ -81,10 +81,9 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
                         <MenuItem onClick={(e) => handlePageNavigation(e, "/registry/inspect")} >
                             Explore
                     </MenuItem>
-
-                        {/*<MenuItem onClick={(e) => handlePageNavigation(e, '/registry/add')} >
+                        <MenuItem onClick={(e) => handlePageNavigation(e, '/registry/add')} >
                             Add entry
-                        </MenuItem>*/}
+                        </MenuItem>
                     </SubMenu>
                 </Menu>
             </SidebarContent>
