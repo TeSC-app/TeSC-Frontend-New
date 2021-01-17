@@ -50,9 +50,13 @@ function RegistryAdd(props) {
                 }
             } else {
                 setValidInput(false)
+                setTescDomain('')
+                setExpiry('')
             }
         } catch (error) {
             setValidInput(false)
+            setTescDomain('')
+            setExpiry('')
         }
     }, [contractAddress, web3])
 
@@ -142,7 +146,7 @@ function RegistryAdd(props) {
                 break
             default: reason = 'Wrong input'
         }
-        return (<div className='cost-estimation-registry'><Label className='error-registry-add'>{reason}</Label></div>)
+        return (<div className='cost-estimation-registry'><i className={errorCase !== 'notDone' ? 'error-registry-add' : ''}>{reason}</i></div>)
     }
 
     return (
@@ -171,6 +175,8 @@ function RegistryAdd(props) {
                         <Grid.Column>
                             <Table celled collapsing>
                                 <Table.Body>
+                                    {validInput ?
+                                    <>
                                     <Table.Row>
                                         <Table.Cell>
                                             <b>Domain</b>
@@ -183,7 +189,6 @@ function RegistryAdd(props) {
                                         </Table.Cell>
                                         <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
                                     </Table.Row>
-                                    {validInput ?
                                         <Table.Row>
                                             <Table.Cell>
                                                 <b>Cost estimation</b>
@@ -192,7 +197,7 @@ function RegistryAdd(props) {
                                                 <Label as="span" tag className='cost-estimate-label'>
                                                     {costEstimatedAdd.toFixed(5)} <span className='cost-estimate-currency'>ETH</span>
                                                 </Label></Table.Cell>
-                                        </Table.Row> : null
+                                        </Table.Row></> : null
                                     }
                                     <Table.Row>
                                         <Table.Cell>

@@ -14,7 +14,6 @@ const SearchBox = ({ label, value, onChange, placeholder, onSubmit, icon }) => (
                     size='large'
                     icon={icon}
                     className='search-box__input'
-                    
                 />
             </Form.Field>
         </Form>
