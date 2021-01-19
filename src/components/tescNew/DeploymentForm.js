@@ -31,8 +31,11 @@ import {
     padToBytesX,
     storeTesc,
     estimateDeploymentCost,
+    formatClaim,
     FLAG_POSITIONS,
 } from '../../utils/tesc';
+import { extractAxiosErrorMessage } from '../../utils/formatError';
+import axios from 'axios';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -96,6 +99,10 @@ const DeploymentForm = ({ initInputs }) => {
 
     const getCurrentDomain = useCallback(() => !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain,
         [domainHashed, domain, flags]);
+
+    const getClaimString = () => {
+        return formatClaim({contractAddress: futureContractAddress, domain, expiry, flags: flagsToBytes24Hex(flags)})
+    }
 
     const computeSignature = useCallback(async () => {
         const domain = getCurrentDomain();
@@ -199,8 +206,25 @@ const DeploymentForm = ({ initInputs }) => {
         if (privateKeyPEM) {
             computeSignature();
         }
-    }, [expiry, contractAddress, futureContractAddress, flags, signature, domain, privateKeyPEM, computeSignature,
+    }, [expiry, contractAddress, futureContractAddress, flags, signature, privateKeyPEM, computeSignature,
         fingerprint, getCurrentDomain, makeDeploymentTx, initInputs, makeUpdateTx, web3]);
+
+
+    const validateEndorsement = async () => {
+        try {
+            console.log('domain', domain)
+            console.log('getCurrentDomain', getCurrentDomain())
+            await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/predeploy/validate`, {
+                params: { 
+                    domain, 
+                    claim: getClaimString(), 
+                    signature
+                }
+            });
+        } catch (err) {
+            throw err;
+        }
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -209,12 +233,12 @@ const DeploymentForm = ({ initInputs }) => {
 
         showMessage(null);
 
-        // const account = web3.currentProvider.selectedAddress;
         const curDomain = getCurrentDomain();
 
         let success = false;
         if (curDomain && expiry && signature) {
             try {
+                await validateEndorsement();
                 const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx();
                 await tx.send({ from: account, gas: '2000000' })
                     .on('receipt', async (txReceipt) => {
@@ -240,13 +264,13 @@ const DeploymentForm = ({ initInputs }) => {
                         });
                     });
 
-            } catch (err) {
+            } catch (error) {
                 showMessage(buildNegativeMsg({
-                    code: err.code,
+                    code: error.code,
                     header: 'Unable to deploy Smart Contract',
-                    msg: err.message
+                    msg: extractAxiosErrorMessage({ error, subject: domain })
                 }));
-                console.log(err);
+                console.log(error);
             }
         } else {
             showMessage(buildNegativeMsg({
@@ -292,7 +316,7 @@ const DeploymentForm = ({ initInputs }) => {
 
     const handleTextCopy = (e) => {
         e.preventDefault();
-        navigator.clipboard.writeText(`echo -n ${futureContractAddress}.${getCurrentDomain()}.${expiry}.${flagsToBytes24Hex(flags)} | openssl dgst -RSA-SHA256 -sign <path_to_private_key_file> | openssl base64 | cat`);
+        navigator.clipboard.writeText(`echo -n ${getClaimString()} | openssl dgst -RSA-SHA256 -sign <path_to_private_key_file> | openssl base64 | cat`);
     };
 
 
@@ -307,15 +331,6 @@ const DeploymentForm = ({ initInputs }) => {
                     component: (
                         <Fragment>
                             <Header as='h3' content='Create Claim' style={{marginBottom: '30px'}} color='purple'/>
-                        {/* <div style={{fontSize:'1.2em'}}>
-                            <p>{'In this step, you could provide information to compute the claim of the form <contract_address>.<domain>.<expiry><flags>'}</p>
-                            <ul>
-                                <li>{`contract_address: This will be automatically computed in advanced for you using the current nonce of your wallet`}</li>
-                                <li>{`domain: The domain to the website you would like to bind with this TLS-endorsed Smart Contract`}</li>
-                                <li>{`expiry: The expiry date, on which this TeSC is expired, stored as Unix timestamp`}</li>
-                                <li>{`flags: Currently only we only support a single flag to hash the provided domain input for your privacy`}</li>
-                            </ul>
-                        </div> */}
                             <Form.Field>
                                 <p>
                                     <b>Contract address: </b>
@@ -458,7 +473,7 @@ const DeploymentForm = ({ initInputs }) => {
                                                 />}
                                             />
                                             <span>
-                                                echo -n {`${futureContractAddress}.${getCurrentDomain()}.${expiry}.${flagsToBytes24Hex(flags)}`} |
+                                                echo -n {getClaimString()} |
                                                 openssl dgst -RSA-SHA256 -sign <span style={{ color: 'magenta' }}>{'<path_to_private_key_file>'}</span> | openssl base64 | cat
                                             </span>
                                         </Label>
@@ -629,7 +644,6 @@ const DeploymentForm = ({ initInputs }) => {
                                     <BtnSuir
                                         basic
                                         onClick={handleReset}
-                                        // className={classes.button}
                                         primary
                                     >
                                         Deploy another TeSC

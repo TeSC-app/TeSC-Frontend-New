@@ -9,6 +9,7 @@ import FilePicker from '../FilePicker';
 import { buildNegativeMsg, buildWarningMsg } from "../FeedbackMessage";
 
 import { predictContractAddress, formatClaim, flagsToBytes24Hex, FLAG_POSITIONS } from '../../utils/tesc';
+import { extractAxiosErrorMessage } from '../../utils/formatError';
 
 
 const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
@@ -82,7 +83,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
             }
 
         } catch (error) {
-            const msg = (error.response) ? getMsgFromErrorCode(error.response.data.err) : error.message;
+            const msg = extractAxiosErrorMessage({ error, subject: domain.current });
             showMessage(buildNegativeMsg({
                 header: 'Unable to compute fingerprint',
                 msg,
@@ -125,7 +126,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
             }
 
         } catch (error) {
-            const msg = (error.response) ? getMsgFromErrorCode(error.response.data.err) : error.message;
+            const msg = extractAxiosErrorMessage({ error, subject: domain.current });
             showMessage(buildWarningMsg({
                 header: 'Unable to automatically retrieve domain certificate to compute the fingerprint.',
                 msg: `${msg}${!!msg.match(/[.!]+$/i) ? '' : '.'} You can also upload your domain certificate manually.`,
@@ -164,13 +165,6 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
         })();
     }, [inputs, sliderState, retrieveCertificate, certPEM, handlePickCert, resetStates, web3]);
 
-    const getMsgFromErrorCode = (errMsg) => {
-        if (errMsg.includes('getaddrinfo ENOTFOUND'))
-            return ` Unable to connect to ${domain.current}. Please check your domain input and the availability of your website.`;
-        else if (errMsg.includes('Signature does not match'))
-            return `${errMsg}. Please make sure you have selected the right certificate for domain ${domain.current}`;
-        return errMsg;
-    };
 
 
     useEffect(() => {
@@ -205,11 +199,11 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
             {sliderState && (fingerprint || filePickerDisplayed) &&
                 <Segment style={{ maxWidth: '100%', width: 'max-content' }}>
                     {filePickerDisplayed && !fingerprint && (
-                        <FilePicker 
-                            label='Choose certificate' 
-                            onPickFile={handlePickCert} 
+                        <FilePicker
+                            label='Choose certificate'
+                            onPickFile={handlePickCert}
                             isDisabled={!sliderState}
-                            input={{fileName:certFileName, content: certPEM}}
+                            input={{ fileName: certFileName, content: certPEM }}
                         />
                     )}
                     {sliderState && fingerprint && (<span style={{ wordBreak: 'break-all' }}><b>Fingerprint: <Label>{fingerprint}</Label></b></span>)
