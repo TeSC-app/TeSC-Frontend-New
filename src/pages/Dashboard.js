@@ -76,12 +76,12 @@ const Dashboard = (props) => {
         localStorage.setItem(selectedAccount.toLowerCase(), JSON.stringify(updatedTescs));
     };
 
-    const changePage = (event, value) => {
+    const changePage = (event, { activePage }) => {
         //check if there are filters applied
-        setCurrentPage(value)
+        setCurrentPage(activePage)
         setTotalPages(Math.ceil(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc).length/7))
         setDisplayedEntries(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc)
-            .slice((value - 1) * 7, value * 7))
+            .slice((activePage - 1) * 7, activePage * 7))
     }
 
     const tableProps = {

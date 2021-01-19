@@ -60,8 +60,8 @@ function RegistryInspect() {
         setLoading(false)
     }
 
-    const changePage = (event, value) => {
-        setDisplayedEntries(allEntries.slice((value - 1) * 7, value * 7))
+    const changePage = (event, { activePage }) => {
+        setDisplayedEntries(allEntries.slice((activePage - 1) * 7, activePage * 7))
     }
 
     const tableProps = { changePage, displayedEntries, totalPages }

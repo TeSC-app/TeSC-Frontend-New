@@ -1,21 +1,8 @@
 import React from 'react'
-import { Table, Dropdown } from 'semantic-ui-react';
-import { makeStyles } from '@material-ui/core/styles';
-import Pagination from '@material-ui/lab/Pagination';
+import { Table, Dropdown, Pagination, Icon } from 'semantic-ui-react';
 import TableEntry from './TableEntry';
 
-const useStyles = makeStyles((theme) => ({
-    root: {
-        '& > *': {
-            marginTop: theme.spacing(2),
-        },
-        display: 'flex',
-        justifyContent: 'center'
-    },
-}));
-
 function TableOverview(props) {
-    const classesPagination = useStyles();
     const {
         showAllTescs,
         showFavouriteTescs,
@@ -86,8 +73,16 @@ function TableOverview(props) {
                 )}
             </Table>
             { totalPages > 0 ?
-                <div className={classesPagination.root}>
-                    <Pagination count={totalPages} page={currentPage} shape="rounded" onChange={changePage} />
+                <div className='pagination'>
+                    <Pagination
+                        totalPages={totalPages}
+                        activePage={currentPage}
+                        onPageChange={changePage}
+                        ellipsisItem={{ content: <Icon name='ellipsis horizontal' />, icon: true }}
+                        firstItem={{ content: <Icon name='angle double left' />, icon: true }}
+                        lastItem={{ content: <Icon name='angle double right' />, icon: true }}
+                        prevItem={{ content: <Icon name='angle left' />, icon: true }}
+                        nextItem={{ content: <Icon name='angle right' />, icon: true }} />
                 </div> : null
             }
         </>
