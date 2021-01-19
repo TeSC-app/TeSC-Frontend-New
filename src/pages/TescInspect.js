@@ -263,7 +263,7 @@ const TeSCInspect = ({ location }) => {
                                 <Grid.Column width={10} >
                                     <Modal
                                         closeIcon
-                                        // dimmer='blurring'
+                                        dimmer='blurring'
                                         trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
                                         onClose={handleCloseTescUpdate}
                                     >
@@ -285,8 +285,8 @@ const TeSCInspect = ({ location }) => {
                                             icon={tescIsInFavourites? 'heart' : 'heart outline'}
                                             className={tescIsInFavourites ? "favourite" : "notFavourite"}
                                             onClick={() => addRemoveFavourites(contractAddress)}
-                                            content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
-                                            style={{ float: 'right', width: '30%' }}
+                                            content={tescIsInFavourites ? 'Unfavourite' : 'Favourite'}
+                                            style={{ float: 'right'}}
                                         />} />
                             </Grid.Column>
                         </Grid.Row>
