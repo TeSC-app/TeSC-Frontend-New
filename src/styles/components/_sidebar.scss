@@ -16,43 +16,9 @@ $breakpoint-md: 768px !default;
 $breakpoint-lg: 992px !default;
 $breakpoint-xl: 1200px !default;
 
-$s-size: 1.2rem;
-$m-size: 1.6rem;
-$l-size: 3.2rem;
-$xl-size: 4.8rem;
-
-$navbar-height: 48.563px;
-
 @import "~react-pro-sidebar/dist/scss/styles.scss";
 
-.root-container {
-  height: 100vh;
-}
-
-.navbar {
-  margin-bottom: 0;
-  border-radius: 0px;
-  height: $navbar-height;
-}
-
-.main-segment-bg {
-  border-radius: 25px;
-}
-
 .layout {
-  // height: calc(100vh - 48.563px);
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  position: relative;
-  background-image: url("../static/images/munich-1.jpg");
-  background-repeat: no-repeat;
-  background-size: cover;
-
-  // .sidebar {
-  //   background: rgba(29, 29, 29, 0.5);
-  // }
-
   .btn-toggle {
     width: 35px;
     height: 35px;
@@ -98,7 +64,6 @@ $navbar-height: 48.563px;
     }
   }
 
-
   .collapsed {
     width: 60px;
     min-width: 60px;
@@ -115,75 +80,28 @@ $navbar-height: 48.563px;
   .pro-sidebar {
     .pro-menu {
       .pro-menu-item > .pro-inner-item {
-          padding: 15px 25px 15px 10px;
+        padding: 15px 25px 15px 10px;
       }
     }
     z-index: 1;
   }
 
-  .page {
-    padding: $l-size;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
+  .badge {
+    padding: 3px 6px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    border-radius: 15px;
+    &.red {
+      color: #ffffff;
+      background: #d63030;
+    }
+    &.gray {
+      color: #ffffff;
+      background: #777777;
+    }
+    &.yellow {
+      color: #000000;
+      background: #ffd331;
+    }
   }
-}
-
-.badge {
-  padding: 3px 6px;
-  font-size: 9px;
-  letter-spacing: 1px;
-  border-radius: 15px;
-  &.red {
-    color: #ffffff;
-    background: #d63030;
-  }
-  &.gray {
-    color: #ffffff;
-    background: #777777;
-  }
-  &.yellow {
-    color: #000000;
-    background: #ffd331;
-  }
-}
-
-.MuiStepIcon-root.MuiStepIcon-active {
-  color: #a333c8
-}
-
-
-
-
-
-
-.favouriteDashboard {
-  color: red !important;
-  background-color: white !important;
-}
-
-.notFavouriteDashboard {
-  color: grey !important;
-  background-color: white !important;
-}
-
-.metamaskLabel {
-  background-color: rgba(0,0,0,0) !important;
-  color: white !important;
-  display: flex !important;
-  align-items: center;
-}
-
-.connectMetaMask {
-  color: inherit !important;
-  transition: .1s opacity ease !important;
-  background-color: rgba(0,0,0,0) !important;
-  padding: 0 !important;
-  font-weight: normal !important;
-  font-size: small;
-}
-
-.connectMetaMask:hover {
-  color:rgba(216, 213, 213, 0.3) !important
 }

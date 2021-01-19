@@ -1,6 +1,5 @@
 import React from 'react';
 import { Input, Form } from 'semantic-ui-react';
-import '../styles/SearchBox.scss'
 
 const SearchBox = ({ label, value, onChange, placeholder, onSubmit, icon }) => (
     <div centered='true' className='searchBoxContainer'>

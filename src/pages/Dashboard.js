@@ -3,7 +3,6 @@ import 'react-day-picker/lib/style.css';
 import { Table, Grid, Dropdown, Dimmer, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
-import '../styles/Dashboard.scss';
 import DashboardEntry from '../components/DashboardEntry';
 import PageHeader from '../components/PageHeader';
 

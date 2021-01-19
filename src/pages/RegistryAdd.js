@@ -9,7 +9,6 @@ import {
 } from '../utils/tesc';
 import moment from 'moment';
 import SearchBox from '../components/SearchBox';
-import '../styles/Registry.scss';
 
 function RegistryAdd({ selectedAccount }) {
     const { web3 } = useContext(AppContext)

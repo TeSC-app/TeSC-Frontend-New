@@ -58,7 +58,7 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
                 </div> */}
                 <div>
                     {collapsed ?
-                        <Image src='../images/tesc-logo-notext.png' size='tiny' style={{ margin: '20px auto', padding: '0 5px' }} />
+                        <Image src='../images/tesc-logo-notext.png'  style={{ margin: '20px auto', padding: '0 5px' }} />
                         : <Image src='../images/tesc-logo.png' size='small' style={{ margin: '20px auto' }} />
                     }
                 </div>

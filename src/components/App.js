@@ -8,7 +8,6 @@ import Dashboard from '../pages/Dashboard';
 import TeSCNew from '../pages/TescNew';
 import TeSCInspect from '../pages/TescInspect';
 import RegistryInspect from '../pages/RegistryInspect';
-import '../styles/App.scss';
 import RegistryAdd from '../pages/RegistryAdd';
 import AppContext from '../appContext';
 
@@ -27,7 +26,7 @@ const App = ({ web3 }) => {
         const init = async () => {
             if (window.ethereum) {
                 const [selectedAccount,] = await web3.eth.getAccounts();
-                setAccount(selectedAccount.toLowerCase());
+                setAccount(selectedAccount && selectedAccount.toLowerCase());
                 window.ethereum.on('accountsChanged', function (accounts) {
                     setHasAccountChanged(true);
                     console.log('CHANGE DETECTED');
@@ -85,15 +84,14 @@ const App = ({ web3 }) => {
                 <div className='layout'>
                     <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} handleCollapseSidebar={handleCollapseSidebar} />
                     <Container className="page">
-                        <Segment className='main-segment-bg' padded='very'
-                            style={{ maxHeight: 'max-content', background: 'rgba(255, 255, 255, 0.97)', borderRadius: '25px'}} 
-                        >
+                        <Segment className='main-segment' raised>
                             <Route path="/" exact render={props => {
                                 return <Dashboard {...props} selectedAccount={account} hasAccountChanged={hasAccountChanged} handleAccountChanged={handleAccountChanged} />;
                             }} />
                             <Route path="/tesc/new" component={TeSCNew} exact />
                             <Route path="/tesc/inspect" component={TeSCInspect} exact />
                             <Route path="/registry/inspect" component={RegistryInspect} exact />
+
                             {/*<Route path="/registry/add" exact render={props => {
                             return <RegistryAdd {...props} selectedAccount={selectedAccount} />
                         }} />*/}
