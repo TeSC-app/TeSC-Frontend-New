@@ -8,7 +8,6 @@ import LinkTescInspect from './InternalLink';
 
 function TableCellVerification(props) {
     const { domain, contractAddress, handleVerified, verified, isDashboard } = props
-    const [verifiedGeneral, setVerifiedGeneral] = useState(null)
 
     const renderLoader = () => {
         return <Loader active inline />
@@ -26,17 +25,11 @@ function TableCellVerification(props) {
                 trigger={<LinkTescInspect contractAddress={contractAddress} content='Domain required' />}
             />);
         }
-        if (isDashboard) {
-            if (verified === null || verified === undefined) {
-                return renderLoader();
-            }
-            return renderIcon(verified);
-        } else {
-            if (verifiedGeneral === null || verifiedGeneral === undefined) {
-                return renderLoader();
-            }
-            return renderIcon(verifiedGeneral);
+        if (verified === null || verified === undefined) {
+            return renderLoader();
         }
+        return renderIcon(verified);
+        
     };
 
     useEffect(() => {
@@ -44,10 +37,10 @@ function TableCellVerification(props) {
             try {
                 const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress.toLowerCase()}`);
                 console.log(response);
-                isDashboard ? handleVerified(response.data.verified) : setVerifiedGeneral(response.data.verified);
+                handleVerified(response.data.verified)
             } catch (error) {
                 console.log(error);
-                isDashboard ? handleVerified(false) : setVerifiedGeneral(false);
+                handleVerified(false)
             }
         })();
     }, [contractAddress, handleVerified, isDashboard]);

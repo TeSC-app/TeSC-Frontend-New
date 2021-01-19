@@ -2,18 +2,25 @@ import React, { useState, useEffect, useContext } from 'react';
 import moment from 'moment';
 import { Table, Icon, Popup, Button } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
-
 import AppContext from '../appContext';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
-import LinkTescInspect from '../components/InternalLink';
+import LinkTescInspect from './InternalLink';
 import {
     estimateRegistryAddCost,
     estimateRegistryRemoveCost,
 } from '../utils/tesc';
 import TableCellVerification from './TableCellVerification';
 
-function DashboardEntry(props) {
-    const { selectedAccount, tesc, contractRegistry, onTescsChange, hasAccountChanged, handleAccountChanged } = props
+function TableEntry(props) {
+    const {
+        selectedAccount,
+        tesc,
+        contractRegistry,
+        onTescsChange,
+        hasAccountChanged,
+        handleAccountChanged,
+        isDashboard,
+    } = props
     const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, isInRegistry, createdAt } = tesc
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
@@ -24,9 +31,9 @@ function DashboardEntry(props) {
     const [isInRegistryUpdated, setIsInRegistryUpdated] = useState(isInRegistry)
 
     useEffect(() => {
-        handleAccountChanged(false)
+        if (isDashboard) handleAccountChanged(false)
         isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false);
-    }, [isFavourite, setTescIsInFavourites, handleAccountChanged]);
+    }, [isFavourite, setTescIsInFavourites, handleAccountChanged, isDashboard]);
 
     useEffect(() => {
         const runEffect = async () => {
@@ -157,33 +164,41 @@ function DashboardEntry(props) {
 
     const tableCellVerifProps = { domain, contractAddress, verified, handleVerified, isDashboard: true }
 
+    const renderFavourites = () => {
+        return (
+            <Popup inverted content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
+                trigger={<Button icon={tescIsInFavourites ? 'heart' : 'heart outline'}
+                    className={tescIsInFavourites ? "favourite-dashboard" : "not-favourite-dashboard"}
+                    onClick={addRemoveFavourites} />} />
+        )
+    }
+
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
                 <span className='contract-address-column'>
                     {
-                        own ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
+                        own && isDashboard ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
                     }
                     <LinkTescInspect contractAddress={contractAddress} />
                 </span>
             </Table.Cell>
-            <Table.Cell>{renderDomain()}</Table.Cell>
+            <Table.Cell>{isDashboard ? renderDomain() : domain}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
             <TableCellVerification {...tableCellVerifProps} />
-            <Table.Cell textAlign="center">
-                {renderRegistryButtons()}
-            </Table.Cell>
-            {
+            { isDashboard ?
                 <Table.Cell textAlign="center">
-                    <Popup inverted content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
-                        trigger={<Button icon={tescIsInFavourites ? 'heart' : 'heart outline'}
-                            className={tescIsInFavourites ? "favourite-dashboard" : "not-favourite-dashboard"}
-                            onClick={addRemoveFavourites} />} />
-                </Table.Cell>
-            }
-            <Table.Cell>{createdAt}</Table.Cell>
+                    {renderRegistryButtons()}
+                </Table.Cell> : null}
+            {isDashboard ?
+                <Table.Cell textAlign="center">
+                    {renderFavourites()}
+                </Table.Cell> : null}
+            {isDashboard ?
+                <Table.Cell>{createdAt}</Table.Cell> : null}
+
         </Table.Row>
     );
 }
 
-export default DashboardEntry;
+export default TableEntry;

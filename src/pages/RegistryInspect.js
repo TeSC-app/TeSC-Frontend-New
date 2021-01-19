@@ -1,14 +1,11 @@
 import React, { useContext, useState, useEffect } from 'react'
-import { Table, Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
+import { Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
-import moment from 'moment'
 import SearchBox from '../components/SearchBox';
-import LinkTescInspect from '../components/InternalLink';
 import PageHeader from '../components/PageHeader';
-import TableGeneral from '../components/TableGeneral';
-import TableCellVerification from '../components/TableCellVerification';
+import TableOverview from '../components/TableOverview';
 
 function RegistryInspect() {
     const { web3 } = useContext(AppContext);
@@ -54,7 +51,7 @@ function RegistryInspect() {
             )
             const expiry = await contractInstance.methods.getExpiry().call()
             //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
-            contractInstances.push({ address: contractAddresses[i], expiry: expiry })
+            contractInstances.push({ contractAddress: contractAddresses[i], domain, expiry })
         }
         setTotalPages(Math.ceil(contractInstances.length/7))
         setAllEntries(contractInstances);
@@ -63,28 +60,17 @@ function RegistryInspect() {
         setLoading(false)
     }
 
-    const renderRows = () => {
-        return displayedEntries.map((contractInstance) => (
-            <Table.Row key={contractInstance.address}>
-                <Table.Cell><LinkTescInspect contractAddress={contractInstance.address} /></Table.Cell>
-                <Table.Cell>{domain}</Table.Cell>
-                <Table.Cell>{moment.unix(parseInt(contractInstance.expiry)).format('DD/MM/YYYY')}</Table.Cell>
-                <TableCellVerification domain={domain} contractAddress={contractInstance.address} />
-            </Table.Row>
-        ))
-    }
-
     const changePage = (event, value) => {
         setDisplayedEntries(allEntries.slice((value - 1) * 7, value * 7))
     }
 
-    const tableProps = { renderRows, changePage, totalPages }
+    const tableProps = { changePage, displayedEntries, totalPages }
 
     const renderTable = () => {
         if (allEntries.length > 0 && submitted && !loading) {
             return (
                 <div style={{justifyContent: 'center'}}>
-                    <TableGeneral {...tableProps} />
+                    <TableOverview {...tableProps} />
                 </div>
             )
         } else if (allEntries.length === 0 && submitted && !loading) {

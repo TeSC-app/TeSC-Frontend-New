@@ -1,12 +1,10 @@
 import React, { useContext, useEffect, useState, useCallback } from 'react';
 import 'react-day-picker/lib/style.css';
-
 import AppContext from '../appContext';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import '../styles/Dashboard.scss';
-import DashboardEntry from '../components/DashboardEntry';
 import PageHeader from '../components/PageHeader';
-import TableGeneral from '../components/TableGeneral';
+import TableOverview from '../components/TableOverview';
 
 const Dashboard = (props) => {
     const { selectedAccount, hasAccountChanged, handleAccountChanged } = props
@@ -78,20 +76,6 @@ const Dashboard = (props) => {
         localStorage.setItem(selectedAccount.toLowerCase(), JSON.stringify(updatedTescs));
     };
 
-    const renderRows = () => {
-        if (displayedEntries) return displayedEntries.map((tesc) => (
-            <DashboardEntry key={tesc.contractAddress}
-                tesc={tesc}
-                selectedAccount={selectedAccount}
-                contractRegistry={contractRegistry}
-                onTescsChange={handleChangeTescs}
-                web3={web3}
-                hasAccountChanged={hasAccountChanged}
-                handleAccountChanged={handleAccountChanged}
-            />
-        ));
-    };
-
     const changePage = (event, value) => {
         //check if there are filters applied
         setCurrentPage(value)
@@ -101,7 +85,6 @@ const Dashboard = (props) => {
     }
 
     const tableProps = {
-        renderRows,
         showFavouriteTescs,
         showAllTescs,
         showOwnTescs,
@@ -109,13 +92,20 @@ const Dashboard = (props) => {
         changePage,
         resultSizeInitial: tescs ? tescs.length : 0,
         currentPage, 
-        totalPages
+        totalPages, 
+        displayedEntries,
+        selectedAccount,
+        contractRegistry,
+        onTescsChange: handleChangeTescs,
+        web3,
+        hasAccountChanged,
+        handleAccountChanged
     }
 
     return (
         <React.Fragment>
             <PageHeader title='Dashboard' />
-            <TableGeneral {...tableProps} />
+            <TableOverview {...tableProps} />
         </React.Fragment>
     );
 

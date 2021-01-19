@@ -2,6 +2,7 @@ import React from 'react'
 import { Table, Dropdown } from 'semantic-ui-react';
 import { makeStyles } from '@material-ui/core/styles';
 import Pagination from '@material-ui/lab/Pagination';
+import TableEntry from './TableEntry';
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -13,18 +14,44 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-function TableGeneral(props) {
+function TableOverview(props) {
     const classesPagination = useStyles();
     const {
-        renderRows,
         showAllTescs,
         showFavouriteTescs,
         showOwnTescs,
         isDashboard,
         changePage,
         currentPage,
-        totalPages
+        totalPages,
+        displayedEntries,
+        selectedAccount,
+        contractRegistry,
+        onTescsChange,
+        web3,
+        hasAccountChanged,
+        handleAccountChanged
     } = props
+
+
+    const tableEntryProps = {
+        selectedAccount,
+        contractRegistry,
+        onTescsChange,
+        web3,
+        hasAccountChanged,
+        handleAccountChanged,
+        isDashboard
+    }
+
+    const renderRows = () => {
+        if (displayedEntries) return displayedEntries.map((tesc) => (
+            <TableEntry key={tesc.contractAddress}
+                tesc={tesc}
+                {...tableEntryProps}
+            />
+        ));
+    };
 
     return (
         <>
@@ -67,4 +94,4 @@ function TableGeneral(props) {
     )
 }
 
-export default TableGeneral
+export default TableOverview

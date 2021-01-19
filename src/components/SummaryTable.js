@@ -70,7 +70,7 @@
 
 //     const renderRows = () => {
 //         if (tescs) return tescs.map(({ contractAddress, domain, expiry, isFavourite, own, isInRegistry }, index) => (
-//             <DashboardEntry key={contractAddress}
+//             <TableEntry key={contractAddress}
 //                 contractAddress={contractAddress}
 //                 domain={domain}
 //                 expiry={expiry}
