@@ -56,7 +56,7 @@ const TescDataTable = ({ data }) => {
                         <b>Fingerprint</b>
                     </Table.Cell>
                     <Table.Cell style={{ wordBreak: 'break-all' }}>
-                        {!fingerprint || parseInt(fingerprint, 16) === 0 ? 'N/A' : fingerprint.substring(2)}
+                        {!fingerprint || parseInt(fingerprint, 16) === 0 ? 'N/A' : fingerprint}
                     </Table.Cell>
                 </Table.Row>
             </Table.Body>

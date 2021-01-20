@@ -72,7 +72,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const [expiry, setExpiry] = useState(initInputs ? initInputs.expiry : null);
     const [signature, setSignature] = useState('');
     const [flags, setFlags] = useState(initInputs ? initInputs.flags : new BitSet('0x00'));
-    const [domainHashed, setDomainHashed] = useState(initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : '');
+    const [currentDomain, setCurrentDomain] = useState(initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : domain);
     const [fingerprint, setFingerprint] = useState(defaultFingerprint);
 
     const [privateKeyPEM, setPrivateKeyPEM] = useState('');
@@ -93,21 +93,21 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const prevFingerprint = useRef(fingerprint);
     const prevPrivateKeyPEM = useRef(privateKeyPEM);
 
-    const getCurrentDomain = useCallback(() => !!flags.get(FLAGS.DOMAIN_HASHED) ? domainHashed : domain,
-        [domainHashed, domain, flags]);
-
     const getClaimString = () => {
-        return formatClaim({contractAddress: futureContractAddress, domain: getCurrentDomain(), expiry, flags: flagsToBytes24Hex(flags)})
+        return formatClaim({contractAddress: futureContractAddress, domain: currentDomain, expiry, flags: flagsToBytes24Hex(flags)})
     }
 
-    const computeSignature = useCallback(async () => {
-        const domain = getCurrentDomain();
-        if (!!privateKeyPEM && !!domain && !!expiry) {
+    const computeSignature = useCallback(async (currentDomain) => {
+        if (prevPrivateKeyPEM.current && currentDomain && prevExpiry.current) {
             try {
-                const address = initInputs ? contractAddress : await predictContractAddress(web3);
-                const flagsHex = flagsToBytes24Hex(flags);
-                const payload = { address, domain, expiry, flagsHex };
-                setSignature(await generateSignature(payload, privateKeyPEM));
+                let address = futureContractAddress;
+                if(!address) {
+                    address = await predictContractAddress(web3);
+                    setFutureContractAddress(address);
+                }
+                const flagsHex = flagsToBytes24Hex(prevFlags.current);
+                const payload = { address, domain: currentDomain, expiry: prevExpiry.current, flagsHex };
+                setSignature(await generateSignature(payload, prevPrivateKeyPEM.current));
             } catch (err) {
                 showMessage(buildNegativeMsg({
                     code: err.code,
@@ -115,42 +115,44 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     msg: err.message
                 }));
             }
-        } else if (!domain || !expiry) {
+        } else if (!currentDomain || !prevExpiry.current) {
             setSignature('');
         }
-    }, [privateKeyPEM, contractAddress, expiry, flags, getCurrentDomain, showMessage, initInputs, web3]);
+    }, [futureContractAddress, showMessage, web3]);
 
     const handleLoseDomainInputFocus = () => {
         if (fingerprint) {
             setFingerprint(defaultFingerprint)
         }
-        computeSignature();
+        computeSignature(currentDomain);
         
     }
 
-    const makeDeploymentTx = useCallback(async () => {
+    const makeDeploymentTx = useCallback(async (currentDomain) => {
         return await new web3.eth.Contract(TeSC.abi).deploy({
             data: TeSC.bytecode,
-            arguments: [getCurrentDomain(), expiry, flagsToBytes24Hex(flags), padToBytesX(fingerprint, 32), signature]
+            arguments: [currentDomain, prevExpiry.current, flagsToBytes24Hex(prevFlags.current), padToBytesX(prevFingerprint.current, 32), prevSignature.current]
         });
-    }, [expiry, flags, signature, fingerprint, web3.eth.Contract, getCurrentDomain]);
+    }, [web3.eth.Contract]);
 
-    const makeUpdateTx = useCallback(async () => {
+    const makeUpdateTx = useCallback(async (currentDomain) => {
         return await new web3.eth.Contract(TeSC.abi, contractAddress).methods.setEndorsement(
-            getCurrentDomain(),
-            expiry,
-            flagsToBytes24Hex(flags),
-            padToBytesX(fingerprint),
-            signature
+            currentDomain,
+            prevExpiry.current,
+            flagsToBytes24Hex(prevFlags.current),
+            padToBytesX(prevFingerprint.current),
+            prevSignature.current
         );
-    }, [contractAddress, expiry, flags, signature, fingerprint, getCurrentDomain, web3.eth.Contract]);
+    }, [contractAddress, web3.eth.Contract]);
     
-    const handleFlagsChange = (i) => {
+    const handleFlagsChange = (i, selected) => {
         const newFlags = new BitSet(flags.flip(i).toString());
         setFlags(newFlags);
         if (i === FLAGS.DOMAIN_HASHED) {
-            if (domain) {
-                setDomainHashed(web3.utils.sha3(domain).substring(2));
+            if (domain && !selected) {
+                setCurrentDomain(web3.utils.sha3(domain).substring(2));
+            } else {
+                setCurrentDomain(domain)
             }
         }
     };
@@ -174,36 +176,43 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         (async () => {
             if (!futureContractAddress) {
                 setFutureContractAddress(await predictContractAddress(web3));
+                console.log(1)
             }
             if (expiry !== prevExpiry.current) {
                 prevExpiry.current = expiry;
+                if (privateKeyPEM) computeSignature(currentDomain);
+                console.log(2)
 
             } else if (flags.toString() !== prevFlags.current) {
                 prevFlags.current = flags.toString();
+                if (privateKeyPEM) computeSignature(currentDomain);
+                console.log(3)
+
+            } else if (privateKeyPEM !== prevPrivateKeyPEM.current) {
+                prevPrivateKeyPEM.current = privateKeyPEM;
+                computeSignature(currentDomain);
 
             } else if (signature !== prevSignature.current || fingerprint !== prevFingerprint.current) {
+                if (signature !== prevSignature.current) {
+                    prevSignature.current = signature;
+                    console.log(4)
+                }
+                else if (fingerprint !== prevFingerprint.current)
+                    prevFingerprint.current = fingerprint;
+
                 if (signature) {
-                    const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx();
+                    console.log(5)
+                    const tx = !initInputs ? await makeDeploymentTx(currentDomain) : await makeUpdateTx(currentDomain);
                     if (!initInputs || contractAddress) {
                         const estCost = await estimateDeploymentCost(web3, tx);
                         setCostEstimated(estCost);
                     }
                 }
 
-                if (signature !== prevSignature.current)
-                    prevSignature.current = signature;
-                else if (fingerprint !== prevFingerprint.current)
-                    prevFingerprint.current = fingerprint;
-
-            } else if (privateKeyPEM !== prevPrivateKeyPEM.current) {
-                prevPrivateKeyPEM.current = prevPrivateKeyPEM;
-            }
+            } 
         })();
-        if (privateKeyPEM) {
-            computeSignature();
-        }
-    }, [expiry, contractAddress, futureContractAddress, flags, signature, privateKeyPEM, computeSignature,
-        fingerprint, getCurrentDomain, makeDeploymentTx, initInputs, makeUpdateTx, web3]);
+    }, [currentDomain, expiry, contractAddress, futureContractAddress, flags, signature, privateKeyPEM, computeSignature,
+        fingerprint, makeDeploymentTx, initInputs, makeUpdateTx, web3]);
 
 
     const validateEndorsement = async () => {
@@ -229,15 +238,12 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
         showMessage(null);
 
-        const curDomain = getCurrentDomain();
-
         let success = false;
-        if (curDomain && expiry && signature) {
+        if (currentDomain && expiry && signature) {
             try {
-                console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
                 await validateEndorsement();
-                console.log("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-                const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx();
+                const tx = !initInputs ? await makeDeploymentTx(currentDomain) : await makeUpdateTx(currentDomain);
+                console.log("tx", tx)
                 await tx.send({ from: account, gas: '2000000' })
                     .on('receipt', async (txReceipt) => {
                         setCostPaid(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether'));
@@ -256,7 +262,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                             account,
                             claim: { 
                                 contractAddress: initInputs? contractAddress : txReceipt.contractAddress, 
-                                domain: curDomain, 
+                                domain: currentDomain, 
                                 expiry 
                             }
                         });
@@ -273,7 +279,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         } else {
             showMessage(buildNegativeMsg({
                 header: 'Unable to deploy Smart Contract',
-                msg: `${!curDomain ? 'Domain' : !expiry ? 'Expiry' : !signature ? 'Signature' : 'Some required input'} is empty`
+                msg: `${!currentDomain ? 'Domain' : !expiry ? 'Expiry' : !signature ? 'Signature' : 'Some required input'} is empty`
             }));
         }
         handleBlockScreen(false);
@@ -290,7 +296,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     checked={!!flags.get(i)}
                     // label={flagName}
                     label='Hash domain'
-                    onClick={() => handleFlagsChange(i)}
+                    onClick={() => handleFlagsChange(i, !!flags.get(i))}
                     disabled={(!initInputs && (!domain)) || (initInputs && !isMatchedOriginalDomain)}
                     slider
                 />
@@ -299,7 +305,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
     const handleEnterOriginalDomain = (originalDomain) => {
         setDomain(originalDomain);
-        if (originalDomain && web3.utils.sha3(originalDomain).substring(2) === domainHashed) {
+        if (originalDomain && web3.utils.sha3(originalDomain).substring(2) === currentDomain) {
             setIsMatchedOriginalDomain(true);
             onMatchOriginalDomain(originalDomain);
         }
@@ -319,7 +325,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     };
 
     const shouldDisplayOriginalDomainStep = () => {
-        return initInputs && !typedInDomain && domainHashed && !isMatchedOriginalDomain
+        return initInputs && flags.get(FLAGS.DOMAIN_HASHED) && !typedInDomain && !isMatchedOriginalDomain
     }
 
     const getSteps = () => {
@@ -345,7 +351,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     </b>
                     <Popup
                         inverted
-                        content={`The original plaintext domain that is hashed to the hash ${domainHashed} (required)`}
+                        content={`The original plaintext domain that is hashed to the hash ${currentDomain} (required)`}
                         trigger={<Icon name='question circle' />}
                     />
                 </div>
@@ -391,10 +397,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                     />
                                 </label>
                                 <Input
-                                    value={!!flags.get(FLAGS.DOMAIN_HASHED) ? domainHashed : domain}
+                                    value={currentDomain}
                                     disabled={!!flags.get(FLAGS.DOMAIN_HASHED)}
                                     placeholder='www.mysite.com'
-                                    onChange={e => setDomain(e.target.value)}
+                                    onChange={e => {setDomain(e.target.value); setCurrentDomain(e.target.value)}}
                                     onBlur={() => handleLoseDomainInputFocus()}
                                     icon='world'
                                 />
@@ -415,7 +421,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                 </label>
                                 <DayPickerInput
                                     value={expiry ? formatDate(new Date(expiry * 1000), 'DD/MM/YYYY') : null}
-                                    onBlur={() => computeSignature()}
+                                    onBlur={() => computeSignature(currentDomain)}
                                     onDayChange={handleExpiryChange}
                                     format="DD/MM/YYYY"
                                     formatDate={formatDate}
@@ -433,8 +439,8 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                             </Form.Field>
                         </Fragment>
                     ),
-                    completed: initInputs? (getCurrentDomain() !== initInputs.domain) || (expiry !== initInputs.expiry) : !!getCurrentDomain() && !!expiry ,
-                    reachable: initInputs && domainHashed? isMatchedOriginalDomain: true
+                    completed: initInputs? (currentDomain !== initInputs.domain) || (expiry !== initInputs.expiry) : !!currentDomain && !!expiry ,
+                    reachable: initInputs && currentDomain? isMatchedOriginalDomain: true
                 };
             case 1:
                 return {
@@ -482,7 +488,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                         <FilePicker
                                             label='Choose certificate  key'
                                             onPickFile={handlePickPrivateKey}
-                                            isDisabled={!getCurrentDomain() || !expiry}
+                                            isDisabled={!currentDomain || !expiry}
                                             input={{fileName:privateKeyFileName, content: privateKeyPEM}}
                                         />
                                     </div>
@@ -550,7 +556,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                         <Fragment>
                             <Header as='h3' content='Review and Deploy' style={{marginBottom: '30px'}} color='purple'/>
                             <TescDataTable
-                                data={{ contractAddress, domain: getCurrentDomain(), expiry, flags, signature, fingerprint }}
+                                data={{ contractAddress, domain: currentDomain, expiry, flags, signature, fingerprint }}
                             />
                             {!!costEstimated && !!signature && (
                                 <div style={{ float: 'right'}}>
@@ -625,7 +631,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         setContractAddress('');
         setFutureContractAddress('');
         setDomain('');
-        setDomainHashed('');
+        setCurrentDomain('');
         setExpiry(null);
         setFlags(new BitSet('0x00'));
         setSignature('');
