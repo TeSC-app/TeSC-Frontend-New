@@ -1,37 +1,20 @@
-import React, { useContext, useState, useEffect } from 'react'
+import React, { useContext, useState } from 'react'
 import { Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
-import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
 import SearchBox from '../components/SearchBox';
 import PageHeader from '../components/PageHeader';
 import TableOverview from '../components/TableOverview';
 
-function RegistryInspect() {
+function RegistryInspect(props) {
+    const { contractRegistry } = props
     const { web3 } = useContext(AppContext);
-    const [contractRegistry, setContractRegistry] = useState(undefined);
     const [domain, setDomain] = useState('')
     const [allEntries, setAllEntries] = useState([])
     const [submitted, setSubmitted] = useState(false)
     const [loading, setLoading] = useState(false)
     const [totalPages, setTotalPages] = useState(0) 
     const [displayedEntries, setDisplayedEntries] = useState([])
-
-    useEffect(() => {
-        const init = async () => {
-            try {
-                const contractRegistry = new web3.eth.Contract(
-                    TeSCRegistry.abi,
-                    process.env.REACT_APP_REGISTRY_ADDRESS,
-                );
-                setContractRegistry(contractRegistry);
-            }
-            catch (error) {
-                console.error(error);
-            }
-        }
-        init()
-    }, [web3.eth.Contract, web3.eth.net])
 
     const handleInput = domain => {
         setSubmitted(false);

@@ -81,12 +81,12 @@ export const estimateRegistryRemoveCost = async (web3, selectedAccount, contract
 
 export const storeTesc = ({ account, claim }) => {
     const { contractAddress, domain, expiry } = claim;
-    let tescs = JSON.parse(localStorage.getItem(account));
+    let tescs = JSON.parse(localStorage.getItem(account.toLowerCase()));
     if (!tescs) {
         tescs = [];
     }
     tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, isInRegistry: false, createdAt: moment().format('DD/MM/YYYY HH:mm:ss') });
-    localStorage.setItem(account, JSON.stringify(tescs));
+    localStorage.setItem(account.toLowerCase(), JSON.stringify(tescs));
 };
 
 export const isValidContractAddress = (address, withReason = false) => {

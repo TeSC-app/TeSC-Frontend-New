@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useCallback } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import 'react-day-picker/lib/style.css';
 import AppContext from '../appContext';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
@@ -6,7 +6,7 @@ import PageHeader from '../components/PageHeader';
 import TableOverview from '../components/TableOverview';
 
 const Dashboard = (props) => {
-    const { selectedAccount, hasAccountChanged, handleAccountChanged } = props
+    const { selectedAccount, hasAccountChanged, handleAccountChanged, loadStorage } = props
     const { web3 } = useContext(AppContext);
     const [contractRegistry, setContractRegistry] = useState(null);
     const [tescs, setTescs] = useState(selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []);
@@ -14,10 +14,6 @@ const Dashboard = (props) => {
     const [filterOption, setFilterOption] = useState(0)
     const [currentPage, setCurrentPage] = useState(1)
     const [totalPages, setTotalPages] = useState(tescs ? Math.ceil(tescs.length/7) : 0)
-
-    const loadStorage = useCallback(() => {
-        return JSON.parse(localStorage.getItem(selectedAccount.toLowerCase()));
-    }, [selectedAccount]);
 
     const showAllTescs = () => {
         setCurrentPage(1)
@@ -49,8 +45,8 @@ const Dashboard = (props) => {
                 );
                 setContractRegistry(contractRegistry);
                 setTescs(selectedAccount ? loadStorage() : []);
-                setDisplayedEntries(selectedAccount ? loadStorage().slice(0, 7) : [])
-                setTotalPages(Math.ceil(loadStorage().length/7))
+                setDisplayedEntries(selectedAccount && loadStorage() ? loadStorage().slice(0, 7) : [])
+                setTotalPages(Math.ceil(loadStorage() ? loadStorage().length/7 : 0))
                 window.ethereum.on('accountsChanged', (accounts) => {
                     setTescs(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
                         JSON.parse(localStorage.getItem(accounts[0].toLowerCase())) :
