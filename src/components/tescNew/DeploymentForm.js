@@ -32,7 +32,7 @@ import {
     storeTesc,
     estimateDeploymentCost,
     formatClaim,
-    FLAG_POSITIONS,
+    FLAGS,
 } from '../../utils/tesc';
 import { extractAxiosErrorMessage } from '../../utils/formatError';
 import axios from 'axios';
@@ -58,13 +58,9 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
-function getSteps() {
-    return ['Create Claim', 'Create Signature', 'Add Certificate Fingerprint', 'Review and Deploy', 'Receipt'];
-}
 
 
-
-const DeploymentForm = ({ initInputs }) => {
+const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' }) => {
     const { web3, showMessage, handleBlockScreen, account } = useContext(AppContext);
 
     const defaultFingerprint = !initInputs || parseInt(initInputs.fisngerprint, 16) === 0 ? '' : initInputs.fingerprint;
@@ -72,11 +68,11 @@ const DeploymentForm = ({ initInputs }) => {
     const [contractAddress, setContractAddress] = useState(initInputs ? initInputs.contractAddress.toLowerCase() : '');
     const [futureContractAddress, setFutureContractAddress] = useState(initInputs ? initInputs.contractAddress.toLowerCase() : '');
 
-    const [domain, setDomain] = useState(initInputs && !initInputs.flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? initInputs.domain : '');
+    const [domain, setDomain] = useState(initInputs && !initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : typedInDomain);
     const [expiry, setExpiry] = useState(initInputs ? initInputs.expiry : null);
     const [signature, setSignature] = useState('');
     const [flags, setFlags] = useState(initInputs ? initInputs.flags : new BitSet('0x00'));
-    const [domainHashed, setDomainHashed] = useState(initInputs && !!initInputs.flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? initInputs.domain : '');
+    const [domainHashed, setDomainHashed] = useState(initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : '');
     const [fingerprint, setFingerprint] = useState(defaultFingerprint);
 
     const [privateKeyPEM, setPrivateKeyPEM] = useState('');
@@ -86,7 +82,7 @@ const DeploymentForm = ({ initInputs }) => {
     const [costPaid, setCostPaid] = useState(null);
 
     const [isMetamaskOpen, setIsMetamaskOpen] = useState(false);
-    const [isMatchedOriginalDomain, setIsMatchedOriginalDomain] = useState(false);
+    const [isMatchedOriginalDomain, setIsMatchedOriginalDomain] = useState(typedInDomain ? true : false);
 
 
     const [sigInputType, setSigInputType] = useState(null);
@@ -97,11 +93,11 @@ const DeploymentForm = ({ initInputs }) => {
     const prevFingerprint = useRef(fingerprint);
     const prevPrivateKeyPEM = useRef(privateKeyPEM);
 
-    const getCurrentDomain = useCallback(() => !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain,
+    const getCurrentDomain = useCallback(() => !!flags.get(FLAGS.DOMAIN_HASHED) ? domainHashed : domain,
         [domainHashed, domain, flags]);
 
     const getClaimString = () => {
-        return formatClaim({contractAddress: futureContractAddress, domain, expiry, flags: flagsToBytes24Hex(flags)})
+        return formatClaim({contractAddress: futureContractAddress, domain: getCurrentDomain(), expiry, flags: flagsToBytes24Hex(flags)})
     }
 
     const computeSignature = useCallback(async () => {
@@ -152,7 +148,7 @@ const DeploymentForm = ({ initInputs }) => {
     const handleFlagsChange = (i) => {
         const newFlags = new BitSet(flags.flip(i).toString());
         setFlags(newFlags);
-        if (i === FLAG_POSITIONS.DOMAIN_HASHED) {
+        if (i === FLAGS.DOMAIN_HASHED) {
             if (domain) {
                 setDomainHashed(web3.utils.sha3(domain).substring(2));
             }
@@ -212,15 +208,15 @@ const DeploymentForm = ({ initInputs }) => {
 
     const validateEndorsement = async () => {
         try {
-            console.log('domain', domain)
-            console.log('getCurrentDomain', getCurrentDomain())
-            await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/predeploy/validate`, {
+            const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/predeploy/validate`, {
                 params: { 
-                    domain, 
+                    domain,
                     claim: getClaimString(), 
                     signature
                 }
             });
+
+            console.log(res.status);
         } catch (err) {
             throw err;
         }
@@ -238,7 +234,9 @@ const DeploymentForm = ({ initInputs }) => {
         let success = false;
         if (curDomain && expiry && signature) {
             try {
+                console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
                 await validateEndorsement();
+                console.log("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
                 const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx();
                 await tx.send({ from: account, gas: '2000000' })
                     .on('receipt', async (txReceipt) => {
@@ -286,7 +284,7 @@ const DeploymentForm = ({ initInputs }) => {
     };
 
     const renderFlagCheckboxes = () => {
-        return Object.entries(FLAG_POSITIONS).filter(([flagName, i]) => i === 0).map(([flagName, i]) =>
+        return Object.entries(FLAGS).filter(([flagName, i]) => i === 0).map(([flagName, i]) =>
                 <Form.Checkbox
                     key={i}
                     checked={!!flags.get(i)}
@@ -303,6 +301,7 @@ const DeploymentForm = ({ initInputs }) => {
         setDomain(originalDomain);
         if (originalDomain && web3.utils.sha3(originalDomain).substring(2) === domainHashed) {
             setIsMatchedOriginalDomain(true);
+            onMatchOriginalDomain(originalDomain);
         }
     };
 
@@ -319,18 +318,56 @@ const DeploymentForm = ({ initInputs }) => {
         navigator.clipboard.writeText(`echo -n ${getClaimString()} | openssl dgst -RSA-SHA256 -sign <path_to_private_key_file> | openssl base64 | cat`);
     };
 
+    const shouldDisplayOriginalDomainStep = () => {
+        return initInputs && !typedInDomain && domainHashed && !isMatchedOriginalDomain
+    }
+
+    const getSteps = () => {
+        return [
+            `${initInputs ? 'Change' : 'Create'} Claim`, 
+            `${initInputs ? 'Change' : 'Create'} Signature`, 
+            `${initInputs ? 'Change' : 'Add'} Certificate Fingerprint`, 
+            `Review and ${initInputs ? 'Update' : 'Deploy'}`, 
+            'Receipt'
+        ];
+    }
 
     const classes = useStyles();
     const [activeStep, setActiveStep] = React.useState(0);
     const steps = getSteps();
+    
+    const renderOriginalDomainInput = () => {
+        return (
+            <div raised padded='very' color='purple' style={{margin: '1% 5%'}}>
+                <div style={{marginBottom: '30px'}}>
+                    <b style={{color: '#A333C8', fontSize: '1.28571429rem'}} >
+                        Enter Original Domain
+                    </b>
+                    <Popup
+                        inverted
+                        content={`The original plaintext domain that is hashed to the hash ${domainHashed} (required)`}
+                        trigger={<Icon name='question circle' />}
+                    />
+                </div>
+                <Input
+                    label={{ content: 'Original Domain', color: 'purple' }}
+                    value={domain}
+                    placeholder='www.mysite.com'
+                    onChange={e => handleEnterOriginalDomain(e.target.value)}
+                    icon='world'
+                    style={{marginTop: '12px', width: '100%'}}
+                />
+            </div>
+        )
+    }
 
-    function getStepContent(step) {
+    const getStepContent = (step) => {
         switch (step) {
             case 0:
                 return {
                     component: (
                         <Fragment>
-                            <Header as='h3' content='Create Claim' style={{marginBottom: '30px'}} color='purple'/>
+                            <Header as='h3' content={getSteps()[step]} style={{marginBottom: '30px'}} color='purple'/>
                             <Form.Field>
                                 <p>
                                     <b>Contract address: </b>
@@ -342,7 +379,6 @@ const DeploymentForm = ({ initInputs }) => {
                                     />
                                     
                                 </p>
-                                {/* <Label color='black' >{futureContractAddress}</Label> */}
                             </Form.Field>
 
                             <Form.Field>
@@ -355,8 +391,8 @@ const DeploymentForm = ({ initInputs }) => {
                                     />
                                 </label>
                                 <Input
-                                    value={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain}
-                                    disabled={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)}
+                                    value={!!flags.get(FLAGS.DOMAIN_HASHED) ? domainHashed : domain}
+                                    disabled={!!flags.get(FLAGS.DOMAIN_HASHED)}
                                     placeholder='www.mysite.com'
                                     onChange={e => setDomain(e.target.value)}
                                     onBlur={() => handleLoseDomainInputFocus()}
@@ -398,7 +434,7 @@ const DeploymentForm = ({ initInputs }) => {
                         </Fragment>
                     ),
                     completed: initInputs? (getCurrentDomain() !== initInputs.domain) || (expiry !== initInputs.expiry) : !!getCurrentDomain() && !!expiry ,
-                    reachable: true
+                    reachable: initInputs && domainHashed? isMatchedOriginalDomain: true
                 };
             case 1:
                 return {
@@ -492,7 +528,7 @@ const DeploymentForm = ({ initInputs }) => {
                         </Fragment>
                     ),
                     completed: !!signature,
-                    reachable: initInputs? getStepContent(0).completed : !!signature || getStepContent(0).completed 
+                    reachable: initInputs? getStepContent(step - 1).completed : !!signature || getStepContent(step - 1).completed 
                 };
             case 2:
                 return {
@@ -505,8 +541,8 @@ const DeploymentForm = ({ initInputs }) => {
                             />
                         </Fragment>
                     ),
-                    completed: getStepContent(0).completed && getStepContent(1).completed,
-                    reachable: (getStepContent(0).completed && getStepContent(1).completed) || getStepContent(1).reachable
+                    completed: getStepContent(step - 2).completed && getStepContent(step - 1).completed,
+                    reachable: (getStepContent(step - 2).completed && getStepContent(step - 1).completed) || getStepContent(step - 1).reachable
                 };
             case 3:
                 return {
@@ -527,7 +563,7 @@ const DeploymentForm = ({ initInputs }) => {
                         </Fragment>
                     ),
                     completed: !!costPaid,
-                    reachable: getStepContent(1).completed || !!costPaid  
+                    reachable: getStepContent(step - 2).completed || !!costPaid  
                 };
             case 4:
                 return {
@@ -543,16 +579,14 @@ const DeploymentForm = ({ initInputs }) => {
 
                         </Fragment>
                     ),
-                    completed: getStepContent(3).completed,
-                    reachable: getStepContent(3).completed
+                    completed: getStepContent(step - 1).completed,
+                    reachable: getStepContent(step - 1).completed
                 };
 
             default:
                 return 'Unknown step';
         }
     }
-
-
 
     const isStepOptional = (step) => {
         return step === 2;
@@ -608,82 +642,90 @@ const DeploymentForm = ({ initInputs }) => {
 
     return (
         <React.Fragment>
-            <div className={classes.root}>
-                <Stepper alternativeLabel nonLinear activeStep={activeStep} style={{background: 'none'}}>
-                    {steps.map((label, index) => {
-                        const stepProps = {};
-                        const buttonProps = {};
-                        if (isStepOptional(index)) {
-                            buttonProps.optional = <Typography variant="caption" style={{fontSize: '0.9em'}}>Optional</Typography>;
-                        }
-                        return (
-                            <Step key={label} {...stepProps}>
-                                <StepButton
-                                    onClick={handleStep(index)}
-                                    completed={getStepContent(index).completed}
-                                    disabled={!getStepContent(index).reachable}
-                                    {...buttonProps}
-                                >
-                                    <span style={{fontSize: '1.2em'}}>{label}</span>
-                                </StepButton>
-                            </Step>
-                        );
-                    })}
-                </Stepper>
-                <Grid relaxed style={{ width: '70%', margin: '0 auto' }}>
-                    <Grid.Column>
-                        <Grid.Row style={{ paddingBottom: '5%', margin: '0 auto' }}>
-                            <Form>
-                                <Segment raised padded='very' color='purple'>
-                                    {getStepContent(activeStep).component}
-                                </Segment>
-                            </Form>
+            {!shouldDisplayOriginalDomainStep() ? (
+                <div className={classes.root}>
+                    <Stepper alternativeLabel nonLinear activeStep={activeStep} style={{ background: 'none' }}>
+                        {steps.map((label, index) => {
+                            const stepProps = {};
+                            const buttonProps = {};
+                            if (isStepOptional(index)) {
+                                buttonProps.optional = <Typography variant="caption" style={{ fontSize: '0.9em' }}>Optional</Typography>;
+                            }
+                            return (
+                                <Step key={label} {...stepProps}>
+                                    <StepButton
+                                        onClick={handleStep(index)}
+                                        completed={getStepContent(index).completed}
+                                        disabled={!getStepContent(index).reachable}
+                                        {...buttonProps}
+                                    >
+                                        <span style={{ fontSize: '1.2em' }}>{label}</span>
+                                    </StepButton>
+                                </Step>
+                            );
+                        })}
+                    </Stepper>
+                    <Grid relaxed style={{ width: '70%', margin: '0 auto' }}>
+                        <Grid.Column>
+                            <Grid.Row style={{ paddingBottom: '5%', margin: '0 auto' }}>
+                                <Form>
+                                    <Segment raised padded='very' color='purple'>
+                                        {getStepContent(activeStep).component}
+                                    </Segment>
+                                </Form>
 
-                            <div className={classes.actionsContainer} style={{ float: 'right', height: 'min-content', padding: '1.5% 0' }}>
-                                {costPaid && !initInputs && (
+                                <div className={classes.actionsContainer} style={{ float: 'right', height: 'min-content', padding: '1.5% 0' }}>
+                                    {costPaid && !initInputs && (
+                                        <BtnSuir
+                                            basic
+                                            onClick={handleReset}
+                                            primary
+                                        >
+                                            Deploy another TeSC
+                                        </BtnSuir>
+                                    )}
                                     <BtnSuir
                                         basic
-                                        onClick={handleReset}
-                                        primary
+                                        disabled={activeStep === 0}
+                                        onClick={handleBack}
                                     >
-                                        Deploy another TeSC
-                                    </BtnSuir>
-                                )}
-                                <BtnSuir
-                                    basic
-                                    disabled={activeStep === 0}
-                                    onClick={handleBack}
-                                >
-                                    Back
+                                        Back
                                 </BtnSuir>
 
-                                {((activeStep < 3 && !costPaid) || (activeStep <= 3 && costPaid)) && (
-                                    <BtnSuir
-                                        basic
-                                        color="purple"
-                                        disabled={!getStepContent(activeStep).completed}
-                                        onClick={handleNext}
-                                    >
-                                        Next
-                                    </BtnSuir>
-                                )}
-                                {activeStep === 3 && !costPaid && (
-                                    <BtnSuir
-                                        icon='play circle'
-                                        basic
-                                        onClick={handleSubmit}
-                                        disabled={!signature || !privateKeyPEM}
-                                        positive
-                                        content={!initInputs ? 'Deploy' : 'Update'}
-                                    />
-                                )
-                                }
-                            </div>
-                        </Grid.Row>
+                                    {((activeStep < 3 && !costPaid) || (activeStep <= 3 && costPaid)) && (
+                                        <BtnSuir
+                                            basic
+                                            color="purple"
+                                            disabled={!getStepContent(activeStep).completed}
+                                            onClick={handleNext}
+                                        >
+                                            Next
+                                        </BtnSuir>
+                                    )}
+                                    {activeStep === 3 && !costPaid && (
+                                        <BtnSuir
+                                            icon='play circle'
+                                            basic
+                                            onClick={handleSubmit}
+                                            disabled={!signature || !privateKeyPEM}
+                                            positive
+                                            content={!initInputs ? 'Deploy' : 'Update'}
+                                        />
+                                    )
+                                    }
+                                </div>
+                            </Grid.Row>
 
-                    </Grid.Column>
-                </Grid>
-            </div>
+                        </Grid.Column>
+                    </Grid>
+                </div>
+            ) : 
+                (
+                    <Fragment>
+                        {renderOriginalDomainInput()}
+                    </Fragment>
+                )
+            }
         </React.Fragment>
     );
 };

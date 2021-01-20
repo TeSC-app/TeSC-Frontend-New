@@ -99,7 +99,7 @@ const App = ({ web3 }) => {
                         </Segment>
                     </Container>
                 </div>
-                <Dimmer active={screenBlocked}>
+                <Dimmer active={screenBlocked} style={{zIndex: '9999'}}>
                     <Loader indeterminate content='Waiting for transaction to finish...' />
                 </Dimmer>
             </AppContext.Provider>

@@ -8,7 +8,7 @@ import AppContext from '../../appContext';
 import FilePicker from '../FilePicker';
 import { buildNegativeMsg, buildWarningMsg } from "../FeedbackMessage";
 
-import { predictContractAddress, formatClaim, flagsToBytes24Hex, FLAG_POSITIONS } from '../../utils/tesc';
+import { predictContractAddress, formatClaim, flagsToBytes24Hex, FLAGS } from '../../utils/tesc';
 import { extractAxiosErrorMessage } from '../../utils/formatError';
 
 
@@ -94,7 +94,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
     }, [showMessage]);
 
     const updateClaim = useCallback(() => {
-        const curDomain = !!flags.current.get(FLAG_POSITIONS.DOMAIN_HASHED) ? web3.utils.sha3(domain.current).substring(2) : domain.current;
+        const curDomain = !!flags.current.get(FLAGS.DOMAIN_HASHED) ? web3.utils.sha3(domain.current).substring(2) : domain.current;
         if (contractAddress.current && domain.current && expiry.current) {
             claim.current = formatClaim({
                 contractAddress: contractAddress.current,

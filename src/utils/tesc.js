@@ -3,7 +3,7 @@ import { PrivateKey } from '@fidm/x509';
 import BitSet from 'bitset';
 import moment from 'moment'
 
-export const FLAG_POSITIONS = {
+export const FLAGS = {
     DOMAIN_HASHED: 0,
     ALLOW_SUBENDORSEMENT: 1,
     EXCLUSIVE: 2,
@@ -44,7 +44,7 @@ export const generateSignature = async ({ address, domain, expiry, flagsHex }, p
 
 export const flagsToBytes24Hex = (flagsBitVector) => {
     const flagsBitVectorWithSANITY = new BitSet(flagsBitVector.toString() + '1');
-    let hex = flagsBitVectorWithSANITY.slice(0, Object.keys(FLAG_POSITIONS).length - 1).toString(16);
+    let hex = flagsBitVectorWithSANITY.slice(0, Object.keys(FLAGS).length - 1).toString(16);
     return padToBytesX(hex, 24);
 };
 

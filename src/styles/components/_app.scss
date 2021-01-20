@@ -6,6 +6,10 @@ $navbar-height: 48.563px;
 //   min-height: 100% !important;
 // }
 
+.ui.page.dimmer {
+  overflow-y: auto;
+}
+
 .root-container {
   height: 100vh;
 }
@@ -41,7 +45,7 @@ $navbar-height: 48.563px;
     display: block;
     background: rgba(255, 255, 255, 0.97);
     padding: 30px;
-    display:table; // must be here
+    display: table; // must be here
     min-height: 100%;
     min-width: fit-content;
   }
