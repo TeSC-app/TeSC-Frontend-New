@@ -85,7 +85,7 @@ export const storeTesc = ({ account, claim }) => {
     if (!tescs) {
         tescs = [];
     }
-    tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, isInRegistry: false, createdAt: moment().format('DD/MM/YYYY HH:mm:ss') });
+    tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, createdAt: moment().format('DD/MM/YYYY HH:mm:ss') });
     localStorage.setItem(account.toLowerCase(), JSON.stringify(tescs));
 };
 

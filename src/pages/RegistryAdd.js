@@ -24,15 +24,6 @@ function RegistryAdd(props) {
     const [submitted, setSubmitted] = useState(false)
     const [added, setAdded] = useState(false)
 
-    const updateStorageTesc = (contractAddress) => {
-        const tescs = loadStorage()
-        let tesc = tescs.find(tesc => tesc.contractAddress === contractAddress)
-        let newTesc = { ...tesc, isInRegistry: true }
-        const updatedTescs = [...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), newTesc]
-            .sort((tescA, tescB) => tescA.createdAt.localeCompare(tescB.createdAt));
-        localStorage.setItem(selectedAccount.toLowerCase(), JSON.stringify(updatedTescs));
-    }
-
     const clearValues = () => {
         setValidInput(false)
         setTescDomain('')
@@ -106,7 +97,6 @@ function RegistryAdd(props) {
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                                 }))
                             })
-                        updateStorageTesc(contractAddress)
                         setAdded(true)
                     } else {
                         showMessage(buildNegativeMsg({

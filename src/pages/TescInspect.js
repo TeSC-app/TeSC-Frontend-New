@@ -96,8 +96,7 @@ const TeSCInspect = ({ location }) => {
             }
         }
         if (!found) {
-            const isInRegistry = contractRegistry ? await contractRegistry.methods.isContractRegistered(address).call() : false
-            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false, isInRegistry, createdAt: moment().format('DD/MM/YYYY HH:mm:ss') });
+            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm:ss') });
             localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
             setTescsIsInFavourites(true);
         }

@@ -22,13 +22,21 @@ function TableEntry(props) {
         isDashboard,
     } = props
     const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
-    const { contractAddress, domain, expiry, isFavourite, own, isInRegistry, createdAt } = tesc
+    const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
     const [costEstimatedRemove, setCostEstimatedRemove] = useState(0);
     const [verified, setVerified] = useState(null)
     //registry buttons need this state to get rerendered
-    const [isInRegistryUpdated, setIsInRegistryUpdated] = useState(isInRegistry)
+    const [isInRegistry, setIsInRegistry] = useState(false)
+
+    useEffect(() => {
+        const checkRegistry = async () => {
+            const isInRegistry = await contractRegistry.methods.isContractRegistered(contractAddress).call()
+            setIsInRegistry(isInRegistry)
+        }
+        checkRegistry()
+    }, [contractAddress, contractRegistry])
 
     useEffect(() => {
         if (isDashboard) handleAccountChanged(false)
@@ -37,16 +45,16 @@ function TableEntry(props) {
 
     useEffect(() => {
         const runEffect = async () => {
-            if (!isInRegistryUpdated && own && selectedAccount && !hasAccountChanged) {
+            if (!isInRegistry && own && selectedAccount && !hasAccountChanged) {
                 const estCostAdd = contractRegistry ? await estimateRegistryAddCost(web3, selectedAccount, contractRegistry, domain, contractAddress) : 0;
                 setCostEstimatedAdd(estCostAdd);
-            } else if (isInRegistryUpdated && own && selectedAccount && !hasAccountChanged) {
+            } else if (isInRegistry && own && selectedAccount && !hasAccountChanged) {
                 const estCostRemove = contractRegistry ? await estimateRegistryRemoveCost(web3, selectedAccount, contractRegistry, domain, contractAddress) : 0;
                 setCostEstimatedRemove(estCostRemove);
             }
         };
         runEffect();
-    }, [web3, contractAddress, selectedAccount, contractRegistry, domain, isInRegistryUpdated, own, hasAccountChanged]);
+    }, [web3, contractAddress, selectedAccount, contractRegistry, domain, isInRegistry, own, hasAccountChanged]);
 
     const handleVerified = (verified) => {
         setVerified(verified)
@@ -65,8 +73,8 @@ function TableEntry(props) {
                                 msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully added to the registry.
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                             }));
-                            onTescsChange({ contractAddress, domain, expiry, isFavourite, own, isInRegistry: true, createdAt });
-                            setIsInRegistryUpdated(true)
+                            onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt });
+                            setIsInRegistry(true)
                         });
                 } else {
                     showMessage(buildNegativeMsg({
@@ -99,8 +107,8 @@ function TableEntry(props) {
                                 msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully removed from the registry.
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                             }));
-                            onTescsChange({ contractAddress, domain, expiry, isFavourite, own, isInRegistry: false, createdAt });
-                            setIsInRegistryUpdated(false)
+                            onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt });
+                            setIsInRegistry(false)
                         });
                 } else {
                     showMessage(buildNegativeMsg({
@@ -128,13 +136,13 @@ function TableEntry(props) {
             isFavourite = true;
             setTescIsInFavourites(true);
         }
-        onTescsChange({ contractAddress, domain, expiry, isFavourite: isFavourite, own, isInRegistry, createdAt });
+        onTescsChange({ contractAddress, domain, expiry, isFavourite: isFavourite, own, createdAt });
     };
 
     const renderRegistryButtons = () => {
         if (own) {
             return (
-                isInRegistryUpdated ?
+                isInRegistry ?
                     <Popup inverted content={`Remove entry from the TeSC registry. This would cost around ${costEstimatedRemove.toFixed(5)} ETH.`}
                         trigger={<Button basic color='red' onClick={removeFromRegistry} content='Remove' icon='delete' className='button-remove' />} />
                     :
