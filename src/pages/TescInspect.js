@@ -11,6 +11,7 @@ import DeploymentForm from "../components/tescNew/DeploymentForm";
 import PageHeader from "../components/PageHeader";
 import TescDataTable from "../components/tesc/TescDataTable";
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
+import moment from 'moment';
 
 const TeSCInspect = ({ location }) => {
     const { web3, showMessage } = useContext(AppContext);
@@ -96,7 +97,7 @@ const TeSCInspect = ({ location }) => {
         }
         if (!found) {
             const isInRegistry = contractRegistry ? await contractRegistry.methods.isContractRegistered(address).call() : false
-            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false, isInRegistry });
+            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false, isInRegistry, createdAt: moment().format('DD/MM/YYYY HH:mm:ss') });
             localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
             setTescsIsInFavourites(true);
         }

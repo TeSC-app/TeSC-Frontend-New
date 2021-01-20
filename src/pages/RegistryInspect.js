@@ -1,20 +1,21 @@
 import React, { useContext, useState, useEffect } from 'react'
-import { Table, Icon } from 'semantic-ui-react';
+import { Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
-import moment from 'moment'
 import SearchBox from '../components/SearchBox';
-import LinkTescInspect from '../components/InternalLink';
 import PageHeader from '../components/PageHeader';
-
+import TableOverview from '../components/TableOverview';
 
 function RegistryInspect() {
     const { web3 } = useContext(AppContext);
     const [contractRegistry, setContractRegistry] = useState(undefined);
     const [domain, setDomain] = useState('')
-    const [entries, setEntries] = useState([])
+    const [allEntries, setAllEntries] = useState([])
     const [submitted, setSubmitted] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [totalPages, setTotalPages] = useState(0) 
+    const [displayedEntries, setDisplayedEntries] = useState([])
 
     useEffect(() => {
         const init = async () => {
@@ -34,10 +35,12 @@ function RegistryInspect() {
 
     const handleInput = domain => {
         setSubmitted(false);
+        setLoading(false)
         setDomain(domain);
     }
 
     const handleSubmit = async () => {
+        setLoading(true)
         const contractAddresses = await contractRegistry.methods.getContractsFromDomain(domain).call();
         const contractInstances = [];
         //generate contracts out of the ERCXXX interface using the contract addresses so that the getExpiry method can be used
@@ -48,39 +51,29 @@ function RegistryInspect() {
             )
             const expiry = await contractInstance.methods.getExpiry().call()
             //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
-            contractInstances.push({ address: contractAddresses[i], expiry: expiry })
+            contractInstances.push({ contractAddress: contractAddresses[i], domain, expiry })
         }
-        setEntries(contractInstances);
+        setTotalPages(Math.ceil(contractInstances.length/7))
+        setAllEntries(contractInstances);
+        setDisplayedEntries(contractInstances.slice(0,7))
         setSubmitted(true)
+        setLoading(false)
     }
 
+    const changePage = (event, { activePage }) => {
+        setDisplayedEntries(allEntries.slice((activePage - 1) * 7, activePage * 7))
+    }
+
+    const tableProps = { changePage, displayedEntries, totalPages }
+
     const renderTable = () => {
-        if (entries.length > 0 && submitted) {
+        if (allEntries.length > 0 && submitted && !loading) {
             return (
-                <Table color='purple'>
-                    <Table.Header>
-                        <Table.Row>
-                            <Table.HeaderCell>Address</Table.HeaderCell>
-                            <Table.HeaderCell>Expiry</Table.HeaderCell>
-                            <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
-                        </Table.Row>
-                    </Table.Header>
-                    <Table.Body>
-                        {
-                            entries.map((contractInstance) => (
-                                <Table.Row key={contractInstance.address}>
-                                    <Table.Cell><LinkTescInspect contractAddress={contractInstance.address} /></Table.Cell>
-                                    <Table.Cell>{moment.unix(parseInt(contractInstance.expiry)).format('DD/MM/YYYY')}</Table.Cell>
-                                    <Table.Cell textAlign="center">
-                                        <Icon name="check" color="green" circular />
-                                    </Table.Cell>
-                                </Table.Row>
-                            ))
-                        }
-                    </Table.Body>
-                </Table>
+                <div style={{justifyContent: 'center'}}>
+                    <TableOverview {...tableProps} />
+                </div>
             )
-        } else if (entries.length === 0 && submitted) {
+        } else if (allEntries.length === 0 && submitted && !loading) {
             return (
                 <div className="ui placeholder segment">
                     <div className="ui icon header">
@@ -88,6 +81,15 @@ function RegistryInspect() {
                   We could not find a Smart Contract associated to this domain in the registry. Look for a different domain.
                 </div>
                 </div>
+            )
+        } else if (loading) {
+            return (
+                <Segment>
+                    <Dimmer active={loading} inverted>
+                        <Loader size='large'>Loading results</Loader>
+                    </Dimmer>
+                    <Image src='https://react.semantic-ui.com/images/wireframe/paragraph.png' />
+                </Segment>
             )
         }
     }

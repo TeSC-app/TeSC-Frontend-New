@@ -105,3 +105,42 @@ $breakpoint-xl: 1200px !default;
     }
   }
 }
+
+.MuiStepIcon-root.MuiStepIcon-active {
+  color: #a333c8
+}
+
+.favourite-dashboard {
+  color: red !important;
+  background-color: white !important;
+}
+
+.not-favourite-dashboard {
+  color: grey !important;
+  background-color: white !important;
+}
+
+.metamask-label {
+  background-color: rgba(0,0,0,0) !important;
+  color: white !important;
+  display: flex !important;
+  align-items: center;
+}
+
+.connect-metamask {
+  color: inherit !important;
+  transition: .1s opacity ease !important;
+  background-color: rgba(0,0,0,0) !important;
+  padding: 0 !important;
+  font-weight: normal !important;
+  font-size: small;
+}
+
+.connect-metamask:hover {
+  color:rgba(216, 213, 213, 0.3) !important
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+}

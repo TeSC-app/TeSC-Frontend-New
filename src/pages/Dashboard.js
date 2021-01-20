@@ -1,32 +1,43 @@
 import React, { useContext, useEffect, useState, useCallback } from 'react';
 import 'react-day-picker/lib/style.css';
-import { Table, Grid, Dropdown, Dimmer, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
-import DashboardEntry from '../components/DashboardEntry';
 import PageHeader from '../components/PageHeader';
+import TableOverview from '../components/TableOverview';
 
 const Dashboard = (props) => {
     const { selectedAccount, hasAccountChanged, handleAccountChanged } = props
     const { web3 } = useContext(AppContext);
     const [contractRegistry, setContractRegistry] = useState(null);
     const [tescs, setTescs] = useState(selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []);
-
+    const [displayedEntries, setDisplayedEntries] = useState([])
+    const [filterOption, setFilterOption] = useState(0)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(tescs ? Math.ceil(tescs.length/7) : 0)
 
     const loadStorage = useCallback(() => {
         return JSON.parse(localStorage.getItem(selectedAccount.toLowerCase()));
     }, [selectedAccount]);
 
-    const filterTescs = () => {
-        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescs(tescs.filter(tesc => tesc.isFavourite === true)) : setTescs([]);
+    const showAllTescs = () => {
+        setCurrentPage(1)
+        setFilterOption(0)
+        setTotalPages(Math.ceil(tescs.length/7))
+        localStorage.getItem(selectedAccount.toLowerCase()) ? setDisplayedEntries(loadStorage().slice(0, 7)) : setTescs([]);
     };
 
-    const showAllTescs = () => {
-        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescs(loadStorage()) : setTescs([]);
+    const showFavouriteTescs = () => {
+        setCurrentPage(1)
+        setFilterOption(1)
+        setTotalPages(Math.ceil(tescs.filter(tesc => tesc.isFavourite === true).length/7))
+        localStorage.getItem(selectedAccount.toLowerCase()) ? setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === true).slice(0, 7)) : setTescs([]);
     };
 
     const showOwnTescs = () => {
-        localStorage.getItem(selectedAccount.toLowerCase()) ? setTescs(loadStorage().filter(tesc => tesc.own === true)) : setTescs([]);
+        setCurrentPage(1)
+        setFilterOption(2)
+        setTotalPages(Math.ceil(tescs.filter(tesc => tesc.own === true).length/7))
+        localStorage.getItem(selectedAccount.toLowerCase()) ? setDisplayedEntries(tescs.filter(tesc => tesc.own === true).slice(0, 7)) : setTescs([]);
     };
 
     useEffect(() => {
@@ -38,10 +49,15 @@ const Dashboard = (props) => {
                 );
                 setContractRegistry(contractRegistry);
                 setTescs(selectedAccount ? loadStorage() : []);
+                setDisplayedEntries(selectedAccount ? loadStorage().slice(0, 7) : [])
+                setTotalPages(Math.ceil(loadStorage().length/7))
                 window.ethereum.on('accountsChanged', (accounts) => {
                     setTescs(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
                         JSON.parse(localStorage.getItem(accounts[0].toLowerCase())) :
                         []);
+                    setDisplayedEntries(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
+                        JSON.parse(localStorage.getItem(accounts[0].toLowerCase())).slice(0, 7) :
+                        [])
                 });
             }
             catch (error) {
@@ -59,55 +75,40 @@ const Dashboard = (props) => {
         localStorage.setItem(selectedAccount.toLowerCase(), JSON.stringify(updatedTescs));
     };
 
-    const renderRows = () => {
-        if (tescs) return tescs.map((tesc) => (
-            <DashboardEntry key={tesc.contractAddress}
-                tesc={tesc}
-                selectedAccount={selectedAccount}
-                contractRegistry={contractRegistry}
-                onTescsChange={handleChangeTescs}
-                web3={web3}
-                hasAccountChanged={hasAccountChanged}
-                handleAccountChanged={handleAccountChanged}
-            />
-        ));
-    };
+    const changePage = (event, { activePage }) => {
+        //check if there are filters applied
+        setCurrentPage(activePage)
+        setTotalPages(Math.ceil(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc).length/7))
+        setDisplayedEntries(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc)
+            .slice((activePage - 1) * 7, activePage * 7))
+    }
+
+    const tableProps = {
+        showFavouriteTescs,
+        showAllTescs,
+        showOwnTescs,
+        isDashboard: true,
+        changePage,
+        resultSizeInitial: tescs ? tescs.length : 0,
+        currentPage, 
+        totalPages, 
+        displayedEntries,
+        selectedAccount,
+        contractRegistry,
+        onTescsChange: handleChangeTescs,
+        web3,
+        hasAccountChanged,
+        handleAccountChanged
+    }
 
     return (
         <React.Fragment>
             <PageHeader title='Dashboard' />
-            <Table color='purple'>
-                <Table.Header active style={{backgroundColor: 'purple'}}>
-                    <Table.Row>
-                        <Table.HeaderCell>Address</Table.HeaderCell>
-                        <Table.HeaderCell>Domain</Table.HeaderCell>
-                        <Table.HeaderCell>Expiry</Table.HeaderCell>
-                        <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
-                        <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
-                        <Table.HeaderCell textAlign="center">Favourites
-                            <Dropdown
-                                icon='filter'
-                                floating
-                                button
-                                className='icon dropdownFavourites'>
-                                <Dropdown.Menu>
-                                    <Dropdown.Item icon='redo' text='All' onClick={showAllTescs} />
-                                    <Dropdown.Item icon='heart' text='By favourite' onClick={filterTescs} />
-                                    <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
-                                </Dropdown.Menu>
-                            </Dropdown>
-                        </Table.HeaderCell>
-                        <Table.HeaderCell>Created At</Table.HeaderCell>
-                    </Table.Row>
-                </Table.Header>
-                {(
-                    <Table.Body>
-                        {renderRows()}
-                    </Table.Body>
-                )}
-            </Table>
+            <TableOverview {...tableProps} />
         </React.Fragment>
     );
+
+
 };
 
 export default Dashboard;

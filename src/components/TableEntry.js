@@ -1,72 +1,56 @@
 import React, { useState, useEffect, useContext } from 'react';
 import moment from 'moment';
-import axios from 'axios';
-import { Table, Icon, Popup, Button, Loader } from 'semantic-ui-react';
+import { Table, Icon, Popup, Button } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
-
 import AppContext from '../appContext';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
-import LinkTescInspect from '../components/InternalLink';
+import LinkTescInspect from './InternalLink';
 import {
     estimateRegistryAddCost,
     estimateRegistryRemoveCost,
-    isSha3Hash
 } from '../utils/tesc';
+import TableCellVerification from './TableCellVerification';
 
-function DashboardEntry(props) {
-    const { selectedAccount, tesc, contractRegistry, onTescsChange, hasAccountChanged, handleAccountChanged } = props
-
+function TableEntry(props) {
+    const {
+        selectedAccount,
+        tesc,
+        contractRegistry,
+        onTescsChange,
+        hasAccountChanged,
+        handleAccountChanged,
+        isDashboard,
+    } = props
     const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, isInRegistry, createdAt } = tesc
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
     const [costEstimatedRemove, setCostEstimatedRemove] = useState(0);
-    const [verified, setVerified] = useState(null);
+    const [verified, setVerified] = useState(null)
+    //registry buttons need this state to get rerendered
+    const [isInRegistryUpdated, setIsInRegistryUpdated] = useState(isInRegistry)
 
     useEffect(() => {
-        handleAccountChanged(false)
+        if (isDashboard) handleAccountChanged(false)
         isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false);
-    }, [isFavourite, setTescIsInFavourites, handleAccountChanged]);
+    }, [isFavourite, setTescIsInFavourites, handleAccountChanged, isDashboard]);
 
     useEffect(() => {
         const runEffect = async () => {
-            if (!isInRegistry && own && selectedAccount && !hasAccountChanged) {
+            if (!isInRegistryUpdated && own && selectedAccount && !hasAccountChanged) {
                 const estCostAdd = contractRegistry ? await estimateRegistryAddCost(web3, selectedAccount, contractRegistry, domain, contractAddress) : 0;
                 setCostEstimatedAdd(estCostAdd);
-            } else if (isInRegistry && own && selectedAccount && !hasAccountChanged) {
+            } else if (isInRegistryUpdated && own && selectedAccount && !hasAccountChanged) {
                 const estCostRemove = contractRegistry ? await estimateRegistryRemoveCost(web3, selectedAccount, contractRegistry, domain, contractAddress) : 0;
                 setCostEstimatedRemove(estCostRemove);
             }
         };
         runEffect();
-    }, [web3, contractAddress, selectedAccount, contractRegistry, domain, isInRegistry, own, hasAccountChanged]);
+    }, [web3, contractAddress, selectedAccount, contractRegistry, domain, isInRegistryUpdated, own, hasAccountChanged]);
 
-    useEffect(() => {
-        (async () => {
-            try {
-                const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress.toLowerCase()}`);
-                console.log(response);
-                setVerified(response.data.verified);
-            } catch (error) {
-                console.log(error);
-                setVerified(false);
-            }
-        })();
-    }, [contractAddress]);
-
-    const renderVerifResult = () => {
-        if (domain && isSha3Hash(domain)) {
-            return (<Popup
-                inverted
-                content='Domain is hashed, please inspect the contract to run the verification'
-                trigger={<LinkTescInspect contractAddress={contractAddress} content='Domain required' />}
-            />);
-        }
-        if (verified === null || verified === undefined) {
-            return <Loader active inline />;
-        }
-        return verified ? <Icon name="check" color="green" circular /> : <Icon name="delete" color="red" circular />;
-    };
+    const handleVerified = (verified) => {
+        setVerified(verified)
+    }
 
     const addToRegistry = async () => {
         handleBlockScreen(true);
@@ -82,6 +66,7 @@ function DashboardEntry(props) {
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                             }));
                             onTescsChange({ contractAddress, domain, expiry, isFavourite, own, isInRegistry: true, createdAt });
+                            setIsInRegistryUpdated(true)
                         });
                 } else {
                     showMessage(buildNegativeMsg({
@@ -115,9 +100,10 @@ function DashboardEntry(props) {
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                             }));
                             onTescsChange({ contractAddress, domain, expiry, isFavourite, own, isInRegistry: false, createdAt });
+                            setIsInRegistryUpdated(false)
                         });
                 } else {
-                    showMessage(buildPositiveMsg({
+                    showMessage(buildNegativeMsg({
                         header: 'Unable to remove entry from the registry',
                         msg: `TLS-endorsed Smart Contract at address ${contractAddress} was not found in the registry`
                     }));
@@ -148,12 +134,12 @@ function DashboardEntry(props) {
     const renderRegistryButtons = () => {
         if (own) {
             return (
-                isInRegistry ?
+                isInRegistryUpdated ?
                     <Popup inverted content={`Remove entry from the TeSC registry. This would cost around ${costEstimatedRemove.toFixed(5)} ETH.`}
-                        trigger={<Button basic color='red' onClick={removeFromRegistry} content='Remove' icon='delete' className='buttonRemove' />} />
+                        trigger={<Button basic color='red' onClick={removeFromRegistry} content='Remove' icon='delete' className='button-remove' />} />
                     :
                     <Popup inverted content={`Add entry to the TeSC registry. This would cost around ${costEstimatedAdd.toFixed(5)} ETH.`}
-                        trigger={<Button basic color='blue' onClick={addToRegistry} content='Add' icon='plus' className='buttonAdd' />}
+                        trigger={<Button basic disabled={!verified} color='blue' onClick={addToRegistry} content='Add' icon='plus' className='button-add' />}
                     />
             );
         } else {
@@ -170,41 +156,49 @@ function DashboardEntry(props) {
         if (domain.length === 64 && domain.split('.').length === 1) {
             return (<Popup inverted content={domain} trigger={<i>{'< hashed >'}</i>} />);
         } else if (domain.length > 32) {
-            return (<Popup inverted on="click" content={domain} trigger={<i className='cursorPointer'>{`${domain.substring(0, 6)}...${domain.substring(domain.length - 4, domain.length)}`}</i>} />);
+            return (<Popup inverted on="click" content={domain} trigger={<i className='cursor-pointer'>{`${domain.substring(0, 6)}...${domain.substring(domain.length - 4, domain.length)}`}</i>} />);
         } else {
             return domain;
         }
     };
 
+    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified, isDashboard: true }
+
+    const renderFavourites = () => {
+        return (
+            <Popup inverted content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
+                trigger={<Button icon={tescIsInFavourites ? 'heart' : 'heart outline'}
+                    className={tescIsInFavourites ? "favourite-dashboard" : "not-favourite-dashboard"}
+                    onClick={addRemoveFavourites} />} />
+        )
+    }
+
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
-                <span className='contractAddressColumn'>
+                <span className='contract-address-column'>
                     {
-                        own ? <Popup inverted content="You own this contract" trigger={<Icon className="userIcon" name="user" color="blue" circular />} /> : null
+                        own && isDashboard ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
                     }
                     <LinkTescInspect contractAddress={contractAddress} />
                 </span>
             </Table.Cell>
-            <Table.Cell>{renderDomain()}</Table.Cell>
+            <Table.Cell>{isDashboard ? renderDomain() : domain}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
-            <Table.Cell textAlign="center">
-                {renderVerifResult()}
-            </Table.Cell>
-            <Table.Cell textAlign="center">
-                {renderRegistryButtons()}
-            </Table.Cell>
-            {
+            <TableCellVerification {...tableCellVerifProps} />
+            { isDashboard ?
                 <Table.Cell textAlign="center">
-                    <Popup inverted content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
-                        trigger={<Button icon={tescIsInFavourites ? 'heart' : 'heart outline'}
-                            className={tescIsInFavourites ? "favouriteDashboard" : "notFavouriteDashboard"}
-                            onClick={addRemoveFavourites} />} />
-                </Table.Cell>
-            }
-            <Table.Cell>{createdAt}</Table.Cell>
+                    {renderRegistryButtons()}
+                </Table.Cell> : null}
+            {isDashboard ?
+                <Table.Cell textAlign="center">
+                    {renderFavourites()}
+                </Table.Cell> : null}
+            {isDashboard ?
+                <Table.Cell>{createdAt}</Table.Cell> : null}
+
         </Table.Row>
     );
 }
 
-export default DashboardEntry;
+export default TableEntry;
