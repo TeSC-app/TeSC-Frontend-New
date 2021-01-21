@@ -1,5 +1,5 @@
 import React, { Fragment, useState, useContext, useCallback, useEffect, useRef } from 'react';
-import { Input, Form, Label, Button as BtnSuir, Segment, Popup, Radio, Header, TextArea, Divider, Icon, Grid } from 'semantic-ui-react';
+import { Input, Form, Label, Button as BtnSuir, Segment, Popup, Radio, Header, TextArea, Divider, Icon, Grid, Dropdown } from 'semantic-ui-react';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { formatDate, parseDate } from 'react-day-picker/moment';
@@ -78,6 +78,9 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const [privateKeyPEM, setPrivateKeyPEM] = useState('');
     const [privateKeyFileName, setPrivateKeyFileName] = useState('');
 
+    const [solidityCode, setSolidityCode] = useState('');
+    const [solidityFileName, setSolidityFileName] = useState('');
+
     const [costEstimated, setCostEstimated] = useState(null);
     const [costPaid, setCostPaid] = useState(null);
 
@@ -86,6 +89,8 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
 
     const [sigInputType, setSigInputType] = useState(null);
+    const [showContractSelectionDropdown, setShowContractSelectionDropdown] = useState(null); 
+    const [contractDropdownOptions, setContractDropdownOptions] = useState([]);
 
     const prevExpiry = useRef(expiry);
     const prevFlags = useRef(flags.toString());
@@ -161,6 +166,49 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         setPrivateKeyFileName(filename);
         setPrivateKeyPEM(content);
     };
+
+    const handlePickSolidityFile = async (filename, content) => {
+        const compileRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/compile`, {
+            params: {
+                solidityCode: content
+            }
+        });
+        const compiled = compileRes.data.compiled;
+        
+        if(compiled){
+            setSolidityCode(content);
+            const contractsRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/contracts`, {
+                params: {
+                    solidityCode: content
+                }
+            });
+            const contractsInFile = contractsRes.data.contractNames;
+            setContractDropdownOptions(buildContractDropdownOptions(contractsInFile));
+            setShowContractSelectionDropdown(true);
+        }else{
+            // TODO show compile error messages
+            const compileError = compileRes.data.compileError;
+            console.log(compileError);
+        }
+  
+    };
+
+    const handleContractSelected = (e, { name, value } ) => {
+        console.log(value);
+        console.log(solidityCode);
+    }
+
+    const buildContractDropdownOptions = (contractNames) => {
+        const options = [];
+        contractNames.forEach(contractName => {
+            options.push({
+                key: contractName,
+                text: contractName,
+                value: contractName,
+            });
+        });
+        return options;
+    }
 
     const handleGetFingerprint = (fp) => {
         setFingerprint(fp);
@@ -329,13 +377,17 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     }
 
     const getSteps = () => {
-        return [
+        const steps = [
             `${initInputs ? 'Change' : 'Create'} Claim`, 
             `${initInputs ? 'Change' : 'Create'} Signature`, 
             `${initInputs ? 'Change' : 'Add'} Certificate Fingerprint`, 
             `Review and ${initInputs ? 'Update' : 'Deploy'}`, 
             'Receipt'
         ];
+        if(!initInputs){
+            steps.unshift(`Select Solidity File`);
+        }
+        return steps;
     }
 
     const classes = useStyles();
@@ -370,6 +422,35 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const getStepContent = (step) => {
         switch (step) {
             case 0:
+                return {
+                    component: (
+                        <Fragment>
+                            <Header as='h3' content='Select Solidity File' style={{marginBottom: '30px'}} color='purple'/>
+
+                            <FilePicker
+                                label='Choose solidity file'
+                                onPickFile={handlePickSolidityFile}
+                                input={{fileName:solidityFileName, content: solidityCode}}
+                            />
+
+                            {showContractSelectionDropdown === true && (
+                                <p>
+                                    <div>Please select the contract that you would like to endorse:</div>
+                                    
+                                    <Dropdown 
+                                        placeholder='Select contract'
+                                        fluid
+                                        selection
+                                        onChange={handleContractSelected}
+                                        options={contractDropdownOptions}>
+                                    </Dropdown>
+                                </p>
+                            )}
+
+                        </Fragment>
+                    )
+                }
+            case 1:
                 return {
                     component: (
                         <Fragment>
@@ -442,7 +523,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     completed: initInputs? (currentDomain !== initInputs.domain) || (expiry !== initInputs.expiry) : !!currentDomain && !!expiry ,
                     reachable: initInputs && currentDomain? isMatchedOriginalDomain: true
                 };
-            case 1:
+            case 2:
                 return {
                     component: (
                         <Fragment>
@@ -536,7 +617,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     completed: !!signature,
                     reachable: initInputs? getStepContent(step - 1).completed : !!signature || getStepContent(step - 1).completed 
                 };
-            case 2:
+            case 3:
                 return {
                     component: (
                         <Fragment>
@@ -550,7 +631,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     completed: getStepContent(step - 2).completed && getStepContent(step - 1).completed,
                     reachable: (getStepContent(step - 2).completed && getStepContent(step - 1).completed) || getStepContent(step - 1).reachable
                 };
-            case 3:
+            case 4:
                 return {
                     component: (
                         <Fragment>
@@ -571,7 +652,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     completed: !!costPaid,
                     reachable: getStepContent(step - 2).completed || !!costPaid  
                 };
-            case 4:
+            case 5:
                 return {
                     component: (
                         <Fragment>
@@ -595,7 +676,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     }
 
     const isStepOptional = (step) => {
-        return step === 2;
+        return step === 3;
     };
 
     const allStepsCompleted = () => {
