@@ -8,12 +8,13 @@ const ENTRY_PER_PAGE = 7
 
 function TableOverview(props) {
     const {
+        rowData,
         isDashboard,
     } = props;
 
-    const { web3, account, loadStorage } = useContext(AppContext);
+    const { web3, account } = useContext(AppContext);
 
-    const [tescs, setTescs] = useState(account ? JSON.parse(localStorage.getItem(account.toLowerCase())) : []);
+    const [tescs, setTescs] = useState(rowData);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(tescs ? Math.ceil(tescs.length / ENTRY_PER_PAGE) : 0);
     const [filterOption, setFilterOption] = useState(0);
@@ -24,9 +25,9 @@ function TableOverview(props) {
     useEffect(() => {
         const init = async () => {
             try {
-                setTescs(account ? loadStorage() : []);
-                setDisplayedEntries(account && loadStorage() ? loadStorage().slice(0, ENTRY_PER_PAGE) : []);
-                setTotalPages(Math.ceil(loadStorage() ? loadStorage().length / ENTRY_PER_PAGE : 0));
+                // setTescs(account ? (isDashboard? loadStorage() : []) : []);
+                setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRY_PER_PAGE) : []);
+                setTotalPages(Math.ceil(tescs ? tescs.length / ENTRY_PER_PAGE : 0));
                 window.ethereum.on('accountsChanged', (accounts) => {
                     setTescs(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
                         JSON.parse(localStorage.getItem(accounts[0].toLowerCase())) :
@@ -37,13 +38,11 @@ function TableOverview(props) {
                 });
             }
             catch (error) {
-                const tescs = account ? loadStorage() : [];
-                setTescs(tescs);
                 console.log(error);
             }
         };
         init();
-    }, [account, web3.eth, web3.eth.Contract, web3.eth.net, loadStorage]);
+    }, [tescs, account, web3.eth, web3.eth.Contract, web3.eth.net]);
 
 
     const handleChangeTescs = (tesc) => {
@@ -56,7 +55,7 @@ function TableOverview(props) {
         setCurrentPage(1);
         setFilterOption(0);
         setTotalPages(Math.ceil(tescs.length / ENTRY_PER_PAGE));
-        localStorage.getItem(account.toLowerCase()) ? setDisplayedEntries(loadStorage().slice(0, ENTRY_PER_PAGE)) : setTescs([]);
+        localStorage.getItem(account.toLowerCase()) ? setDisplayedEntries(tescs.slice(0, ENTRY_PER_PAGE)) : setTescs([]);
     };
 
     const showFavouriteTescs = () => {

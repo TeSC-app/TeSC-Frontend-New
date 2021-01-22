@@ -68,7 +68,7 @@ function RegistryInspect(props) {
         if (entries && entries.length > 0 && !loading) {
             return (
                 <div style={{justifyContent: 'center'}}>
-                    <TableOverview />
+                    <TableOverview rowData={entries} />
                 </div>
             )
         } else if (entries && entries.length === 0 && !loading) {
