@@ -1,6 +1,5 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React from 'react';
 import 'react-day-picker/lib/style.css';
-import AppContext from '../appContext';
 import PageHeader from '../components/PageHeader';
 import TableOverview from '../components/TableOverview';
 

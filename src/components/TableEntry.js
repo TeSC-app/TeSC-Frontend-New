@@ -24,15 +24,22 @@ function TableEntry(props) {
     const [costEstimatedRemove, setCostEstimatedRemove] = useState(0);
     const [verified, setVerified] = useState(null);
     //registry buttons need this state to get rerendered
-    const [isInRegistry, setIsInRegistry] = useState(false);
+    const [isInRegistry, setIsInRegistry] = useState(false)
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const checkRegistry = async () => {
-            const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call();
-            setIsInRegistry(isInRegistry);
-        };
-        checkRegistry();
-    }, [contractAddress, registryContract]);
+            try {
+            const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call()
+            setIsInRegistry(isInRegistry)
+            setLoading(false)
+            } catch (error) {
+                console.log(error)
+                setLoading(false)
+            }
+        }
+        checkRegistry()
+    }, [contractAddress, registryContract])
 
     useEffect(() => {
         if (isDashboard) handleAccountChanged(false);
@@ -41,16 +48,16 @@ function TableEntry(props) {
 
     useEffect(() => {
         const runEffect = async () => {
-            if (!isInRegistry && own && account && !hasAccountChanged) {
-                const estCostAdd = registryContract ? await estimateRegistryAddCost(web3, account, registryContract, domain, contractAddress) : 0;
+            if (!isInRegistry && own && account && !hasAccountChanged && !loading) {
+                const estCostAdd = registryContract ? await estimateRegistryAddCost(web3, account, registryContract, contractAddress) : 0;
                 setCostEstimatedAdd(estCostAdd);
-            } else if (isInRegistry && own && account && !hasAccountChanged) {
+            } else if (isInRegistry && own && account && !hasAccountChanged && !loading) {
                 const estCostRemove = registryContract ? await estimateRegistryRemoveCost(web3, account, registryContract, domain, contractAddress) : 0;
                 setCostEstimatedRemove(estCostRemove);
             }
         };
         runEffect();
-    }, [web3, contractAddress, account, registryContract, domain, isInRegistry, own, hasAccountChanged]);
+    }, [web3, contractAddress, account, registryContract, domain, isInRegistry, own, hasAccountChanged, loading]);
 
     const handleVerified = (verified) => {
         setVerified(verified);
@@ -60,9 +67,10 @@ function TableEntry(props) {
         handleBlockScreen(true);
         if (domain && contractAddress) {
             try {
+                console.log(registryContract)
                 const isContractRegistered = await registryContract.methods.isContractRegistered(contractAddress).call();
                 if (!isContractRegistered) {
-                    await registryContract.methods.add(domain, contractAddress).send({ from: account, gas: '2000000' })
+                    await registryContract.methods.add(contractAddress).send({ from: account, gas: '2000000' })
                         .on('receipt', async (txReceipt) => {
                             showMessage(buildPositiveMsg({
                                 header: 'Entry added to the registry',

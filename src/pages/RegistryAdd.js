@@ -11,7 +11,7 @@ import SearchBox from '../components/SearchBox';
 import PageHeader from '../components/PageHeader';
 
 function RegistryAdd(props) {
-    const { selectedAccount, handleBlockScreen, loadStorage, contractRegistry } = props
+    const { selectedAccount, handleBlockScreen, contractRegistry } = props
     const { web3, showMessage } = useContext(AppContext)
     const [contractAddress, setContractAddress] = useState('')
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0)
@@ -46,7 +46,7 @@ function RegistryAdd(props) {
                 setInconsistentAddress(tescContractOwner !== account)
                 if (tescDomain && tescContractOwner && tescContractOwner === account && !isContractRegistered) {
                     setValidInput(true)
-                    const estCostAdd = await estimateRegistryAddCost(web3, account, contractRegistry, tescDomain, contractAddress);
+                    const estCostAdd = await estimateRegistryAddCost(web3, account, contractRegistry, contractAddress);
                     setCostEstimatedAdd(estCostAdd);
                 }
             } else {

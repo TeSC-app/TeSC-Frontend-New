@@ -68,8 +68,8 @@ export const estimateDeploymentCost = async (web3, tx) => {
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 };
 
-export const estimateRegistryAddCost = async (web3, selectedAccount, contractRegistry, domain, contractTeSCAddress) => {
-    const gasEstimation = await contractRegistry.methods.add(domain, contractTeSCAddress).estimateGas({ from: selectedAccount, gas: '2000000' });
+export const estimateRegistryAddCost = async (web3, selectedAccount, contractRegistry, contractTeSCAddress) => {
+    const gasEstimation = await contractRegistry.methods.add(contractTeSCAddress).estimateGas({ from: selectedAccount, gas: '2000000' });
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 }
 
