@@ -4,7 +4,7 @@ import { Table, Dropdown, Pagination, Icon } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TableEntry from './TableEntry';
 
-const ENTRY_PER_PAGE = 7
+const ENTRY_PER_PAGE = 5
 
 function TableOverview(props) {
     const {
@@ -96,7 +96,7 @@ function TableOverview(props) {
     return (
         <>
             <Table color='purple'>
-                <Table.Header active style={{ backgroundColor: 'purple' }}>
+                <Table.Header active='true' style={{ backgroundColor: 'purple' }}>
                     <Table.Row>
                         <Table.HeaderCell>Address</Table.HeaderCell>
                         <Table.HeaderCell>Domain</Table.HeaderCell>
