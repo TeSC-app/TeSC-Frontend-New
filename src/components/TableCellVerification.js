@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import axios from 'axios'
 import {
     isSha3Hash
@@ -36,7 +36,7 @@ function TableCellVerification(props) {
         (async () => {
             try {
                 const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress.toLowerCase()}`);
-                console.log(response);
+                //console.log(response);
                 handleVerified(response.data.verified)
             } catch (error) {
                 console.log(error);

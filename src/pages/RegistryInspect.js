@@ -1,10 +1,11 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
 import SearchBox from '../components/SearchBox';
 import PageHeader from '../components/PageHeader';
 import TableOverview from '../components/TableOverview';
+import axios from 'axios'
 
 function RegistryInspect(props) {
     const { contractRegistry } = props
@@ -13,8 +14,32 @@ function RegistryInspect(props) {
     const [allEntries, setAllEntries] = useState([])
     const [submitted, setSubmitted] = useState(false)
     const [loading, setLoading] = useState(false)
-    const [totalPages, setTotalPages] = useState(0) 
+    const [totalPages, setTotalPages] = useState(0)
     const [displayedEntries, setDisplayedEntries] = useState([])
+
+    useEffect(() => {
+        (async () => {
+            try {
+                setLoading(true)
+                const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/registry`);
+                //for each object key that is an array get the values associated to that key and out of these values build an array of objects
+                const registryEntries = Object.keys(response.data['registryEntries'])
+                    .map(domain => Object.values(response.data['registryEntries'][domain])
+                        .map(({ contract }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry })))
+                    .flat()
+                if(response.status === 200) {
+                    setAllEntries(registryEntries)
+                    setDisplayedEntries(registryEntries.slice(0, 7))
+                } else {
+                    setAllEntries([])
+                    setDisplayedEntries([])
+                }
+                setLoading(false)
+            } catch (error) {
+                console.log(error);
+            }
+        })();
+    }, [])
 
     const handleInput = domain => {
         setSubmitted(false);
@@ -24,23 +49,29 @@ function RegistryInspect(props) {
 
     const handleSubmit = async () => {
         setLoading(true)
-        const contractAddresses = await contractRegistry.methods.getContractsFromDomain(domain).call();
-        const contractInstances = [];
-        //generate contracts out of the ERCXXX interface using the contract addresses so that the getExpiry method can be used
-        for (let i = 0; i < contractAddresses.length; i++) {
-            const contractInstance = new web3.eth.Contract(
-                ERCXXX.abi,
-                contractAddresses[i],
-            )
-            const expiry = await contractInstance.methods.getExpiry().call()
-            //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
-            contractInstances.push({ contractAddress: contractAddresses[i], domain, expiry })
+        try {
+            const contractAddresses = await contractRegistry.methods.getContractsFromDomain(domain).call();
+            const contractInstances = [];
+            //generate contracts out of the ERCXXX interface using the contract addresses so that the getExpiry method can be used
+            for (let i = 0; i < contractAddresses.length; i++) {
+                const contractInstance = new web3.eth.Contract(
+                    ERCXXX.abi,
+                    contractAddresses[i],
+                )
+                const expiry = await contractInstance.methods.getExpiry().call()
+                //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
+                contractInstances.push({ contractAddress: contractAddresses[i], domain, expiry })
+            }
+            setTotalPages(Math.ceil(contractInstances.length / 7))
+            setAllEntries(contractInstances);
+            setDisplayedEntries(contractInstances.slice(0, 7))
+            setSubmitted(true)
+            setLoading(false)
+        } catch (err) {
+            setLoading(false)
+            setSubmitted(true)
         }
-        setTotalPages(Math.ceil(contractInstances.length/7))
-        setAllEntries(contractInstances);
-        setDisplayedEntries(contractInstances.slice(0,7))
-        setSubmitted(true)
-        setLoading(false)
+
     }
 
     const changePage = (event, { activePage }) => {
@@ -50,9 +81,9 @@ function RegistryInspect(props) {
     const tableProps = { changePage, displayedEntries, totalPages }
 
     const renderTable = () => {
-        if (allEntries.length > 0 && submitted && !loading) {
+        if (allEntries.length > 0 && !loading) {
             return (
-                <div style={{justifyContent: 'center'}}>
+                <div style={{ justifyContent: 'center' }}>
                     <TableOverview {...tableProps} />
                 </div>
             )

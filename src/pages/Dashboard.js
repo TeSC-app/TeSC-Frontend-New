@@ -1,14 +1,12 @@
 import React, { useContext, useEffect, useState } from 'react';
 import 'react-day-picker/lib/style.css';
 import AppContext from '../appContext';
-import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import PageHeader from '../components/PageHeader';
 import TableOverview from '../components/TableOverview';
 
 const Dashboard = (props) => {
-    const { selectedAccount, hasAccountChanged, handleAccountChanged, loadStorage } = props
+    const { selectedAccount, hasAccountChanged, handleAccountChanged, loadStorage, contractRegistry } = props
     const { web3 } = useContext(AppContext);
-    const [contractRegistry, setContractRegistry] = useState(null);
     const [tescs, setTescs] = useState(selectedAccount ? JSON.parse(localStorage.getItem(selectedAccount.toLowerCase())) : []);
     const [displayedEntries, setDisplayedEntries] = useState([])
     const [filterOption, setFilterOption] = useState(0)
@@ -39,11 +37,6 @@ const Dashboard = (props) => {
     useEffect(() => {
         const init = async () => {
             try {
-                const contractRegistry = new web3.eth.Contract(
-                    TeSCRegistry.abi,
-                    process.env.REACT_APP_REGISTRY_ADDRESS,
-                );
-                setContractRegistry(contractRegistry);
                 setTescs(selectedAccount ? loadStorage() : []);
                 setDisplayedEntries(selectedAccount && loadStorage() ? loadStorage().slice(0, 7) : [])
                 setTotalPages(Math.ceil(loadStorage() ? loadStorage().length/7 : 0))

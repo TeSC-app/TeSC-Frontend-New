@@ -29,11 +29,18 @@ function TableEntry(props) {
     const [verified, setVerified] = useState(null)
     //registry buttons need this state to get rerendered
     const [isInRegistry, setIsInRegistry] = useState(false)
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const checkRegistry = async () => {
+            try {
             const isInRegistry = await contractRegistry.methods.isContractRegistered(contractAddress).call()
             setIsInRegistry(isInRegistry)
+            setLoading(false)
+            } catch (error) {
+                console.log(error)
+                setLoading(false)
+            }
         }
         checkRegistry()
     }, [contractAddress, contractRegistry])
@@ -45,16 +52,16 @@ function TableEntry(props) {
 
     useEffect(() => {
         const runEffect = async () => {
-            if (!isInRegistry && own && selectedAccount && !hasAccountChanged) {
-                const estCostAdd = contractRegistry ? await estimateRegistryAddCost(web3, selectedAccount, contractRegistry, domain, contractAddress) : 0;
+            if (!isInRegistry && own && selectedAccount && !hasAccountChanged && !loading) {
+                const estCostAdd = contractRegistry ? await estimateRegistryAddCost(web3, selectedAccount, contractRegistry, contractAddress) : 0;
                 setCostEstimatedAdd(estCostAdd);
-            } else if (isInRegistry && own && selectedAccount && !hasAccountChanged) {
+            } else if (isInRegistry && own && selectedAccount && !hasAccountChanged && !loading) {
                 const estCostRemove = contractRegistry ? await estimateRegistryRemoveCost(web3, selectedAccount, contractRegistry, domain, contractAddress) : 0;
                 setCostEstimatedRemove(estCostRemove);
             }
         };
         runEffect();
-    }, [web3, contractAddress, selectedAccount, contractRegistry, domain, isInRegistry, own, hasAccountChanged]);
+    }, [web3, contractAddress, selectedAccount, contractRegistry, domain, isInRegistry, own, hasAccountChanged, loading]);
 
     const handleVerified = (verified) => {
         setVerified(verified)
@@ -64,9 +71,10 @@ function TableEntry(props) {
         handleBlockScreen(true);
         if (domain && contractAddress) {
             try {
+                console.log(contractRegistry)
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call();
                 if (!isContractRegistered) {
-                    await contractRegistry.methods.add(domain, contractAddress).send({ from: selectedAccount, gas: '2000000' })
+                    await contractRegistry.methods.add(contractAddress).send({ from: selectedAccount, gas: '2000000' })
                         .on('receipt', async (txReceipt) => {
                             showMessage(buildPositiveMsg({
                                 header: 'Entry added to the registry',
