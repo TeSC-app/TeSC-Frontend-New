@@ -17,35 +17,35 @@ const App = ({ web3 }) => {
     const [sysMsg, setSysMsg] = useState(null);
     const [screenBlocked, setScreenBlocked] = useState(false);
     const [hasWalletAddress, setHasWalletAddress] = useState(false);
-    const [account, setAccount] = useState(null);
+    const [account, setAccount] = useState('');
     const [hasAccountChanged, setHasAccountChanged] = useState(false);
-    const [contractRegistry, setContractRegistry] = useState(undefined)
+    const [registryContract, setRegistryContract] = useState(undefined);
 
     const loadStorage = () => {
         return JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress));
-    }
+    };
 
     useEffect(() => {
         const init = async () => {
             try {
-                const contractRegistry = new web3.eth.Contract(
+                const registryContract = new web3.eth.Contract(
                     TeSCRegistry.abi,
                     process.env.REACT_APP_REGISTRY_ADDRESS,
                 );
-                setContractRegistry(contractRegistry);
+                setRegistryContract(registryContract);
             }
             catch (error) {
                 console.error(error);
             }
-        }
-        init()
-    }, [web3.eth.Contract, web3.eth.net])
+        };
+        init();
+    }, [web3.eth.Contract, web3.eth.net]);
 
     useEffect(() => {
         const init = async () => {
             if (window.ethereum) {
-                const [selectedAccount,] = await web3.eth.getAccounts();
-                setAccount(selectedAccount && selectedAccount);
+                const [selectedAccount] = await web3.eth.getAccounts();
+                setAccount(selectedAccount ? selectedAccount.toLowerCase() : '');
                 window.ethereum.on('accountsChanged', function (accounts) {
                     setHasAccountChanged(true);
                     if (!accounts[0]) {
@@ -95,7 +95,11 @@ const App = ({ web3 }) => {
                 showMessage,
                 handleDismissMessage,
                 account,
-                hasWalletAddress
+                hasWalletAddress,
+                loadStorage,
+                hasAccountChanged,
+                handleAccountChanged,
+                registryContract
             }}
             >
                 {/* <Navbar hasWalletAddress={hasWalletAddress} selectedAccount={account} handleCollapseSidebar={handleCollapseSidebar} /> */}
@@ -104,32 +108,27 @@ const App = ({ web3 }) => {
                     <Container className="page">
                         <Segment className='main-segment' raised>
                             <Route path="/" exact render={props => {
-                                return <Dashboard {...props}
-                                    selectedAccount={account && account.toLowerCase()}
-                                    hasAccountChanged={hasAccountChanged}
-                                    handleAccountChanged={handleAccountChanged}
-                                    loadStorage={loadStorage}
-                                    contractRegistry={contractRegistry} />;
+                                return <Dashboard
+                                    {...props}
+                                />;
                             }} />
                             <Route path="/tesc/new" component={TeSCNew} exact />
                             <Route path="/tesc/inspect" component={TeSCInspect} exact />
                             <Route path="/registry/inspect" exact render={props => {
                                 return <RegistryInspect {...props}
-                                    contractRegistry={contractRegistry} />
+                                    contractRegistry={registryContract} />;
                             }} />
                             <Route path="/registry/add" exact render={props => {
                                 return <RegistryAdd {...props}
-                                    selectedAccount={account}
                                     handleBlockScreen={handleBlockScreen}
                                     screenBlocked={screenBlocked}
-                                    loadStorage={loadStorage}
-                                    contractRegistry={contractRegistry} />
+                                    contractRegistry={registryContract} />;
                             }} />
 
                         </Segment>
                     </Container>
                 </div>
-                <Dimmer active={screenBlocked} style={{zIndex: '9999'}}>
+                <Dimmer active={screenBlocked} style={{ zIndex: '9999' }}>
                     <Loader indeterminate content='Waiting for transaction to finish...' />
                 </Dimmer>
             </AppContext.Provider>

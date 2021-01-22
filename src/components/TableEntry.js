@@ -13,60 +13,56 @@ import TableCellVerification from './TableCellVerification';
 
 function TableEntry(props) {
     const {
-        selectedAccount,
         tesc,
-        contractRegistry,
         onTescsChange,
-        hasAccountChanged,
-        handleAccountChanged,
         isDashboard,
-    } = props
-    const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
-    const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc
+    } = props;
+    const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged } = useContext(AppContext);
+    const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
     const [costEstimatedRemove, setCostEstimatedRemove] = useState(0);
-    const [verified, setVerified] = useState(null)
+    const [verified, setVerified] = useState(null);
     //registry buttons need this state to get rerendered
-    const [isInRegistry, setIsInRegistry] = useState(false)
+    const [isInRegistry, setIsInRegistry] = useState(false);
 
     useEffect(() => {
         const checkRegistry = async () => {
-            const isInRegistry = await contractRegistry.methods.isContractRegistered(contractAddress).call()
-            setIsInRegistry(isInRegistry)
-        }
-        checkRegistry()
-    }, [contractAddress, contractRegistry])
+            const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call();
+            setIsInRegistry(isInRegistry);
+        };
+        checkRegistry();
+    }, [contractAddress, registryContract]);
 
     useEffect(() => {
-        if (isDashboard) handleAccountChanged(false)
+        if (isDashboard) handleAccountChanged(false);
         isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false);
     }, [isFavourite, setTescIsInFavourites, handleAccountChanged, isDashboard]);
 
     useEffect(() => {
         const runEffect = async () => {
-            if (!isInRegistry && own && selectedAccount && !hasAccountChanged) {
-                const estCostAdd = contractRegistry ? await estimateRegistryAddCost(web3, selectedAccount, contractRegistry, domain, contractAddress) : 0;
+            if (!isInRegistry && own && account && !hasAccountChanged) {
+                const estCostAdd = registryContract ? await estimateRegistryAddCost(web3, account, registryContract, domain, contractAddress) : 0;
                 setCostEstimatedAdd(estCostAdd);
-            } else if (isInRegistry && own && selectedAccount && !hasAccountChanged) {
-                const estCostRemove = contractRegistry ? await estimateRegistryRemoveCost(web3, selectedAccount, contractRegistry, domain, contractAddress) : 0;
+            } else if (isInRegistry && own && account && !hasAccountChanged) {
+                const estCostRemove = registryContract ? await estimateRegistryRemoveCost(web3, account, registryContract, domain, contractAddress) : 0;
                 setCostEstimatedRemove(estCostRemove);
             }
         };
         runEffect();
-    }, [web3, contractAddress, selectedAccount, contractRegistry, domain, isInRegistry, own, hasAccountChanged]);
+    }, [web3, contractAddress, account, registryContract, domain, isInRegistry, own, hasAccountChanged]);
 
     const handleVerified = (verified) => {
-        setVerified(verified)
-    }
+        setVerified(verified);
+    };
 
     const addToRegistry = async () => {
         handleBlockScreen(true);
         if (domain && contractAddress) {
             try {
-                const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call();
+                const isContractRegistered = await registryContract.methods.isContractRegistered(contractAddress).call();
                 if (!isContractRegistered) {
-                    await contractRegistry.methods.add(domain, contractAddress).send({ from: selectedAccount, gas: '2000000' })
+                    await registryContract.methods.add(domain, contractAddress).send({ from: account, gas: '2000000' })
                         .on('receipt', async (txReceipt) => {
                             showMessage(buildPositiveMsg({
                                 header: 'Entry added to the registry',
@@ -74,7 +70,7 @@ function TableEntry(props) {
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                             }));
                             onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt });
-                            setIsInRegistry(true)
+                            setIsInRegistry(true);
                         });
                 } else {
                     showMessage(buildNegativeMsg({
@@ -86,10 +82,15 @@ function TableEntry(props) {
                 showMessage(buildNegativeMsg({
                     code: err.code,
                     header: 'Unable to add entry to the registry',
-                    msg: `${!domain ? 'Domain' : !contractAddress ? 'Contract address' : 'Some required input'} is empty`
+                    msg: err.message
                 }));
-                console.log(err);
+                console.log("Error", err);
             }
+        } else {
+            showMessage(buildNegativeMsg({
+                header: 'Unable to add entry to the registry',
+                msg: `${!domain ? 'Domain' : !contractAddress ? 'Contract address' : 'Some required input'} is empty`
+            }));
         }
         handleBlockScreen(false);
     };
@@ -98,9 +99,9 @@ function TableEntry(props) {
         handleBlockScreen(true);
         if (domain && contractAddress) {
             try {
-                const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call();
+                const isContractRegistered = await registryContract.methods.isContractRegistered(contractAddress).call();
                 if (isContractRegistered) {
-                    await contractRegistry.methods.remove(domain, contractAddress).send({ from: selectedAccount, gas: '2000000' })
+                    await registryContract.methods.remove(domain, contractAddress).send({ from: account, gas: '2000000' })
                         .on('receipt', async (txReceipt) => {
                             showMessage(buildPositiveMsg({
                                 header: 'Entry removed from the registry',
@@ -108,7 +109,7 @@ function TableEntry(props) {
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                             }));
                             onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt });
-                            setIsInRegistry(false)
+                            setIsInRegistry(false);
                         });
                 } else {
                     showMessage(buildNegativeMsg({
@@ -170,7 +171,7 @@ function TableEntry(props) {
         }
     };
 
-    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified, isDashboard: true }
+    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified, isDashboard: true };
 
     const renderFavourites = () => {
         return (
@@ -178,8 +179,8 @@ function TableEntry(props) {
                 trigger={<Button icon={tescIsInFavourites ? 'heart' : 'heart outline'}
                     className={tescIsInFavourites ? "favourite-dashboard" : "not-favourite-dashboard"}
                     onClick={addRemoveFavourites} />} />
-        )
-    }
+        );
+    };
 
     return (
         <Table.Row key={contractAddress}>
@@ -194,16 +195,16 @@ function TableEntry(props) {
             <Table.Cell>{isDashboard ? renderDomain() : domain}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
             <TableCellVerification {...tableCellVerifProps} />
-            { isDashboard ?
+            { isDashboard &&
                 <Table.Cell textAlign="center">
                     {renderRegistryButtons()}
-                </Table.Cell> : null}
-            {isDashboard ?
+                </Table.Cell>}
+            {isDashboard &&
                 <Table.Cell textAlign="center">
                     {renderFavourites()}
-                </Table.Cell> : null}
-            {isDashboard ?
-                <Table.Cell>{createdAt}</Table.Cell> : null}
+                </Table.Cell>}
+            {isDashboard &&
+                <Table.Cell>{createdAt}</Table.Cell>}
 
         </Table.Row>
     );
