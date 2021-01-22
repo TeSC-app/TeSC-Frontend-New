@@ -195,16 +195,19 @@ function TableEntry(props) {
             <Table.Cell>{isDashboard ? renderDomain() : domain}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
             <TableCellVerification {...tableCellVerifProps} />
-            { isDashboard &&
+            {isDashboard &&
                 <Table.Cell textAlign="center">
                     {renderRegistryButtons()}
-                </Table.Cell>}
+                </Table.Cell>
+            }
+
+            <Table.Cell textAlign="center">
+                {renderFavourites()}
+            </Table.Cell>
+            
             {isDashboard &&
-                <Table.Cell textAlign="center">
-                    {renderFavourites()}
-                </Table.Cell>}
-            {isDashboard &&
-                <Table.Cell>{createdAt}</Table.Cell>}
+                <Table.Cell>{createdAt}</Table.Cell>
+            }
 
         </Table.Row>
     );

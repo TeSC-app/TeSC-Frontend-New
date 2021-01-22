@@ -10,20 +10,16 @@ function RegistryInspect(props) {
     const { contractRegistry } = props
     const { web3 } = useContext(AppContext);
     const [domain, setDomain] = useState('')
-    const [allEntries, setAllEntries] = useState([])
-    const [submitted, setSubmitted] = useState(false)
+    const [entries, setEntries] = useState(null)
     const [loading, setLoading] = useState(false)
-    const [totalPages, setTotalPages] = useState(0) 
-    const [displayedEntries, setDisplayedEntries] = useState([])
 
     const handleInput = domain => {
-        setSubmitted(false);
-        setLoading(false)
         setDomain(domain);
     }
 
     const handleSubmit = async () => {
         setLoading(true)
+        setEntries(null);
         const contractAddresses = await contractRegistry.methods.getContractsFromDomain(domain).call();
         const contractInstances = [];
         //generate contracts out of the ERCXXX interface using the contract addresses so that the getExpiry method can be used
@@ -36,27 +32,19 @@ function RegistryInspect(props) {
             //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
             contractInstances.push({ contractAddress: contractAddresses[i], domain, expiry })
         }
-        setTotalPages(Math.ceil(contractInstances.length/7))
-        setAllEntries(contractInstances);
-        setDisplayedEntries(contractInstances.slice(0,7))
-        setSubmitted(true)
+        setEntries(contractInstances);
         setLoading(false)
     }
 
-    const changePage = (event, { activePage }) => {
-        setDisplayedEntries(allEntries.slice((activePage - 1) * 7, activePage * 7))
-    }
-
-    const tableProps = { changePage, displayedEntries, totalPages }
 
     const renderTable = () => {
-        if (allEntries.length > 0 && submitted && !loading) {
+        if (entries && entries.length > 0 && !loading) {
             return (
                 <div style={{justifyContent: 'center'}}>
-                    <TableOverview {...tableProps} />
+                    <TableOverview />
                 </div>
             )
-        } else if (allEntries.length === 0 && submitted && !loading) {
+        } else if (entries && entries.length === 0 && !loading) {
             return (
                 <div className="ui placeholder segment">
                     <div className="ui icon header">
