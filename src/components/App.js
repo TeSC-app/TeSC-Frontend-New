@@ -10,6 +10,7 @@ import RegistryInspect from '../pages/RegistryInspect';
 import RegistryAdd from '../pages/RegistryAdd';
 import AppContext from '../appContext';
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
+import RegistryAnalytics from '../pages/RegistryAnalytics';
 
 const App = ({ web3 }) => {
     const [collapsed, setCollapsed] = useState(false);
@@ -124,7 +125,7 @@ const App = ({ web3 }) => {
                                     screenBlocked={screenBlocked}
                                     contractRegistry={registryContract} />;
                             }} />
-
+                            <Route path="/registry/analytics" component={RegistryAnalytics} exact />
                         </Segment>
                     </Container>
                 </div>
