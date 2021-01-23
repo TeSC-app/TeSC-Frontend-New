@@ -67,7 +67,6 @@ function TableEntry(props) {
         handleBlockScreen(true);
         if (domain && contractAddress) {
             try {
-                console.log(registryContract)
                 const isContractRegistered = await registryContract.methods.isContractRegistered(contractAddress).call();
                 if (!isContractRegistered) {
                     await registryContract.methods.add(contractAddress).send({ from: account, gas: '2000000' })
@@ -145,7 +144,7 @@ function TableEntry(props) {
             isFavourite = true;
             setTescIsInFavourites(true);
         }
-        onTescsChange({ contractAddress, domain, expiry, isFavourite: isFavourite, own, createdAt });
+        onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt })
     };
 
     const renderRegistryButtons = () => {
@@ -190,6 +189,10 @@ function TableEntry(props) {
         );
     };
 
+    const renderCreatedAt = () => {
+        return typeof createdAt === 'undefined' ? moment().format('DD/MM/YYYY HH:mm') : createdAt
+    }
+
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
@@ -214,7 +217,7 @@ function TableEntry(props) {
             </Table.Cell>
             
             {isDashboard &&
-                <Table.Cell>{createdAt}</Table.Cell>
+                <Table.Cell>{renderCreatedAt()}</Table.Cell>
             }
 
         </Table.Row>

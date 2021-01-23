@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState, useCallback } from 'react'
 import { Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
@@ -6,13 +6,27 @@ import SearchBox from '../components/SearchBox';
 import PageHeader from '../components/PageHeader';
 import TableOverview from '../components/TableOverview';
 import axios from 'axios'
+import moment from 'moment'
 
 function RegistryInspect(props) {
     const { contractRegistry } = props
-    const { web3 } = useContext(AppContext);
+    const { web3, loadStorage } = useContext(AppContext);
     const [domain, setDomain] = useState('')
     const [entries, setEntries] = useState(null)
     const [loading, setLoading] = useState(false)
+
+    //add createdAt and isFavourite prop to objects retrieved from the backend - compares with localStorage values
+    const updateCreatedAtAndFavouritesForRegistryInspectEntries = useCallback((newTesc) => {
+        const tescsLocalStorage = loadStorage() ? loadStorage() : []
+        let isIdentical = false;
+        for (const tesc of tescsLocalStorage) {
+            if (tesc.contractAddress === newTesc.contractAddress) {
+                isIdentical = true
+                return { isFavourite: tesc.isFavourite, createdAt: tesc.createdAt }
+            }
+        }
+        if (!isIdentical) return { isFavourite: false, createdAt: moment().format('DD/MM/YYYY HH:mm') }
+    }, [loadStorage])
 
     useEffect(() => {
         (async () => {
@@ -22,10 +36,11 @@ function RegistryInspect(props) {
                 //for each object key that is an array get the values associated to that key and out of these values build an array of objects
                 const registryEntries = Object.keys(response.data['registryEntries'])
                     .map(domain => Object.values(response.data['registryEntries'][domain])
-                        .map(({ contract }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry })))
+                        .map(({ contract }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, createdAt: moment().format('DD/MM/YYYY HH:mm') })))
                     .flat()
                 if(response.status === 200) {
-                    setEntries(registryEntries)
+                    //console.log(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })))
+                    setEntries(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry))
                 } else {
                     setEntries([])
                 }
@@ -34,7 +49,8 @@ function RegistryInspect(props) {
                 console.log(error);
             }
         })();
-    }, [])
+    }, [updateCreatedAtAndFavouritesForRegistryInspectEntries])
+
 
     const handleInput = domain => {
         setDomain(domain);
@@ -68,7 +84,7 @@ function RegistryInspect(props) {
         if (entries && entries.length > 0 && !loading) {
             return (
                 <div style={{justifyContent: 'center'}}>
-                    <TableOverview rowData={entries} />
+                    <TableOverview rowData={entries} isRegistryInspect={true} />
                 </div>
             )
         } else if (entries && entries.length === 0 && !loading) {

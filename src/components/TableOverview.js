@@ -3,6 +3,7 @@ import { Table, Dropdown, Pagination, Icon } from 'semantic-ui-react';
 
 import AppContext from '../appContext';
 import TableEntry from './TableEntry';
+import moment from 'moment'
 
 const ENTRY_PER_PAGE = 5
 
@@ -10,17 +11,16 @@ function TableOverview(props) {
     const {
         rowData,
         isDashboard,
+        isRegistryInspect
     } = props;
 
-    const { web3, account } = useContext(AppContext);
+    const { web3, account, loadStorage } = useContext(AppContext);
 
     const [tescs, setTescs] = useState(rowData);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(tescs ? Math.ceil(tescs.length / ENTRY_PER_PAGE) : 0);
     const [filterOption, setFilterOption] = useState(0);
     const [displayedEntries, setDisplayedEntries] = useState([]);
-
-
 
     useEffect(() => {
         const init = async () => {
@@ -47,8 +47,30 @@ function TableOverview(props) {
 
     const handleChangeTescs = (tesc) => {
         const updatedTescs = [...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), tesc];
+        if (isRegistryInspect) {
+            let tescsNew = loadStorage() ? loadStorage() : []
+            let found = false
+            for (const tescNew of tescsNew) {
+                if (tescNew.contractAddress === tesc.contractAddress) {
+                    found = true;
+                    if (tescNew.isFavourite) {
+                        tescNew.isFavourite = false;
+                    } else {
+                        tescNew.isFavourite = true;
+                    }
+                    localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+                    break;
+                }
+            }
+            if (!found) {
+                tescsNew.push({ contractAddress: tesc.contractAddress, domain: tesc.domain, expiry: tesc.expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') });
+                localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+            }
+            setTescs(updatedTescs.sort((tescA, tescB) => tescB.expiry - tescA.expiry))
+        } else {
         setTescs(updatedTescs.sort((tescA, tescB) => tescA.createdAt.localeCompare(tescB.createdAt)));
         localStorage.setItem(account.toLowerCase(), JSON.stringify(updatedTescs));
+        }
     };
 
     const showAllTescs = () => {
