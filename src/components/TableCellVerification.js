@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import {
     isSha3Hash
@@ -7,15 +7,10 @@ import { Table, Popup, Loader, Icon } from 'semantic-ui-react';
 import LinkTescInspect from './InternalLink';
 
 function TableCellVerification(props) {
-    const { domain, contractAddress, handleVerified, verified, isDashboard } = props
+    const { domain, contractAddress, verified, handleVerified } = props
+    const [isVerified, setIsVerified] = useState(verified);
+    const contractAddress_ = useRef(contractAddress);
 
-    const renderLoader = () => {
-        return <Loader active inline />
-    }
-
-    const renderIcon = (verifParam) => {
-        return verifParam ? <Icon name="check" color="green" circular /> : <Icon name="delete" color="red" circular />
-    }
 
     const renderVerifResult = () => {
         if (domain && isSha3Hash(domain)) {
@@ -25,25 +20,34 @@ function TableCellVerification(props) {
                 trigger={<LinkTescInspect contractAddress={contractAddress} content='Domain required' />}
             />);
         }
-        if (verified === null || verified === undefined) {
-            return renderLoader();
+        if (isVerified === null || isVerified === undefined) {
+            return <Loader active inline />;
         }
-        return renderIcon(verified);
+        return isVerified ? <Icon name="check" color="green" circular /> : <Icon name="delete" color="red" circular />;
         
     };
 
     useEffect(() => {
         (async () => {
             try {
-                const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress.toLowerCase()}`);
-                console.log(response);
-                handleVerified(response.data.verified)
+                if(typeof verified !== 'boolean') {
+                    console.log("verified", verified);
+                    const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress_.current.toLowerCase()}`);
+                    setIsVerified(response.data.verified)
+                }
             } catch (error) {
                 console.log(error);
-                handleVerified(false)
             }
         })();
-    }, [contractAddress, handleVerified, isDashboard]);
+    }, [verified]);
+
+
+    useEffect(() => {
+        (async () => {
+            if(typeof isVerified === 'boolean')
+                handleVerified(isVerified)    
+        })();
+    }, [isVerified, handleVerified]);
 
     return (
         <Table.Cell textAlign="center">

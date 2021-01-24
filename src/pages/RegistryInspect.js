@@ -1,79 +1,93 @@
-import React, { useContext, useState, useEffect } from 'react'
+import React, { useContext, useEffect, useState, useCallback } from 'react'
 import { Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
-import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
 import SearchBox from '../components/SearchBox';
 import PageHeader from '../components/PageHeader';
 import TableOverview from '../components/TableOverview';
+import axios from 'axios'
+import moment from 'moment'
 
-function RegistryInspect() {
-    const { web3 } = useContext(AppContext);
-    const [contractRegistry, setContractRegistry] = useState(undefined);
+function RegistryInspect(props) {
+    const { contractRegistry } = props
+    const { web3, loadStorage } = useContext(AppContext);
     const [domain, setDomain] = useState('')
-    const [allEntries, setAllEntries] = useState([])
-    const [submitted, setSubmitted] = useState(false)
+    const [entries, setEntries] = useState(null)
     const [loading, setLoading] = useState(false)
-    const [totalPages, setTotalPages] = useState(0) 
-    const [displayedEntries, setDisplayedEntries] = useState([])
 
-    useEffect(() => {
-        const init = async () => {
-            try {
-                const contractRegistry = new web3.eth.Contract(
-                    TeSCRegistry.abi,
-                    process.env.REACT_APP_REGISTRY_ADDRESS,
-                );
-                setContractRegistry(contractRegistry);
-            }
-            catch (error) {
-                console.error(error);
+    //add createdAt and isFavourite prop to objects retrieved from the backend - compares with localStorage values
+    const updateCreatedAtAndFavouritesForRegistryInspectEntries = useCallback((newTesc) => {
+        const tescsLocalStorage = loadStorage() ? loadStorage() : []
+        let isIdentical = false;
+        for (const tesc of tescsLocalStorage) {
+            if (tesc.contractAddress === newTesc.contractAddress) {
+                isIdentical = true
+                return { isFavourite: tesc.isFavourite, createdAt: tesc.createdAt }
             }
         }
-        init()
-    }, [web3.eth.Contract, web3.eth.net])
+        if (!isIdentical) return { isFavourite: false, createdAt: moment().format('DD/MM/YYYY HH:mm') }
+    }, [loadStorage])
+
+    useEffect(() => {
+        (async () => {
+            try {
+                setLoading(true)
+                const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/registry`);
+                //for each object key that is an array get the values associated to that key and out of these values build an array of objects
+                const registryEntries = Object.keys(response.data['registryEntries'])
+                    .map(domain => Object.values(response.data['registryEntries'][domain])
+                        .map(({ contract }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, createdAt: moment().format('DD/MM/YYYY HH:mm') })))
+                    .flat()
+                if(response.status === 200) {
+                    //console.log(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })))
+                    setEntries(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry))
+                } else {
+                    setEntries([])
+                }
+                setLoading(false)
+            } catch (error) {
+                console.log(error);
+            }
+        })();
+    }, [updateCreatedAtAndFavouritesForRegistryInspectEntries])
+
 
     const handleInput = domain => {
-        setSubmitted(false);
-        setLoading(false)
         setDomain(domain);
     }
 
     const handleSubmit = async () => {
         setLoading(true)
-        const contractAddresses = await contractRegistry.methods.getContractsFromDomain(domain).call();
-        const contractInstances = [];
-        //generate contracts out of the ERCXXX interface using the contract addresses so that the getExpiry method can be used
-        for (let i = 0; i < contractAddresses.length; i++) {
-            const contractInstance = new web3.eth.Contract(
-                ERCXXX.abi,
-                contractAddresses[i],
-            )
-            const expiry = await contractInstance.methods.getExpiry().call()
-            //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
-            contractInstances.push({ contractAddress: contractAddresses[i], domain, expiry })
+        setEntries(null);
+        try {
+            const contractAddresses = await contractRegistry.methods.getContractsFromDomain(domain).call();
+            const contractInstances = [];
+            //generate contracts out of the ERCXXX interface using the contract addresses so that the getExpiry method can be used
+            for (let i = 0; i < contractAddresses.length; i++) {
+                const contractInstance = new web3.eth.Contract(
+                    ERCXXX.abi,
+                    contractAddresses[i],
+                )
+                const expiry = await contractInstance.methods.getExpiry().call()
+                //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
+                contractInstances.push({ contractAddress: contractAddresses[i], domain, expiry })
+            }
+            setEntries(contractInstances);
+            setLoading(false)
+        } catch (err) {
+            setLoading(false)
         }
-        setTotalPages(Math.ceil(contractInstances.length/7))
-        setAllEntries(contractInstances);
-        setDisplayedEntries(contractInstances.slice(0,7))
-        setSubmitted(true)
-        setLoading(false)
     }
 
-    const changePage = (event, { activePage }) => {
-        setDisplayedEntries(allEntries.slice((activePage - 1) * 7, activePage * 7))
-    }
-
-    const tableProps = { changePage, displayedEntries, totalPages }
 
     const renderTable = () => {
-        if (allEntries.length > 0 && submitted && !loading) {
+        if (entries && entries.length > 0 && !loading) {
             return (
                 <div style={{justifyContent: 'center'}}>
-                    <TableOverview {...tableProps} />
+                    <TableOverview rowData={entries} isRegistryInspect={true} />
                 </div>
             )
-        } else if (allEntries.length === 0 && submitted && !loading) {
+        } else if (entries && entries.length === 0 && !loading) {
             return (
                 <div className="ui placeholder segment">
                     <div className="ui icon header">

@@ -17,27 +17,27 @@ contract TeSCRegistryImplementation is TeSCRegistry {
     // @notice Maps contract addresses to their index in domainToContracts
     mapping(address => uint) private contractsToIndex;
 
-    function add(string calldata _domain, address _contractAddr) external override {
-        require(TeSC(_contractAddr).supportsInterface(0xd7de9043));
+    function add(address _contractAddr) external override {
+        require(TeSC(_contractAddr).supportsInterface(0xd7de9043), "Contract not added to registry: does not support TeSC interface");
         bytes24 flags = TeSC(_contractAddr).getFlags();
-        require(isFlagSet(flags, 0));
-        string memory contractDomain = TeSC(_contractAddr).getDomain();
-        require(keccak256(abi.encodePacked(contractDomain)) == keccak256(abi.encodePacked(_domain)));
-        require(TeSC(_contractAddr).getExpiry() > block.timestamp);
-        require(registeredContracts[_contractAddr] == false);
+        require(isFlagSet(flags, 0), "Contract not added to registry: sanity flag (at index 0) not set");
+        require(TeSC(_contractAddr).getExpiry() > block.timestamp, "Contract not added to registry: endorsement is expired");
+        require(registeredContracts[_contractAddr] == false, "Contract not added to registry: already contained in registry");
 
-        entryOwner[_domain][_contractAddr] = msg.sender;
-        address[] storage arr = domainToContracts[_domain];
+        string memory domain = TeSC(_contractAddr).getDomain();
+        entryOwner[domain][_contractAddr] = msg.sender;
+        address[] storage arr = domainToContracts[domain];
         uint indexOfNewContract = arr.length;
         arr.push(_contractAddr);
         contractsToIndex[_contractAddr] = indexOfNewContract;
         registeredContracts[_contractAddr] = true;
 
-        emit RegistryChanged(_domain, _contractAddr, EventType.Add);
+        emit RegistryChanged(domain, _contractAddr, EventType.Add);
     }
 
     function remove(string calldata _domain, address _contractAddr) external override {
-        require(entryOwner[_domain][_contractAddr] == msg.sender);
+        require(registeredContracts[_contractAddr] == true, "Contract not removed from registry: not contained in registry");
+        require(entryOwner[_domain][_contractAddr] == msg.sender, "Contract not removed from registry: only sender that added the contract can remove it");
 
         address[] storage arr = domainToContracts[_domain];
         address replacement = arr[arr.length - 1];

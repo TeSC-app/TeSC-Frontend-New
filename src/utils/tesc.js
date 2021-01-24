@@ -68,8 +68,8 @@ export const estimateDeploymentCost = async (web3, tx) => {
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 };
 
-export const estimateRegistryAddCost = async (web3, selectedAccount, contractRegistry, domain, contractTeSCAddress) => {
-    const gasEstimation = await contractRegistry.methods.add(domain, contractTeSCAddress).estimateGas({ from: selectedAccount, gas: '2000000' });
+export const estimateRegistryAddCost = async (web3, selectedAccount, contractRegistry, contractTeSCAddress) => {
+    const gasEstimation = await contractRegistry.methods.add(contractTeSCAddress).estimateGas({ from: selectedAccount, gas: '2000000' });
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 }
 
@@ -81,12 +81,12 @@ export const estimateRegistryRemoveCost = async (web3, selectedAccount, contract
 
 export const storeTesc = ({ account, claim }) => {
     const { contractAddress, domain, expiry } = claim;
-    let tescs = JSON.parse(localStorage.getItem(account));
+    let tescs = JSON.parse(localStorage.getItem(account.toLowerCase()));
     if (!tescs) {
         tescs = [];
     }
-    tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, isInRegistry: false, createdAt: moment().format('DD/MM/YYYY HH:mm:ss') });
-    localStorage.setItem(account, JSON.stringify(tescs));
+    tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, createdAt: moment().format('DD/MM/YYYY HH:mm') });
+    localStorage.setItem(account.toLowerCase(), JSON.stringify(tescs));
 };
 
 export const isValidContractAddress = (address, withReason = false) => {
