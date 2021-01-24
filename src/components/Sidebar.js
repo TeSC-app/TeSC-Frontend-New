@@ -84,9 +84,6 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
                         <MenuItem onClick={(e) => handlePageNavigation(e, '/registry/add')} >
                             Add entry
                         </MenuItem>
-                        <MenuItem onClick={(e) => handlePageNavigation(e, '/registry/analytics')} >
-                            Analytics
-                        </MenuItem>
                     </SubMenu>
                 </Menu>
             </SidebarContent>
