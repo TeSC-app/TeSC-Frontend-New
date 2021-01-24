@@ -1,14 +1,14 @@
 import React from 'react';
 import { Table, Checkbox } from 'semantic-ui-react';
 import moment from 'moment';
-import { FLAG_POSITIONS } from '../../utils/tesc';
+import { FLAGS } from '../../utils/tesc';
 
 const TescDataTable = ({ data }) => {
 
     const { domain, expiry, flags, signature, fingerprint } = data;
 
     const renderFlagCheckboxes = () => {
-        return Object.entries(FLAG_POSITIONS).filter(([flagName, i]) => i === 0).map(([flagName, i]) => (
+        return Object.entries(FLAGS).filter(([flagName, i]) => i === 0).map(([flagName, i]) => (
             <div key={i} style={{ paddingBottom: '5px' }}>
                 <Checkbox
                     checked={!!flags.get(i)}
@@ -56,7 +56,7 @@ const TescDataTable = ({ data }) => {
                         <b>Fingerprint</b>
                     </Table.Cell>
                     <Table.Cell style={{ wordBreak: 'break-all' }}>
-                        {!fingerprint || parseInt(fingerprint, 16) === 0 ? 'N/A' : fingerprint.substring(2)}
+                        {!fingerprint || parseInt(fingerprint, 16) === 0 ? 'N/A' : fingerprint}
                     </Table.Cell>
                 </Table.Row>
             </Table.Body>

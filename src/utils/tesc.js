@@ -3,7 +3,7 @@ import { PrivateKey } from '@fidm/x509';
 import BitSet from 'bitset';
 import moment from 'moment'
 
-export const FLAG_POSITIONS = {
+export const FLAGS = {
     DOMAIN_HASHED: 0,
     ALLOW_SUBENDORSEMENT: 1,
     EXCLUSIVE: 2,
@@ -18,7 +18,8 @@ export const predictContractAddress = async (web3) => {
     console.log("Sender address:", senderAddress);
 
     if (!senderAddress) {
-        throw new Error('Wallet address not found! Your wallet might not be connected to this site.');
+        // throw new Error('Wallet address not found! Your wallet might not be connected to this site.');
+        return;
     }
     const nonce = await web3.eth.getTransactionCount(senderAddress);
 
@@ -43,7 +44,7 @@ export const generateSignature = async ({ address, domain, expiry, flagsHex }, p
 
 export const flagsToBytes24Hex = (flagsBitVector) => {
     const flagsBitVectorWithSANITY = new BitSet(flagsBitVector.toString() + '1');
-    let hex = flagsBitVectorWithSANITY.slice(0, Object.keys(FLAG_POSITIONS).length - 1).toString(16);
+    let hex = flagsBitVectorWithSANITY.slice(0, Object.keys(FLAGS).length - 1).toString(16);
     return padToBytesX(hex, 24);
 };
 
@@ -67,8 +68,8 @@ export const estimateDeploymentCost = async (web3, tx) => {
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 };
 
-export const estimateRegistryAddCost = async (web3, selectedAccount, contractRegistry, domain, contractTeSCAddress) => {
-    const gasEstimation = await contractRegistry.methods.add(domain, contractTeSCAddress).estimateGas({ from: selectedAccount, gas: '2000000' });
+export const estimateRegistryAddCost = async (web3, selectedAccount, contractRegistry, contractTeSCAddress) => {
+    const gasEstimation = await contractRegistry.methods.add(contractTeSCAddress).estimateGas({ from: selectedAccount, gas: '2000000' });
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 }
 
@@ -80,12 +81,12 @@ export const estimateRegistryRemoveCost = async (web3, selectedAccount, contract
 
 export const storeTesc = ({ account, claim }) => {
     const { contractAddress, domain, expiry } = claim;
-    let tescs = JSON.parse(localStorage.getItem(account));
+    let tescs = JSON.parse(localStorage.getItem(account.toLowerCase()));
     if (!tescs) {
         tescs = [];
     }
-    tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, isInRegistry: false, createdAt: moment().format('DD/MM/YYYY HH:mm:ss') });
-    localStorage.setItem(account, JSON.stringify(tescs));
+    tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, createdAt: moment().format('DD/MM/YYYY HH:mm') });
+    localStorage.setItem(account.toLowerCase(), JSON.stringify(tescs));
 };
 
 export const isValidContractAddress = (address, withReason = false) => {

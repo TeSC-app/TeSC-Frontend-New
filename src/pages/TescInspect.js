@@ -3,17 +3,17 @@ import { Input, Loader, Icon, Label, Grid, Card, Form, Dimmer, Popup, Button, Mo
 import BitSet from 'bitset';
 import axios from 'axios';
 import AppContext from '../appContext';
-import { FLAG_POSITIONS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc';
+import { FLAGS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc';
 import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
 import { buildNegativeMsg } from "../components/FeedbackMessage";
 import SearchBox from "../components/SearchBox";
 import DeploymentForm from "../components/tescNew/DeploymentForm";
 import PageHeader from "../components/PageHeader";
 import TescDataTable from "../components/tesc/TescDataTable";
-import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
+import moment from 'moment';
 
 const TeSCInspect = ({ location }) => {
-    const { web3, showMessage } = useContext(AppContext);
+    const { web3, showMessage, loadStorage } = useContext(AppContext);
     const [contractAddress, setContractAddress] = useState('');
     const [contractOwner, setContractOwner] = useState('');
     const [domainFromChain, setDomainFromChain] = useState('');
@@ -22,21 +22,21 @@ const TeSCInspect = ({ location }) => {
     const [fingerprint, setFingerprint] = useState('');
     const [flags, setFlags] = useState(new BitSet('0x00'));
     const [isDomainHashed, setIsDomainHashed] = useState(null);
-    const [plainDomain, setPlainDomain] = useState('');
-    const [plainDomainSubmitted, setPlainDomainSubmitted] = useState(false);
+    const [typedInDomain, setTypedInDomain] = useState('');
+    const [isPlainDomainSubmitted, setIsPlainDomainSubmitted] = useState(false);
     const [verifResult, setVerifResult] = useState(null);
     const [tescIsInFavourites, setTescsIsInFavourites] = useState(false);
-    const [tescs, setTescs] = useState(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
-    const [contractRegistry, setContractRegistry] = useState(null)
+    const [tescs, setTescs] = useState(loadStorage());
 
     useEffect(() => {
-        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
-        const contractRegistry = new web3.eth.Contract(
-            TeSCRegistry.abi,
-            process.env.REACT_APP_REGISTRY_ADDRESS,
-        );
-        setContractRegistry(contractRegistry)
-    }, [web3.currentProvider.selectedAddress, web3.eth.Contract]);
+        setTescs(loadStorage());
+    }, [loadStorage]);
+    
+    useEffect(() => {
+        if(!!flags.get(FLAGS.DOMAIN_HASHED) && typedInDomain && web3.utils.sha3(typedInDomain).substring(2) === domainFromChain && !verifResult) {
+            setIsPlainDomainSubmitted(true);
+        }
+    }, [typedInDomain, domainFromChain, flags, verifResult, web3.utils]);
 
     const fetchTescData = useCallback(async (address) => {
         showMessage(null);
@@ -45,7 +45,7 @@ const TeSCInspect = ({ location }) => {
 
             const flagsHex = await contract.methods.getFlags().call();
             console.log("Flaghex", flagsHex);
-            setIsDomainHashed(!!(new BitSet(flagsHex)).get(FLAG_POSITIONS.DOMAIN_HASHED + 1));
+            setIsDomainHashed(!!(new BitSet(flagsHex)).get(FLAGS.DOMAIN_HASHED + 1));
             setFlags(hexStringToBitSet(flagsHex));
 
             setDomainFromChain(await contract.methods.getDomain().call());
@@ -71,8 +71,7 @@ const TeSCInspect = ({ location }) => {
     }, [contractAddress, showMessage, tescs, web3.eth.Contract]);
 
     const addRemoveFavourites = async (address) => {
-        let tescsNew;
-        tescs ? tescsNew = tescs : tescsNew = [];
+        let tescsNew = tescs ? tescs : [];
         let found = false;
         for (const tesc of tescsNew) {
             if (tesc.contractAddress === address) {
@@ -89,27 +88,26 @@ const TeSCInspect = ({ location }) => {
             }
         }
         if (!found) {
-            const isInRegistry = contractRegistry ? await contractRegistry.methods.isContractRegistered(address).call() : false
-            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false, isInRegistry });
+            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') });
             localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
             setTescsIsInFavourites(true);
         }
     };
 
     const verifyTesc = useCallback(async () => {
-        if (isDomainHashed !== null && (!isDomainHashed || (isDomainHashed && plainDomainSubmitted))) {
+        if (isDomainHashed !== null && (!isDomainHashed || (isDomainHashed && isPlainDomainSubmitted))) {
             const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress.toLowerCase()}`, {
-                params: { plainDomain }
+                params: { plainDomain: typedInDomain }
             });
             console.log('VERIF_RESULT', response);
             setVerifResult(response.data);
-            setPlainDomainSubmitted(false);
+            setIsPlainDomainSubmitted(false);
         }
-    }, [contractAddress, isDomainHashed, plainDomain, plainDomainSubmitted]);
+    }, [contractAddress, isDomainHashed, typedInDomain, isPlainDomainSubmitted]);
 
     useEffect(() => {
         verifyTesc();
-    }, [contractAddress, plainDomainSubmitted, verifyTesc]);
+    }, [contractAddress, isPlainDomainSubmitted, verifyTesc]);
 
     const handleChangeAddress = useCallback(async (address) => {
         setContractAddress(address);
@@ -138,7 +136,7 @@ const TeSCInspect = ({ location }) => {
         setExpiry('');
         setFlags(new BitSet('0x00'));
         setSignature('');
-        setPlainDomain('');
+        setTypedInDomain('');
         setVerifResult(null);
     };
 
@@ -160,7 +158,7 @@ const TeSCInspect = ({ location }) => {
     const handleEnterOriginalDomain = async (e) => {
         e.preventDefault();
         setVerifResult(null);
-        setPlainDomainSubmitted(true);
+        setIsPlainDomainSubmitted(true);
     };
 
     const handleCloseTescUpdate = (e) => {
@@ -208,7 +206,7 @@ const TeSCInspect = ({ location }) => {
                                 <Card style={{ width: '100%' }}>
                                     <Card.Content header="Verification" />
                                     <Card.Content>
-                                        <Dimmer active={(plainDomainSubmitted && !verifResult)
+                                        <Dimmer active={(isPlainDomainSubmitted && !verifResult)
                                             || (!isDomainHashed && !verifResult)} inverted>
                                             <Loader content='Verifying...' />
                                         </Dimmer>
@@ -218,9 +216,9 @@ const TeSCInspect = ({ location }) => {
                                                     <Form.Field>
                                                         <label>Original domain</label>
                                                         <Input
-                                                            value={plainDomain}
+                                                            value={typedInDomain}
                                                             placeholder='www.mysite.com'
-                                                            onChange={e => setPlainDomain(e.target.value)}
+                                                            onChange={e => setTypedInDomain(e.target.value)}
                                                             size='large'
                                                             style={{ width: '100%' }}
                                                         />
@@ -263,16 +261,29 @@ const TeSCInspect = ({ location }) => {
                                 <Grid.Column width={10} >
                                     <Modal
                                         closeIcon
-                                        // dimmer='blurring'
                                         trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
                                         onClose={handleCloseTescUpdate}
+                                        style={{borderRadius: '20px', height: '80%', width: '75%'}}
                                     >
-                                        <Modal.Header>Update TLS-endorsed Smart Contract</Modal.Header>
-                                        <Modal.Content>
+                                        <Modal.Header style={{borderTopLeftRadius: '15px', borderTopRightRadius: '15px'}}>
+                                            Update TLS-endorsed Smart Contract
+                                        </Modal.Header>
+                                        <Modal.Content style={{borderBottomLeftRadius: '15px', borderBottomRightRadius: '15px'}}>
                                             <DeploymentForm
-                                                initInputs={{ contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint: fingerprint.substring(2) }}
+                                                initInputs={{ 
+                                                    contractAddress, 
+                                                    domain: domainFromChain, 
+                                                    expiry, flags, 
+                                                    signature, 
+                                                    fingerprint: fingerprint.substring(2),
+                                                }}
+                                                typedInDomain={typedInDomain}
+                                                onMatchOriginalDomain={setTypedInDomain}
                                             />
                                         </Modal.Content>
+                                        {/* <Dimmer active={true}>
+                                            <Loader indeterminate content='Waiting for transaction to finish...' />
+                                        </Dimmer> */}
                                     </Modal>
                                 </Grid.Column>
                             )}
@@ -285,8 +296,8 @@ const TeSCInspect = ({ location }) => {
                                             icon={tescIsInFavourites? 'heart' : 'heart outline'}
                                             className={tescIsInFavourites ? "favourite" : "notFavourite"}
                                             onClick={() => addRemoveFavourites(contractAddress)}
-                                            content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
-                                            style={{ float: 'right', width: '30%' }}
+                                            content={tescIsInFavourites ? 'Unfavourite' : 'Favourite'}
+                                            style={{ float: 'right'}}
                                         />} />
                             </Grid.Column>
                         </Grid.Row>

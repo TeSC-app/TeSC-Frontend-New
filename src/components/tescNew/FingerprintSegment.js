@@ -8,11 +8,12 @@ import AppContext from '../../appContext';
 import FilePicker from '../FilePicker';
 import { buildNegativeMsg, buildWarningMsg } from "../FeedbackMessage";
 
-import { predictContractAddress, formatClaim, flagsToBytes24Hex, FLAG_POSITIONS } from '../../utils/tesc';
+import { predictContractAddress, formatClaim, flagsToBytes24Hex, FLAGS } from '../../utils/tesc';
+import { extractAxiosErrorMessage } from '../../utils/formatError';
 
 
 const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
-    const { web3, showMessage } = useContext(AppContext);
+    const { web3, showMessage, account } = useContext(AppContext);
 
     const [isWaiting, setIsWaiting] = useState(false);
 
@@ -60,7 +61,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
         try {
             if (!cache.current[domain.current]) {
                 const cert = Certificate.fromPEM(certPEM);
-                if (!cert.dnsNames.includes(domain.current) || !cert.ipAddresses.includes(domain.current)) {
+                if (!cert.dnsNames.includes(domain.current) && !cert.ipAddresses.includes(domain.current)) {
                     throw new Error(`The selected certificate is not issued to domain ${domain.current}`);
                 }
 
@@ -82,7 +83,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
             }
 
         } catch (error) {
-            const msg = (error.response) ? getMsgFromErrorCode(error.response.data.err) : error.message;
+            const msg = extractAxiosErrorMessage({ error, subject: domain.current });
             showMessage(buildNegativeMsg({
                 header: 'Unable to compute fingerprint',
                 msg,
@@ -93,7 +94,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
     }, [showMessage]);
 
     const updateClaim = useCallback(() => {
-        const curDomain = !!flags.current.get(FLAG_POSITIONS.DOMAIN_HASHED) ? web3.utils.sha3(domain.current).substring(2) : domain.current;
+        const curDomain = !!flags.current.get(FLAGS.DOMAIN_HASHED) ? web3.utils.sha3(domain.current).substring(2) : domain.current;
         if (contractAddress.current && domain.current && expiry.current) {
             claim.current = formatClaim({
                 contractAddress: contractAddress.current,
@@ -125,7 +126,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
             }
 
         } catch (error) {
-            const msg = (error.response) ? getMsgFromErrorCode(error.response.data.err) : error.message;
+            const msg = extractAxiosErrorMessage({ error, subject: domain.current });
             showMessage(buildWarningMsg({
                 header: 'Unable to automatically retrieve domain certificate to compute the fingerprint.',
                 msg: `${msg}${!!msg.match(/[.!]+$/i) ? '' : '.'} You can also upload your domain certificate manually.`,
@@ -164,13 +165,6 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
         })();
     }, [inputs, sliderState, retrieveCertificate, certPEM, handlePickCert, resetStates, web3]);
 
-    const getMsgFromErrorCode = (errMsg) => {
-        if (errMsg.includes('getaddrinfo ENOTFOUND'))
-            return ` Unable to connect to ${domain.current}. Please check your domain input and the availability of your website.`;
-        else if (errMsg.includes('Signature does not match'))
-            return `${errMsg}. Please make sure you have selected the right certificate for domain ${domain.current}`;
-        return errMsg;
-    };
 
 
     useEffect(() => {
@@ -205,11 +199,11 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
             {sliderState && (fingerprint || filePickerDisplayed) &&
                 <Segment style={{ maxWidth: '100%', width: 'max-content' }}>
                     {filePickerDisplayed && !fingerprint && (
-                        <FilePicker 
-                            label='Choose certificate' 
-                            onPickFile={handlePickCert} 
+                        <FilePicker
+                            label='Choose certificate'
+                            onPickFile={handlePickCert}
                             isDisabled={!sliderState}
-                            input={{fileName:certFileName, content: certPEM}}
+                            input={{ fileName: certFileName, content: certPEM }}
                         />
                     )}
                     {sliderState && fingerprint && (<span style={{ wordBreak: 'break-all' }}><b>Fingerprint: <Label>{fingerprint}</Label></b></span>)

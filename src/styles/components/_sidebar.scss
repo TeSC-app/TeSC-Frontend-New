@@ -1,0 +1,146 @@
+$sidebar-bg-color: rgba(29, 29, 29, 0.5) !default;
+// $sidebar-color: #adadad !default;
+$sidebar-color: #dadada !default;
+$sidebar-width: 270px !default;
+$sidebar-collapsed-width: 80px !default;
+$highlight-color: #d8d8d8 !default;
+$submenu-bg-color: rgba(29, 29, 29, 0.25) !default;
+// $submenu-bg-color-collapsed: #2b2b2b !default;
+$submenu-bg-color-collapsed: rgba(29, 29, 29, 0.6) !default;
+// $submenu-bg-color-collapsed: rgba(29, 29, 29) !default;
+$icon-bg-color: rgba(29, 29, 29, 0.35) !default;
+$icon-size: 35px !default;
+$breakpoint-xs: 480px !default;
+$breakpoint-sm: 576px !default;
+$breakpoint-md: 768px !default;
+$breakpoint-lg: 992px !default;
+$breakpoint-xl: 1200px !default;
+
+@import "~react-pro-sidebar/dist/scss/styles.scss";
+
+.layout {
+  .btn-toggle {
+    width: 35px;
+    height: 35px;
+    background: #353535;
+    color: #fff;
+    text-align: center;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    display: none;
+  }
+
+  .pro-sidebar-header {
+    cursor: pointer;
+  }
+
+  .sidebar-btn-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    .sidebar-btn {
+      padding: 1px 1px;
+      border-radius: 40px;
+      background: rgba(29, 29, 29, 0.5);
+      color: #adadad;
+      text-decoration: none;
+      margin: 0 auto;
+      height: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      span {
+        margin-left: 5px;
+        font-size: 13px;
+      }
+      &:hover {
+        color: $highlight-color;
+      }
+    }
+  }
+
+  .collapsed {
+    width: 60px;
+    min-width: 60px;
+    .sidebar-btn {
+      display: inline-block;
+      border-radius: 50%;
+      width: 35px;
+      height: 35px;
+      line-height: 40px;
+      padding: 0;
+    }
+  }
+
+  .pro-sidebar {
+    .pro-menu {
+      .pro-menu-item > .pro-inner-item {
+        padding: 15px 25px 15px 10px;
+      }
+    }
+    z-index: 1;
+  }
+
+  .badge {
+    padding: 3px 6px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    border-radius: 15px;
+    &.red {
+      color: #ffffff;
+      background: #d63030;
+    }
+    &.gray {
+      color: #ffffff;
+      background: #777777;
+    }
+    &.yellow {
+      color: #000000;
+      background: #ffd331;
+    }
+  }
+}
+
+.MuiStepIcon-root.MuiStepIcon-active {
+  color: #a333c8
+}
+
+.favourite-dashboard {
+  color: red !important;
+  background-color: white !important;
+}
+
+.not-favourite-dashboard {
+  color: grey !important;
+  background-color: white !important;
+}
+
+.metamask-label {
+  background-color: rgba(0,0,0,0) !important;
+  color: white !important;
+  display: flex !important;
+  align-items: center;
+}
+
+.connect-metamask {
+  color: inherit !important;
+  transition: .1s opacity ease !important;
+  background-color: rgba(0,0,0,0) !important;
+  padding: 0 !important;
+  font-weight: normal !important;
+  font-size: small;
+}
+
+.connect-metamask:hover {
+  color:rgba(216, 213, 213, 0.3) !important
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+}

@@ -1,0 +1,80 @@
+$navbar-height: 48.563px;
+
+.ui.page.dimmer {
+  overflow-y: auto;
+}
+
+.root-container {
+  height: 100vh;
+}
+
+.navbar {
+  margin-bottom: 0;
+  border-radius: 0px;
+  height: $navbar-height;
+}
+
+.layout {
+  // height: calc(100vh - 48.563px);
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  position: relative;
+  background-image: url("../../static/images/munich-1.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+
+  .page {
+    padding: $l-size;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: auto;
+    height: 100%;
+  }
+
+  .main-segment {
+    border-radius: 25px;
+    display: block;
+    background: rgba(255, 255, 255, 0.97);
+    padding: 30px;
+    display: table; // must be here
+    min-height: 100%;
+    min-width: fit-content;
+  }
+}
+
+.MuiStepIcon-root.MuiStepIcon-active {
+  color: #a333c8;
+}
+
+.favouriteDashboard {
+  color: red !important;
+  background-color: white !important;
+}
+
+.notFavouriteDashboard {
+  color: grey !important;
+  background-color: white !important;
+}
+
+.metamaskLabel {
+  background-color: rgba(0, 0, 0, 0) !important;
+  color: white !important;
+  display: flex !important;
+  align-items: center;
+}
+
+.connectMetaMask {
+  color: inherit !important;
+  transition: 0.1s opacity ease !important;
+  background-color: rgba(0, 0, 0, 0) !important;
+  padding: 0 !important;
+  font-weight: normal !important;
+  font-size: small;
+}
+
+.connectMetaMask:hover {
+  color: rgba(216, 213, 213, 0.3) !important;
+}

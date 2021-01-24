@@ -31,22 +31,25 @@ import {
     padToBytesX,
     storeTesc,
     estimateDeploymentCost,
-    FLAG_POSITIONS,
+    formatClaim,
+    FLAGS,
 } from '../../utils/tesc';
+import { extractAxiosErrorMessage } from '../../utils/formatError';
+import axios from 'axios';
 
 
 const useStyles = makeStyles((theme) => ({
     root: {
         width: '100%',
     },
-    button: {
-        marginRight: theme.spacing(1),
-    },
-    backButton: {
-        marginRight: theme.spacing(1),
+    active: {
+        color: 'purple',
+        backgroundColor: 'purple'
     },
     completed: {
         display: 'inline-block',
+        color: 'purple',
+        backgroundColor: 'purple'
     },
     instructions: {
         marginTop: theme.spacing(1),
@@ -55,24 +58,22 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
-function getSteps() {
-    return ['Create Claim', 'Create Signature', 'Add Certificate Fingerprint', 'Review and Confirm', 'Receipt'];
-}
 
 
+const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' }) => {
+    const { web3, showMessage, handleBlockScreen, account } = useContext(AppContext);
 
-const DeploymentForm = ({ initInputs }) => {
-    const { web3, showMessage, handleBlockScreen } = useContext(AppContext);
+    const defaultFingerprint = !initInputs || parseInt(initInputs.fisngerprint, 16) === 0 ? '' : initInputs.fingerprint;
 
     const [contractAddress, setContractAddress] = useState(initInputs ? initInputs.contractAddress.toLowerCase() : '');
     const [futureContractAddress, setFutureContractAddress] = useState(initInputs ? initInputs.contractAddress.toLowerCase() : '');
 
-    const [domain, setDomain] = useState(initInputs && !initInputs.flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? initInputs.domain : '');
+    const [domain, setDomain] = useState(initInputs && !initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : typedInDomain);
     const [expiry, setExpiry] = useState(initInputs ? initInputs.expiry : null);
     const [signature, setSignature] = useState('');
     const [flags, setFlags] = useState(initInputs ? initInputs.flags : new BitSet('0x00'));
-    const [domainHashed, setDomainHashed] = useState(initInputs && !!initInputs.flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? initInputs.domain : '');
-    const [fingerprint, setFingerprint] = useState(!initInputs || parseInt(initInputs.fingerprint, 16) === 0 ? '' : initInputs.fingerprint);
+    const [currentDomain, setCurrentDomain] = useState(initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : domain);
+    const [fingerprint, setFingerprint] = useState(defaultFingerprint);
 
     const [privateKeyPEM, setPrivateKeyPEM] = useState('');
     const [privateKeyFileName, setPrivateKeyFileName] = useState('');
@@ -81,7 +82,7 @@ const DeploymentForm = ({ initInputs }) => {
     const [costPaid, setCostPaid] = useState(null);
 
     const [isMetamaskOpen, setIsMetamaskOpen] = useState(false);
-    const [isMatchedOriginalDomain, setIsMatchedOriginalDomain] = useState(false);
+    const [isMatchedOriginalDomain, setIsMatchedOriginalDomain] = useState(typedInDomain ? true : false);
 
 
     const [sigInputType, setSigInputType] = useState(null);
@@ -92,17 +93,21 @@ const DeploymentForm = ({ initInputs }) => {
     const prevFingerprint = useRef(fingerprint);
     const prevPrivateKeyPEM = useRef(privateKeyPEM);
 
-    const getCurrentDomain = useCallback(() => !!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain,
-        [domainHashed, domain, flags]);
+    const getClaimString = () => {
+        return formatClaim({contractAddress: futureContractAddress, domain: currentDomain, expiry, flags: flagsToBytes24Hex(flags)})
+    }
 
-    const computeSignature = useCallback(async () => {
-        const domain = getCurrentDomain();
-        if (!!privateKeyPEM && !!domain && !!expiry) {
+    const computeSignature = useCallback(async (currentDomain) => {
+        if (prevPrivateKeyPEM.current && currentDomain && prevExpiry.current) {
             try {
-                const address = initInputs ? contractAddress : await predictContractAddress(web3);
-                const flagsHex = flagsToBytes24Hex(flags);
-                const payload = { address, domain, expiry, flagsHex };
-                setSignature(await generateSignature(payload, privateKeyPEM));
+                let address = futureContractAddress;
+                if(!address) {
+                    address = await predictContractAddress(web3);
+                    setFutureContractAddress(address);
+                }
+                const flagsHex = flagsToBytes24Hex(prevFlags.current);
+                const payload = { address, domain: currentDomain, expiry: prevExpiry.current, flagsHex };
+                setSignature(await generateSignature(payload, prevPrivateKeyPEM.current));
             } catch (err) {
                 showMessage(buildNegativeMsg({
                     code: err.code,
@@ -110,34 +115,44 @@ const DeploymentForm = ({ initInputs }) => {
                     msg: err.message
                 }));
             }
-        } else if (!domain || !expiry) {
+        } else if (!currentDomain || !prevExpiry.current) {
             setSignature('');
         }
-    }, [privateKeyPEM, contractAddress, expiry, flags, getCurrentDomain, showMessage, initInputs, web3]);
+    }, [futureContractAddress, showMessage, web3]);
 
-    const makeDeploymentTx = useCallback(async () => {
+    const handleLoseDomainInputFocus = () => {
+        if (fingerprint) {
+            setFingerprint(defaultFingerprint)
+        }
+        computeSignature(currentDomain);
+        
+    }
+
+    const makeDeploymentTx = useCallback(async (currentDomain) => {
         return await new web3.eth.Contract(TeSC.abi).deploy({
             data: TeSC.bytecode,
-            arguments: [getCurrentDomain(), expiry, flagsToBytes24Hex(flags), padToBytesX(fingerprint, 32), signature]
+            arguments: [currentDomain, prevExpiry.current, flagsToBytes24Hex(prevFlags.current), padToBytesX(prevFingerprint.current, 32), prevSignature.current]
         });
-    }, [expiry, flags, signature, fingerprint, web3.eth.Contract, getCurrentDomain]);
+    }, [web3.eth.Contract]);
 
-    const makeUpdateTx = useCallback(async () => {
+    const makeUpdateTx = useCallback(async (currentDomain) => {
         return await new web3.eth.Contract(TeSC.abi, contractAddress).methods.setEndorsement(
-            getCurrentDomain(),
-            expiry,
-            flagsToBytes24Hex(flags),
-            padToBytesX(fingerprint),
-            signature
+            currentDomain,
+            prevExpiry.current,
+            flagsToBytes24Hex(prevFlags.current),
+            padToBytesX(prevFingerprint.current),
+            prevSignature.current
         );
-    }, [contractAddress, expiry, flags, signature, fingerprint, getCurrentDomain, web3.eth.Contract]);
+    }, [contractAddress, web3.eth.Contract]);
     
-    const handleFlagsChange = (i) => {
+    const handleFlagsChange = (i, selected) => {
         const newFlags = new BitSet(flags.flip(i).toString());
         setFlags(newFlags);
-        if (i === FLAG_POSITIONS.DOMAIN_HASHED) {
-            if (domain) {
-                setDomainHashed(web3.utils.sha3(domain).substring(2));
+        if (i === FLAGS.DOMAIN_HASHED) {
+            if (domain && !selected) {
+                setCurrentDomain(web3.utils.sha3(domain).substring(2));
+            } else {
+                setCurrentDomain(domain)
             }
         }
     };
@@ -161,36 +176,60 @@ const DeploymentForm = ({ initInputs }) => {
         (async () => {
             if (!futureContractAddress) {
                 setFutureContractAddress(await predictContractAddress(web3));
+                console.log(1)
             }
             if (expiry !== prevExpiry.current) {
                 prevExpiry.current = expiry;
+                if (privateKeyPEM) computeSignature(currentDomain);
+                console.log(2)
 
             } else if (flags.toString() !== prevFlags.current) {
                 prevFlags.current = flags.toString();
+                if (privateKeyPEM) computeSignature(currentDomain);
+                console.log(3)
+
+            } else if (privateKeyPEM !== prevPrivateKeyPEM.current) {
+                prevPrivateKeyPEM.current = privateKeyPEM;
+                computeSignature(currentDomain);
 
             } else if (signature !== prevSignature.current || fingerprint !== prevFingerprint.current) {
+                if (signature !== prevSignature.current) {
+                    prevSignature.current = signature;
+                    console.log(4)
+                }
+                else if (fingerprint !== prevFingerprint.current)
+                    prevFingerprint.current = fingerprint;
+
                 if (signature) {
-                    const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx();
+                    console.log(5)
+                    const tx = !initInputs ? await makeDeploymentTx(currentDomain) : await makeUpdateTx(currentDomain);
                     if (!initInputs || contractAddress) {
                         const estCost = await estimateDeploymentCost(web3, tx);
                         setCostEstimated(estCost);
                     }
                 }
 
-                if (signature !== prevSignature.current)
-                    prevSignature.current = signature;
-                else if (fingerprint !== prevFingerprint.current)
-                    prevFingerprint.current = fingerprint;
-
-            } else if (privateKeyPEM !== prevPrivateKeyPEM.current) {
-                prevPrivateKeyPEM.current = prevPrivateKeyPEM;
-            }
+            } 
         })();
-        if (privateKeyPEM) {
-            computeSignature();
+    }, [currentDomain, expiry, contractAddress, futureContractAddress, flags, signature, privateKeyPEM, computeSignature,
+        fingerprint, makeDeploymentTx, initInputs, makeUpdateTx, web3]);
+
+
+    const validateEndorsement = async () => {
+        try {
+            const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/predeploy/validate`, {
+                params: { 
+                    domain,
+                    claim: getClaimString(), 
+                    signature
+                }
+            });
+
+            console.log(res.status);
+        } catch (err) {
+            throw err;
         }
-    }, [expiry, contractAddress, futureContractAddress, flags, signature, domain, privateKeyPEM, computeSignature,
-        fingerprint, getCurrentDomain, makeDeploymentTx, initInputs, makeUpdateTx, web3]);
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -199,13 +238,12 @@ const DeploymentForm = ({ initInputs }) => {
 
         showMessage(null);
 
-        const account = web3.currentProvider.selectedAddress;
-        const curDomain = getCurrentDomain();
-
         let success = false;
-        if (curDomain && expiry && signature) {
+        if (currentDomain && expiry && signature) {
             try {
-                const tx = !initInputs ? await makeDeploymentTx() : await makeUpdateTx();
+                await validateEndorsement();
+                const tx = !initInputs ? await makeDeploymentTx(currentDomain) : await makeUpdateTx(currentDomain);
+                console.log("tx", tx)
                 await tx.send({ from: account, gas: '2000000' })
                     .on('receipt', async (txReceipt) => {
                         setCostPaid(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether'));
@@ -224,24 +262,24 @@ const DeploymentForm = ({ initInputs }) => {
                             account,
                             claim: { 
                                 contractAddress: initInputs? contractAddress : txReceipt.contractAddress, 
-                                domain: curDomain, 
+                                domain: currentDomain, 
                                 expiry 
                             }
                         });
                     });
 
-            } catch (err) {
+            } catch (error) {
                 showMessage(buildNegativeMsg({
-                    code: err.code,
+                    code: error.code,
                     header: 'Unable to deploy Smart Contract',
-                    msg: err.message
+                    msg: extractAxiosErrorMessage({ error, subject: domain })
                 }));
-                console.log(err);
+                console.log(error);
             }
         } else {
             showMessage(buildNegativeMsg({
                 header: 'Unable to deploy Smart Contract',
-                msg: `${!curDomain ? 'Domain' : !expiry ? 'Expiry' : !signature ? 'Signature' : 'Some required input'} is empty`
+                msg: `${!currentDomain ? 'Domain' : !expiry ? 'Expiry' : !signature ? 'Signature' : 'Some required input'} is empty`
             }));
         }
         handleBlockScreen(false);
@@ -252,13 +290,13 @@ const DeploymentForm = ({ initInputs }) => {
     };
 
     const renderFlagCheckboxes = () => {
-        return Object.entries(FLAG_POSITIONS).filter(([flagName, i]) => i === 0).map(([flagName, i]) =>
+        return Object.entries(FLAGS).filter(([flagName, i]) => i === 0).map(([flagName, i]) =>
                 <Form.Checkbox
                     key={i}
                     checked={!!flags.get(i)}
                     // label={flagName}
                     label='Hash domain'
-                    onClick={() => handleFlagsChange(i)}
+                    onClick={() => handleFlagsChange(i, !!flags.get(i))}
                     disabled={(!initInputs && (!domain)) || (initInputs && !isMatchedOriginalDomain)}
                     slider
                 />
@@ -267,8 +305,9 @@ const DeploymentForm = ({ initInputs }) => {
 
     const handleEnterOriginalDomain = (originalDomain) => {
         setDomain(originalDomain);
-        if (originalDomain && web3.utils.sha3(originalDomain).substring(2) === domainHashed) {
+        if (originalDomain && web3.utils.sha3(originalDomain).substring(2) === currentDomain) {
             setIsMatchedOriginalDomain(true);
+            onMatchOriginalDomain(originalDomain);
         }
     };
 
@@ -282,29 +321,59 @@ const DeploymentForm = ({ initInputs }) => {
 
     const handleTextCopy = (e) => {
         e.preventDefault();
-        navigator.clipboard.writeText(`echo -n ${futureContractAddress}.${getCurrentDomain()}.${expiry}.${flagsToBytes24Hex(flags)} | openssl dgst -RSA-SHA256 -sign <path_to_private_key_file> | openssl base64 | cat`);
+        navigator.clipboard.writeText(`echo -n ${getClaimString()} | openssl dgst -RSA-SHA256 -sign <path_to_private_key_file> | openssl base64 | cat`);
     };
 
+    const shouldDisplayOriginalDomainStep = () => {
+        return initInputs && flags.get(FLAGS.DOMAIN_HASHED) && !typedInDomain && !isMatchedOriginalDomain
+    }
+
+    const getSteps = () => {
+        return [
+            `${initInputs ? 'Change' : 'Create'} Claim`, 
+            `${initInputs ? 'Change' : 'Create'} Signature`, 
+            `${initInputs ? 'Change' : 'Add'} Certificate Fingerprint`, 
+            `Review and ${initInputs ? 'Update' : 'Deploy'}`, 
+            'Receipt'
+        ];
+    }
 
     const classes = useStyles();
     const [activeStep, setActiveStep] = React.useState(0);
     const steps = getSteps();
+    
+    const renderOriginalDomainInput = () => {
+        return (
+            <div raised padded='very' color='purple' style={{margin: '1% 5%'}}>
+                <div style={{marginBottom: '30px'}}>
+                    <b style={{color: '#A333C8', fontSize: '1.28571429rem'}} >
+                        Enter Original Domain
+                    </b>
+                    <Popup
+                        inverted
+                        content={`The original plaintext domain that is hashed to the hash ${currentDomain} (required)`}
+                        trigger={<Icon name='question circle' />}
+                    />
+                </div>
+                <Input
+                    label={{ content: 'Original Domain', color: 'purple' }}
+                    value={domain}
+                    placeholder='www.mysite.com'
+                    onChange={e => handleEnterOriginalDomain(e.target.value)}
+                    icon='world'
+                    style={{marginTop: '12px', width: '100%'}}
+                />
+            </div>
+        )
+    }
 
-    function getStepContent(step) {
+    const getStepContent = (step) => {
         switch (step) {
             case 0:
                 return {
                     component: (
                         <Fragment>
-                        {/* <div style={{fontSize:'1.2em'}}>
-                            <p>{'In this step, you could provide information to compute the claim of the form <contract_address>.<domain>.<expiry><flags>'}</p>
-                            <ul>
-                                <li>{`contract_address: This will be automatically computed in advanced for you using the current nonce of your wallet`}</li>
-                                <li>{`domain: The domain to the website you would like to bind with this TLS-endorsed Smart Contract`}</li>
-                                <li>{`expiry: The expiry date, on which this TeSC is expired, stored as Unix timestamp`}</li>
-                                <li>{`flags: Currently only we only support a single flag to hash the provided domain input for your privacy`}</li>
-                            </ul>
-                        </div> */}
+                            <Header as='h3' content={getSteps()[step]} style={{marginBottom: '30px'}} color='purple'/>
                             <Form.Field>
                                 <p>
                                     <b>Contract address: </b>
@@ -316,7 +385,6 @@ const DeploymentForm = ({ initInputs }) => {
                                     />
                                     
                                 </p>
-                                {/* <Label color='black' >{futureContractAddress}</Label> */}
                             </Form.Field>
 
                             <Form.Field>
@@ -329,11 +397,11 @@ const DeploymentForm = ({ initInputs }) => {
                                     />
                                 </label>
                                 <Input
-                                    value={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED) ? domainHashed : domain}
-                                    disabled={!!flags.get(FLAG_POSITIONS.DOMAIN_HASHED)}
+                                    value={currentDomain}
+                                    disabled={!!flags.get(FLAGS.DOMAIN_HASHED)}
                                     placeholder='www.mysite.com'
-                                    onChange={e => setDomain(e.target.value)}
-                                    onBlur={() => computeSignature()}
+                                    onChange={e => {setDomain(e.target.value); setCurrentDomain(e.target.value)}}
+                                    onBlur={() => handleLoseDomainInputFocus()}
                                     icon='world'
                                 />
                             </Form.Field>
@@ -353,7 +421,7 @@ const DeploymentForm = ({ initInputs }) => {
                                 </label>
                                 <DayPickerInput
                                     value={expiry ? formatDate(new Date(expiry * 1000), 'DD/MM/YYYY') : null}
-                                    onBlur={() => computeSignature()}
+                                    onBlur={() => computeSignature(currentDomain)}
                                     onDayChange={handleExpiryChange}
                                     format="DD/MM/YYYY"
                                     formatDate={formatDate}
@@ -371,13 +439,15 @@ const DeploymentForm = ({ initInputs }) => {
                             </Form.Field>
                         </Fragment>
                     ),
-                    completed: initInputs? (getCurrentDomain() !== initInputs.domain) || (expiry !== initInputs.expiry) : !!getCurrentDomain() && !!expiry ,
-                    reachable: true
+                    completed: initInputs? (currentDomain !== initInputs.domain) || (expiry !== initInputs.expiry) : !!currentDomain && !!expiry ,
+                    reachable: initInputs && currentDomain? isMatchedOriginalDomain: true
                 };
             case 1:
                 return {
                     component: (
                         <Fragment>
+                            <Header as='h3' content='Create Signature' style={{marginBottom: '30px'}} color='purple'/>
+
                             <p>
                                 <b>Signature</b> <span style={{ color: 'red' }}>*</span>
                                 <Popup
@@ -418,7 +488,7 @@ const DeploymentForm = ({ initInputs }) => {
                                         <FilePicker
                                             label='Choose certificate  key'
                                             onPickFile={handlePickPrivateKey}
-                                            isDisabled={!getCurrentDomain() || !expiry}
+                                            isDisabled={!currentDomain || !expiry}
                                             input={{fileName:privateKeyFileName, content: privateKeyPEM}}
                                         />
                                     </div>
@@ -445,7 +515,7 @@ const DeploymentForm = ({ initInputs }) => {
                                                 />}
                                             />
                                             <span>
-                                                echo -n {`${futureContractAddress}.${getCurrentDomain()}.${expiry}.${flagsToBytes24Hex(flags)}`} |
+                                                echo -n {getClaimString()} |
                                                 openssl dgst -RSA-SHA256 -sign <span style={{ color: 'magenta' }}>{'<path_to_private_key_file>'}</span> | openssl base64 | cat
                                             </span>
                                         </Label>
@@ -464,25 +534,29 @@ const DeploymentForm = ({ initInputs }) => {
                         </Fragment>
                     ),
                     completed: !!signature,
-                    reachable: initInputs? getStepContent(0).completed : !!signature || getStepContent(0).completed 
+                    reachable: initInputs? getStepContent(step - 1).completed : !!signature || getStepContent(step - 1).completed 
                 };
             case 2:
                 return {
                     component: (
-                        <FingerprintSegment
-                            inputs={{ contractAddress, domain, expiry, flags, signature, fingerprint: initInputs ? initInputs.fingerprint : fingerprint }}
-                            onGetFingerprint={handleGetFingerprint}
-                        />
+                        <Fragment>
+                            <Header as='h3' content='Add Certificate Fingerprint' style={{marginBottom: '30px'}} color='purple'/>
+                            <FingerprintSegment
+                                inputs={{ contractAddress, domain, expiry, flags, signature, fingerprint }}
+                                onGetFingerprint={handleGetFingerprint}
+                            />
+                        </Fragment>
                     ),
-                    completed: getStepContent(0).completed && getStepContent(1).completed,
-                    reachable: (getStepContent(0).completed && getStepContent(1).completed) || getStepContent(1).reachable
+                    completed: getStepContent(step - 2).completed && getStepContent(step - 1).completed,
+                    reachable: (getStepContent(step - 2).completed && getStepContent(step - 1).completed) || getStepContent(step - 1).reachable
                 };
             case 3:
                 return {
                     component: (
                         <Fragment>
+                            <Header as='h3' content='Review and Deploy' style={{marginBottom: '30px'}} color='purple'/>
                             <TescDataTable
-                                data={{ contractAddress, domain: getCurrentDomain(), expiry, flags, signature, fingerprint }}
+                                data={{ contractAddress, domain: currentDomain, expiry, flags, signature, fingerprint }}
                             />
                             {!!costEstimated && !!signature && (
                                 <div style={{ float: 'right'}}>
@@ -495,25 +569,30 @@ const DeploymentForm = ({ initInputs }) => {
                         </Fragment>
                     ),
                     completed: !!costPaid,
-                    reachable: getStepContent(1).completed || !!costPaid  
+                    reachable: getStepContent(step - 2).completed || !!costPaid  
                 };
             case 4:
                 return {
-                    component: costPaid && (
-                        <Grid.Row style={{ minWidth: 'max-content', paddingTop: '2%' }}>
-                            <DeploymentOutput contractAddress={contractAddress} costPaid={costPaid} />
-                        </Grid.Row>
+                    component: (
+                        <Fragment>
+                            <Header as='h3' content='Receipt' style={{marginBottom: '30px'}} color='purple'/>
+                            {costPaid && 
+                                <Grid.Row style={{ minWidth: 'max-content', paddingTop: '2%' }}>
+                                    <DeploymentOutput contractAddress={contractAddress} costPaid={costPaid} />
+                                </Grid.Row>
+                            }
+                            
+
+                        </Fragment>
                     ),
-                    completed: getStepContent(3).completed,
-                    reachable: getStepContent(3).completed
+                    completed: getStepContent(step - 1).completed,
+                    reachable: getStepContent(step - 1).completed
                 };
 
             default:
                 return 'Unknown step';
         }
     }
-
-
 
     const isStepOptional = (step) => {
         return step === 2;
@@ -552,7 +631,7 @@ const DeploymentForm = ({ initInputs }) => {
         setContractAddress('');
         setFutureContractAddress('');
         setDomain('');
-        setDomainHashed('');
+        setCurrentDomain('');
         setExpiry(null);
         setFlags(new BitSet('0x00'));
         setSignature('');
@@ -569,83 +648,90 @@ const DeploymentForm = ({ initInputs }) => {
 
     return (
         <React.Fragment>
-            <div className={classes.root}>
-                <Stepper alternativeLabel nonLinear activeStep={activeStep}>
-                    {steps.map((label, index) => {
-                        const stepProps = {};
-                        const buttonProps = {};
-                        if (isStepOptional(index)) {
-                            buttonProps.optional = <Typography variant="caption">Optional</Typography>;
-                        }
-                        return (
-                            <Step key={label} {...stepProps}>
-                                <StepButton
-                                    onClick={handleStep(index)}
-                                    completed={getStepContent(index).completed}
-                                    disabled={!getStepContent(index).reachable}
-                                    {...buttonProps}
-                                >
-                                    {label}
-                                </StepButton>
-                            </Step>
-                        );
-                    })}
-                </Stepper>
-                <Grid relaxed style={{ width: '70%', margin: '0 auto' }}>
-                    <Grid.Column>
-                        <Grid.Row style={{ paddingBottom: '5%', margin: '0 auto' }}>
-                            <Form>
-                                <Segment raised padded='very' color='purple'>
-                                    {getStepContent(activeStep).component}
-                                </Segment>
-                            </Form>
+            {!shouldDisplayOriginalDomainStep() ? (
+                <div className={classes.root}>
+                    <Stepper alternativeLabel nonLinear activeStep={activeStep} style={{ background: 'none' }}>
+                        {steps.map((label, index) => {
+                            const stepProps = {};
+                            const buttonProps = {};
+                            if (isStepOptional(index)) {
+                                buttonProps.optional = <Typography variant="caption" style={{ fontSize: '0.9em' }}>Optional</Typography>;
+                            }
+                            return (
+                                <Step key={label} {...stepProps}>
+                                    <StepButton
+                                        onClick={handleStep(index)}
+                                        completed={getStepContent(index).completed}
+                                        disabled={!getStepContent(index).reachable}
+                                        {...buttonProps}
+                                    >
+                                        <span style={{ fontSize: '1.2em' }}>{label}</span>
+                                    </StepButton>
+                                </Step>
+                            );
+                        })}
+                    </Stepper>
+                    <Grid relaxed style={{ width: '70%', margin: '0 auto' }}>
+                        <Grid.Column>
+                            <Grid.Row style={{ paddingBottom: '5%', margin: '0 auto' }}>
+                                <Form>
+                                    <Segment raised padded='very' color='purple'>
+                                        {getStepContent(activeStep).component}
+                                    </Segment>
+                                </Form>
 
-                            <div className={classes.actionsContainer} style={{ float: 'right', height: 'min-content', padding: '1.5% 0' }}>
-                                {costPaid && !initInputs && (
+                                <div className={classes.actionsContainer} style={{ float: 'right', height: 'min-content', padding: '1.5% 0' }}>
+                                    {costPaid && !initInputs && (
+                                        <BtnSuir
+                                            basic
+                                            onClick={handleReset}
+                                            primary
+                                        >
+                                            Deploy another TeSC
+                                        </BtnSuir>
+                                    )}
                                     <BtnSuir
                                         basic
-                                        onClick={handleReset}
-                                        className={classes.button}
-                                        primary
+                                        disabled={activeStep === 0}
+                                        onClick={handleBack}
                                     >
-                                        Deploy another TeSC
-                                    </BtnSuir>
-                                )}
-                                <BtnSuir
-                                    basic
-                                    disabled={activeStep === 0}
-                                    onClick={handleBack}
-                                >
-                                    Back
+                                        Back
                                 </BtnSuir>
 
-                                {((activeStep < 3 && !costPaid) || (activeStep <= 3 && costPaid)) && (
-                                    <BtnSuir
-                                        basic
-                                        color="purple"
-                                        disabled={!getStepContent(activeStep).completed}
-                                        onClick={handleNext}
-                                    >
-                                        Next
-                                    </BtnSuir>
-                                )}
-                                {activeStep === 3 && !costPaid && (
-                                    <BtnSuir
-                                        icon='play circle'
-                                        basic
-                                        onClick={handleSubmit}
-                                        disabled={!signature || !privateKeyPEM}
-                                        positive
-                                        content={!initInputs ? 'Deploy' : 'Update'}
-                                    />
-                                )
-                                }
-                            </div>
-                        </Grid.Row>
+                                    {((activeStep < 3 && !costPaid) || (activeStep <= 3 && costPaid)) && (
+                                        <BtnSuir
+                                            basic
+                                            color="purple"
+                                            disabled={!getStepContent(activeStep).completed}
+                                            onClick={handleNext}
+                                        >
+                                            Next
+                                        </BtnSuir>
+                                    )}
+                                    {activeStep === 3 && !costPaid && (
+                                        <BtnSuir
+                                            icon='play circle'
+                                            basic
+                                            onClick={handleSubmit}
+                                            disabled={!signature || !privateKeyPEM}
+                                            positive
+                                            content={!initInputs ? 'Deploy' : 'Update'}
+                                        />
+                                    )
+                                    }
+                                </div>
+                            </Grid.Row>
 
-                    </Grid.Column>
-                </Grid>
-            </div>
+                        </Grid.Column>
+                    </Grid>
+                </div>
+            ) : 
+                (
+                    <Fragment>
+                        {renderOriginalDomainInput()}
+                    </Fragment>
+                )
+            }
         </React.Fragment>
     );
 };

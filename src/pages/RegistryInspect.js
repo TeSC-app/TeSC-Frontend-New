@@ -1,83 +1,93 @@
-import React, { useContext, useState, useEffect } from 'react'
-import { Table, Icon } from 'semantic-ui-react';
+import React, { useContext, useEffect, useState, useCallback } from 'react'
+import { Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
-import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
-import moment from 'moment'
 import SearchBox from '../components/SearchBox';
+import PageHeader from '../components/PageHeader';
+import TableOverview from '../components/TableOverview';
+import axios from 'axios'
+import moment from 'moment'
 
-function RegistryInspect() {
-    const { web3 } = useContext(AppContext);
-    const [contractRegistry, setContractRegistry] = useState(undefined);
+function RegistryInspect(props) {
+    const { contractRegistry } = props
+    const { web3, loadStorage } = useContext(AppContext);
     const [domain, setDomain] = useState('')
-    const [entries, setEntries] = useState([])
-    const [submitted, setSubmitted] = useState(false)
+    const [entries, setEntries] = useState(null)
+    const [loading, setLoading] = useState(false)
 
-    useEffect(() => {
-        const init = async () => {
-            try {
-                const contractRegistry = new web3.eth.Contract(
-                    TeSCRegistry.abi,
-                    process.env.REACT_APP_REGISTRY_ADDRESS,
-                );
-                setContractRegistry(contractRegistry);
-            }
-            catch (error) {
-                console.error(error);
+    //add createdAt and isFavourite prop to objects retrieved from the backend - compares with localStorage values
+    const updateCreatedAtAndFavouritesForRegistryInspectEntries = useCallback((newTesc) => {
+        const tescsLocalStorage = loadStorage() ? loadStorage() : []
+        let isIdentical = false;
+        for (const tesc of tescsLocalStorage) {
+            if (tesc.contractAddress === newTesc.contractAddress) {
+                isIdentical = true
+                return { isFavourite: tesc.isFavourite, createdAt: tesc.createdAt }
             }
         }
-        init()
-    }, [web3.eth.Contract, web3.eth.net])
+        if (!isIdentical) return { isFavourite: false, createdAt: moment().format('DD/MM/YYYY HH:mm') }
+    }, [loadStorage])
+
+    useEffect(() => {
+        (async () => {
+            try {
+                setLoading(true)
+                const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/registry`);
+                //for each object key that is an array get the values associated to that key and out of these values build an array of objects
+                const registryEntries = Object.keys(response.data['registryEntries'])
+                    .map(domain => Object.values(response.data['registryEntries'][domain])
+                        .map(({ contract }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, createdAt: moment().format('DD/MM/YYYY HH:mm') })))
+                    .flat()
+                if(response.status === 200) {
+                    //console.log(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })))
+                    setEntries(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry))
+                } else {
+                    setEntries([])
+                }
+                setLoading(false)
+            } catch (error) {
+                console.log(error);
+            }
+        })();
+    }, [updateCreatedAtAndFavouritesForRegistryInspectEntries])
+
 
     const handleInput = domain => {
-        setSubmitted(false);
         setDomain(domain);
     }
 
     const handleSubmit = async () => {
-        const contractAddresses = await contractRegistry.methods.getContractsFromDomain(domain).call();
-        const contractInstances = [];
-        //generate contracts out of the ERCXXX interface using the contract addresses so that the getExpiry method can be used
-        for (let i = 0; i < contractAddresses.length; i++) {
-            const contractInstance = new web3.eth.Contract(
-                ERCXXX.abi,
-                contractAddresses[i],
-            )
-            const expiry = await contractInstance.methods.getExpiry().call()
-            //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
-            contractInstances.push({ address: contractAddresses[i], expiry: expiry })
+        setLoading(true)
+        setEntries(null);
+        try {
+            const contractAddresses = await contractRegistry.methods.getContractsFromDomain(domain).call();
+            const contractInstances = [];
+            //generate contracts out of the ERCXXX interface using the contract addresses so that the getExpiry method can be used
+            for (let i = 0; i < contractAddresses.length; i++) {
+                const contractInstance = new web3.eth.Contract(
+                    ERCXXX.abi,
+                    contractAddresses[i],
+                )
+                const expiry = await contractInstance.methods.getExpiry().call()
+                //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
+                contractInstances.push({ contractAddress: contractAddresses[i], domain, expiry })
+            }
+            setEntries(contractInstances);
+            setLoading(false)
+        } catch (err) {
+            setLoading(false)
         }
-        setEntries(contractInstances);
-        setSubmitted(true)
     }
 
+
     const renderTable = () => {
-        if (entries.length > 0 && submitted) {
+        if (entries && entries.length > 0 && !loading) {
             return (
-                <Table>
-                    <Table.Header>
-                        <Table.Row>
-                            <Table.HeaderCell>Address</Table.HeaderCell>
-                            <Table.HeaderCell>Expiry</Table.HeaderCell>
-                            <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
-                        </Table.Row>
-                    </Table.Header>
-                    <Table.Body>
-                        {
-                            entries.map((contractInstance) => (
-                                <Table.Row key={contractInstance.address}>
-                                    <Table.Cell>{contractInstance.address}</Table.Cell>
-                                    <Table.Cell>{moment.unix(parseInt(contractInstance.expiry)).format('DD/MM/YYYY')}</Table.Cell>
-                                    <Table.Cell textAlign="center">
-                                        <Icon name="check" color="green" circular />
-                                    </Table.Cell>
-                                </Table.Row>
-                            ))
-                        }
-                    </Table.Body>
-                </Table>
+                <div style={{justifyContent: 'center'}}>
+                    <TableOverview rowData={entries} isRegistryInspect={true} />
+                </div>
             )
-        } else if (entries.length === 0 && submitted) {
+        } else if (entries && entries.length === 0 && !loading) {
             return (
                 <div className="ui placeholder segment">
                     <div className="ui icon header">
@@ -86,12 +96,21 @@ function RegistryInspect() {
                 </div>
                 </div>
             )
+        } else if (loading) {
+            return (
+                <Segment>
+                    <Dimmer active={loading} inverted>
+                        <Loader size='large'>Loading results</Loader>
+                    </Dimmer>
+                    <Image src='https://react.semantic-ui.com/images/wireframe/paragraph.png' />
+                </Segment>
+            )
         }
     }
 
     return (
         <div>
-            <h2>Explore TeSC Registry</h2>
+            <PageHeader title='Explore TeSC Registry' />
             {/* Smart Contracts associated with Domain */}
             <SearchBox
                 onChange={handleInput}
