@@ -10,9 +10,8 @@ interface TeSCRegistry {
 
     // @notice Adds a new entry to the registry
     // @dev Deploy endorsed contract and set its values before adding it to the registry
-    // @param _domain The hash of the domain that the endorsed contract is linked to
     // @param _contractAddr The address of the endorsed contract
-    function add(string calldata _domain, address _contractAddr) external;
+    function add(address _contractAddr) external;
 
     // @notice Removes an entry from the registry
     // @dev The call must be invoked from the account that added the entry

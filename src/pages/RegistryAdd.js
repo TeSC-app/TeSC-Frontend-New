@@ -1,7 +1,6 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react'
 import { Button, Grid, Icon, Label, Table } from 'semantic-ui-react';
 import AppContext from '../appContext';
-import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import ERCXXXImplementation from '../ethereum/build/contracts/ERCXXXImplementation.json';
 import { buildNegativeMsg, buildPositiveMsg } from "../components/FeedbackMessage";
 import {
@@ -12,11 +11,10 @@ import SearchBox from '../components/SearchBox';
 import PageHeader from '../components/PageHeader';
 
 function RegistryAdd(props) {
-    const { selectedAccount, handleBlockScreen } = props
+    const { selectedAccount, handleBlockScreen, contractRegistry } = props
     const { web3, showMessage } = useContext(AppContext)
     const [contractAddress, setContractAddress] = useState('')
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0)
-    const [contractRegistry, setContractRegistry] = useState(undefined)
     const [tescContractOwner, setTescContractOwner] = useState(undefined)
     const [isContractRegistered, setIsContractRegistered] = useState(true)
     const [tescDomain, setTescDomain] = useState('')
@@ -24,6 +22,7 @@ function RegistryAdd(props) {
     const [validInput, setValidInput] = useState(false)
     const [inconsistentAddress, setInconsistentAddress] = useState(false)
     const [submitted, setSubmitted] = useState(false)
+    const [added, setAdded] = useState(false)
 
     const clearValues = () => {
         setValidInput(false)
@@ -33,11 +32,6 @@ function RegistryAdd(props) {
     }
 
     const checkInput = useCallback(async (account) => {
-        const contractRegistry = new web3.eth.Contract(
-            TeSCRegistry.abi,
-            process.env.REACT_APP_REGISTRY_ADDRESS,
-        );
-        setContractRegistry(contractRegistry)
         try {
             const tescContract = new web3.eth.Contract(ERCXXXImplementation.abi, contractAddress)
             if (tescContract && contractAddress.length === 42 && tescContract._address) {
@@ -52,7 +46,7 @@ function RegistryAdd(props) {
                 setInconsistentAddress(tescContractOwner !== account)
                 if (tescDomain && tescContractOwner && tescContractOwner === account && !isContractRegistered) {
                     setValidInput(true)
-                    const estCostAdd = await estimateRegistryAddCost(web3, account, contractRegistry, tescDomain, contractAddress);
+                    const estCostAdd = await estimateRegistryAddCost(web3, account, contractRegistry, contractAddress);
                     setCostEstimatedAdd(estCostAdd);
                 }
             } else {
@@ -61,7 +55,7 @@ function RegistryAdd(props) {
         } catch (error) {
             clearValues()
         }
-    }, [contractAddress, web3])
+    }, [contractAddress, web3, contractRegistry])
 
     //To predetermine the cost - only for valid input that would be able to be added to the registry
     useEffect(() => {
@@ -103,6 +97,7 @@ function RegistryAdd(props) {
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
                                 }))
                             })
+                        setAdded(true)
                     } else {
                         showMessage(buildNegativeMsg({
                             header: 'Unable to add entry to the registry',
@@ -173,11 +168,21 @@ function RegistryAdd(props) {
     }
 
     const renderExpiry = () => {
-        return expiry !== '' ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : 'Empty expiry'
+        return expiry !== '' ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : <Label as='span' basic className='error-registry-add'>Empty expiry</Label>
     }
 
     const renderDomain = () => {
-        return tescDomain !== '' ? tescDomain : 'Empty domain'
+        return tescDomain !== '' ? tescDomain : <Label as='span' basic className='error-registry-add'>Empty domain</Label>
+    }
+
+    const renderButton = () => {
+        return !added ? <Button disabled={!validInput} onClick={handleSubmit} floated='left' positive>Add entry</Button> : 'Entry added'
+    }
+
+    const renderCostEstimation = () => {
+        return (<Label as="span" tag className='cost-estimate-label-registry'>
+            {costEstimatedAdd.toFixed(5)} <span className='cost-estimate-currency'>ETH</span>
+        </Label>)
     }
 
     return (
@@ -214,10 +219,7 @@ function RegistryAdd(props) {
                                             <Table.Cell>
                                                 <b>Cost estimation</b>
                                             </Table.Cell>
-                                            <Table.Cell>
-                                                <Label as="span" tag className='cost-estimate-label-registry'>
-                                                    {costEstimatedAdd.toFixed(5)} <span className='cost-estimate-currency'>ETH</span>
-                                                </Label></Table.Cell>
+                                            <Table.Cell>{renderCostEstimation()}</Table.Cell>
                                         </Table.Row>
                                         <Table.Row>
                                             <Table.Cell>
@@ -232,7 +234,7 @@ function RegistryAdd(props) {
                                                 <b>Add TeSC</b>
                                             </Table.Cell>
                                             <Table.Cell>
-                                                <Button disabled={!validInput} onClick={handleSubmit} floated='left' positive>Add entry</Button>
+                                                {renderButton()}
                                             </Table.Cell>
                                         </Table.Row>
                                     </> : null

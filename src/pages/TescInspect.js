@@ -10,11 +10,10 @@ import SearchBox from "../components/SearchBox";
 import DeploymentForm from "../components/tescNew/DeploymentForm";
 import PageHeader from "../components/PageHeader";
 import TescDataTable from "../components/tesc/TescDataTable";
-import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import moment from 'moment';
 
 const TeSCInspect = ({ location }) => {
-    const { web3, showMessage } = useContext(AppContext);
+    const { web3, showMessage, loadStorage } = useContext(AppContext);
     const [contractAddress, setContractAddress] = useState('');
     const [contractOwner, setContractOwner] = useState('');
     const [domainFromChain, setDomainFromChain] = useState('');
@@ -27,17 +26,11 @@ const TeSCInspect = ({ location }) => {
     const [isPlainDomainSubmitted, setIsPlainDomainSubmitted] = useState(false);
     const [verifResult, setVerifResult] = useState(null);
     const [tescIsInFavourites, setTescsIsInFavourites] = useState(false);
-    const [tescs, setTescs] = useState(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
-    const [contractRegistry, setContractRegistry] = useState(null)
+    const [tescs, setTescs] = useState(loadStorage());
 
     useEffect(() => {
-        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
-        const contractRegistry = new web3.eth.Contract(
-            TeSCRegistry.abi,
-            process.env.REACT_APP_REGISTRY_ADDRESS,
-        );
-        setContractRegistry(contractRegistry)
-    }, [web3.currentProvider.selectedAddress, web3.eth.Contract]);
+        setTescs(loadStorage());
+    }, [loadStorage]);
     
     useEffect(() => {
         if(!!flags.get(FLAGS.DOMAIN_HASHED) && typedInDomain && web3.utils.sha3(typedInDomain).substring(2) === domainFromChain && !verifResult) {
@@ -78,8 +71,7 @@ const TeSCInspect = ({ location }) => {
     }, [contractAddress, showMessage, tescs, web3.eth.Contract]);
 
     const addRemoveFavourites = async (address) => {
-        let tescsNew;
-        tescs ? tescsNew = tescs : tescsNew = [];
+        let tescsNew = tescs ? tescs : [];
         let found = false;
         for (const tesc of tescsNew) {
             if (tesc.contractAddress === address) {
@@ -96,8 +88,7 @@ const TeSCInspect = ({ location }) => {
             }
         }
         if (!found) {
-            const isInRegistry = contractRegistry ? await contractRegistry.methods.isContractRegistered(address).call() : false
-            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false, isInRegistry, createdAt: moment().format('DD/MM/YYYY HH:mm:ss') });
+            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') });
             localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
             setTescsIsInFavourites(true);
         }
