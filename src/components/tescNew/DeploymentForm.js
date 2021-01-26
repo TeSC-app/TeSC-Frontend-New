@@ -237,7 +237,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                 await validateEndorsement();
                 const tx = !initInputs ? await makeDeploymentTx(currentDomain) : await makeUpdateTx(currentDomain);
                 console.log("tx", tx)
-                await tx.send({ from: account, gas: '2000000' })
+                await tx.send({ from: account, gas: '3000000' })
                     .on('receipt', async (txReceipt) => {
                         setCostPaid(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether'));
                         if(txReceipt.contractAddress) {

@@ -8,7 +8,7 @@ const TescDataTable = ({ data }) => {
     const { domain, expiry, flags, signature, fingerprint } = data;
 
     const renderFlagCheckboxes = () => {
-        return Object.entries(FLAGS).filter(([flagName, i]) => i === 0).map(([flagName, i]) => (
+        return Object.entries(FLAGS).filter(([flagName, i]) => [FLAGS.DOMAIN_HASHED, FLAGS.ALLOW_SUBENDORSEMENT].includes(i)).map(([flagName, i]) => (
             <div key={i} style={{ paddingBottom: '5px' }}>
                 <Checkbox
                     checked={!!flags.get(i)}
@@ -21,7 +21,7 @@ const TescDataTable = ({ data }) => {
     };
 
     return (
-        <Table basic='very' celled collapsing style={{margin: '0 auto'}}>
+        <Table basic='very' celled collapsing style={{ margin: '0 auto' }}>
             <Table.Body>
                 <Table.Row>
                     <Table.Cell>

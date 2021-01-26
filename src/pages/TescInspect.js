@@ -10,6 +10,7 @@ import SearchBox from "../components/SearchBox";
 import DeploymentForm from "../components/tescNew/DeploymentForm";
 import PageHeader from "../components/PageHeader";
 import TescDataTable from "../components/tesc/TescDataTable";
+import SubEndorsementAddition from "../components/tescInspect/SubEndorsementAddition";
 import moment from 'moment';
 
 const TeSCInspect = ({ location }) => {
@@ -31,9 +32,9 @@ const TeSCInspect = ({ location }) => {
     useEffect(() => {
         setTescs(loadStorage());
     }, [loadStorage]);
-    
+
     useEffect(() => {
-        if(!!flags.get(FLAGS.DOMAIN_HASHED) && typedInDomain && web3.utils.sha3(typedInDomain).substring(2) === domainFromChain && !verifResult) {
+        if (!!flags.get(FLAGS.DOMAIN_HASHED) && typedInDomain && web3.utils.sha3(typedInDomain).substring(2) === domainFromChain && !verifResult) {
             setIsPlainDomainSubmitted(true);
         }
     }, [typedInDomain, domainFromChain, flags, verifResult, web3.utils]);
@@ -178,15 +179,15 @@ const TeSCInspect = ({ location }) => {
             <PageHeader
                 title='Inspect TeSC'
             />
-                <SearchBox 
-                    value={contractAddress}
-                    label='TeSC Address'
-                    onChange={handleChangeAddress}
-                    placeholder='0x254dffcd3277c0b1660f6d42efbb754edababc2b'
-                    onSubmit={handleSubmitAddress}
-                    icon='search'
-                    validInput={true}
-                />
+            <SearchBox
+                value={contractAddress}
+                label='TeSC Address'
+                onChange={handleChangeAddress}
+                placeholder='Contract address e.g. 0x123456789abcdf...'
+                onSubmit={handleSubmitAddress}
+                icon='search'
+                validInput={true}
+            />
             <Grid style={{ margin: '0 auto' }}>
                 <Grid.Row>
                     {
@@ -254,58 +255,61 @@ const TeSCInspect = ({ location }) => {
                             )
                         }
                     </Grid.Column>
-
-                    {domainFromChain && expiry && signature && flags && (
+                </Grid.Row>
+                {domainFromChain && expiry && signature && flags && (
+                    <>
                         <Grid.Row style={{ width: `${1000 / 16}%` }}>
-                            {web3.currentProvider.selectedAddress === contractOwner && (
-                                <Grid.Column width={10} >
+                            <Grid.Column width={10} >
+                                {web3.currentProvider.selectedAddress === contractOwner && (
                                     <Modal
                                         closeIcon
                                         trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
                                         onClose={handleCloseTescUpdate}
-                                        style={{borderRadius: '20px', height: '80%', width: '75%'}}
+                                        style={{ borderRadius: '20px', height: '80%', width: '75%' }}
                                     >
-                                        <Modal.Header style={{borderTopLeftRadius: '15px', borderTopRightRadius: '15px'}}>
+                                        <Modal.Header style={{ borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
                                             Update TLS-endorsed Smart Contract
-                                        </Modal.Header>
-                                        <Modal.Content style={{borderBottomLeftRadius: '15px', borderBottomRightRadius: '15px'}}>
+                                            </Modal.Header>
+                                        <Modal.Content style={{ borderBottomLeftRadius: '15px', borderBottomRightRadius: '15px' }}>
                                             <DeploymentForm
-                                                initInputs={{ 
-                                                    contractAddress, 
-                                                    domain: domainFromChain, 
-                                                    expiry, flags, 
-                                                    signature, 
+                                                initInputs={{
+                                                    contractAddress,
+                                                    domain: domainFromChain,
+                                                    expiry, flags,
+                                                    signature,
                                                     fingerprint: fingerprint.substring(2),
                                                 }}
                                                 typedInDomain={typedInDomain}
                                                 onMatchOriginalDomain={setTypedInDomain}
                                             />
                                         </Modal.Content>
-                                        {/* <Dimmer active={true}>
-                                            <Loader indeterminate content='Waiting for transaction to finish...' />
-                                        </Dimmer> */}
                                     </Modal>
-                                </Grid.Column>
-                            )}
-                            <Grid.Column width={6}>
+                                )}
                                 <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
                                     trigger={
                                         <Button
                                             basic
                                             color='pink'
-                                            icon={tescIsInFavourites? 'heart' : 'heart outline'}
+                                            icon={tescIsInFavourites ? 'heart' : 'heart outline'}
                                             className={tescIsInFavourites ? "favourite" : "notFavourite"}
                                             onClick={() => addRemoveFavourites(contractAddress)}
                                             content={tescIsInFavourites ? 'Unfavourite' : 'Favourite'}
-                                            style={{ float: 'right'}}
-                                        />} />
+                                            style={{ float: 'right' }}
+                                        />}
+                                />
                             </Grid.Column>
                         </Grid.Row>
-                    )}
+                    </>
+                )}
+                <Grid.Row style={{ width: `${1000 / 16}%` }}>
+                    <Grid.Column width={10}>
+                        {!!flags.get(FLAGS.ALLOW_SUBENDORSEMENT) && contractAddress &&
+                            <SubEndorsementAddition contractAddress={contractAddress} />
+                        }
+                    </Grid.Column>
                 </Grid.Row>
-
             </Grid>
-        </div>
+        </div >
     );
 };
 
