@@ -84,14 +84,18 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const [isMetamaskOpen, setIsMetamaskOpen] = useState(false);
     const [isMatchedOriginalDomain, setIsMatchedOriginalDomain] = useState(typedInDomain ? true : false);
 
-
     const [sigInputType, setSigInputType] = useState(null);
+
+    const classes = useStyles();
+    const [activeStep, setActiveStep] = React.useState(0);
 
     const prevExpiry = useRef(expiry);
     const prevFlags = useRef(flags.toString());
     const prevSignature = useRef(signature);
     const prevFingerprint = useRef(fingerprint);
     const prevPrivateKeyPEM = useRef(privateKeyPEM);
+
+    
 
     const getClaimString = () => {
         return formatClaim({contractAddress: futureContractAddress, domain: currentDomain, expiry, flags: flagsToBytes24Hex(flags)})
@@ -145,17 +149,6 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         );
     }, [contractAddress, web3.eth.Contract]);
     
-    const handleFlagsChange = (i, selected) => {
-        const newFlags = new BitSet(flags.flip(i).toString());
-        setFlags(newFlags);
-        if (i === FLAGS.DOMAIN_HASHED) {
-            if (domain && !selected) {
-                setCurrentDomain(web3.utils.sha3(domain).substring(2));
-            } else {
-                setCurrentDomain(domain)
-            }
-        }
-    };
 
     const handlePickPrivateKey = (filename, content) => {
         setPrivateKeyFileName(filename);
@@ -289,19 +282,6 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         }
     };
 
-    const renderFlagCheckboxes = () => {
-        return Object.entries(FLAGS).filter(([flagName, i]) => i === 0).map(([flagName, i]) =>
-                <Form.Checkbox
-                    key={i}
-                    checked={!!flags.get(i)}
-                    // label={flagName}
-                    label='Hash domain'
-                    onClick={() => handleFlagsChange(i, !!flags.get(i))}
-                    disabled={(!initInputs && (!domain)) || (initInputs && !isMatchedOriginalDomain)}
-                    slider
-                />
-        );
-    };
 
     const handleEnterOriginalDomain = (originalDomain) => {
         setDomain(originalDomain);
@@ -338,9 +318,36 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         ];
     }
 
-    const classes = useStyles();
-    const [activeStep, setActiveStep] = React.useState(0);
-    const steps = getSteps();
+
+    const handleFlagsChange = (i, selected) => {
+        const newFlags = new BitSet(flags.flip(i).toString());
+        setFlags(newFlags);
+        if (i === FLAGS.DOMAIN_HASHED) {
+            if (domain && !selected) {
+                setCurrentDomain(web3.utils.sha3(domain).substring(2));
+            } else {
+                setCurrentDomain(domain)
+            }
+        }
+        console.log('newFlags', flagsToBytes24Hex(flags))
+    };
+
+    const renderFlagCheckboxes = () => {
+        const FLAGNAME_LABEL_MAPPING = {
+            'ALLOW_SUBENDORSEMENT': 'Allow Subendorsement'
+        }
+        return Object.entries(FLAGS).filter(([flagName, i]) => i=== FLAGS.ALLOW_SUBENDORSEMENT).map(([flagName, i]) =>
+                <Form.Checkbox
+                    key={i}
+                    checked={!!flags.get(i)}
+                    // label={flagName}
+                    label={FLAGNAME_LABEL_MAPPING[flagName]}
+                    onClick={() => handleFlagsChange(i, !!flags.get(i))}
+                    slider
+                    className='slider'
+                />
+        );
+    };
     
     const renderOriginalDomainInput = () => {
         return (
@@ -372,7 +379,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             case 0:
                 return {
                     component: (
-                        <Fragment>
+                        <>
                             <Header as='h3' content={getSteps()[step]} style={{marginBottom: '30px'}} color='purple'/>
                             <Form.Field>
                                 <p>
@@ -406,7 +413,13 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                 />
                             </Form.Field>
                             <Form.Field>
-                                {renderFlagCheckboxes()}
+                                <Form.Checkbox
+                                    checked={!!flags.get(FLAGS.DOMAIN_HASHED)}
+                                    label='Hash Domain'
+                                    onClick={() => handleFlagsChange(FLAGS.DOMAIN_HASHED, !!flags.get(FLAGS.DOMAIN_HASHED))}
+                                    disabled={(!initInputs && (!domain)) || (initInputs && !isMatchedOriginalDomain)}
+                                    slider
+                                />
                             </Form.Field>
 
 
@@ -437,7 +450,11 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                     component={props => <Input icon='calendar alternate outline' {...props} />}
                                 />
                             </Form.Field>
-                        </Fragment>
+
+                            <Form.Field>
+                                {renderFlagCheckboxes()}
+                            </Form.Field>
+                        </>
                     ),
                     completed: initInputs? (currentDomain !== initInputs.domain) || (expiry !== initInputs.expiry) : !!currentDomain && !!expiry ,
                     reachable: initInputs && currentDomain? isMatchedOriginalDomain: true
@@ -599,7 +616,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     };
 
     const allStepsCompleted = () => {
-        return getSteps.filter((step, i) => getStepContent(i).completed) === getSteps.length;
+        return getSteps().filter((step, i) => getStepContent(i).completed) === getSteps().length;
     };
 
     const isLastStep = () => {
@@ -612,7 +629,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             isLastStep() && !allStepsCompleted()
                 ? // It's the last step, but not all steps have been completed
                 // find the first step that has been completed
-                steps.findIndex((step, i) => !getStepContent(i).completed)
+                getSteps().findIndex((step, i) => !getStepContent(i).completed)
                 : activeStep + 1;
 
         setActiveStep(newActiveStep);
@@ -651,7 +668,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             {!shouldDisplayOriginalDomainStep() ? (
                 <div className={classes.root}>
                     <Stepper alternativeLabel nonLinear activeStep={activeStep} style={{ background: 'none' }}>
-                        {steps.map((label, index) => {
+                        {getSteps().map((label, index) => {
                             const stepProps = {};
                             const buttonProps = {};
                             if (isStepOptional(index)) {
