@@ -30,20 +30,26 @@ const SubEndorsementAddition = ({ contractAddress }) => {
 
     const handleChangeSubendorsementInputs = (newAddress, index) => {
         try {
-            const updatedSubendorsements = subendorsements.map((curAddress, i) => {
+            let last = subendorsements.length - 1;
+            let updatedSubendorsements = subendorsements.map((curAddress, i) => {
                 if (index === i) return newAddress;
                 return curAddress;
             });
 
-            if (newAddress === '' && index !== updatedSubendorsements.length - 1) {
-                setSubendorsements(updatedSubendorsements.slice(0, updatedSubendorsements.length - 1));
+            if (newAddress === '' && index !== last) {
+                updatedSubendorsements = updatedSubendorsements.slice(0, last);
+                last = updatedSubendorsements.length - 1;
+                setSubendorsements(updatedSubendorsements);
             } else if (newAddress) {
-                setSubendorsements(index === updatedSubendorsements.length - 1 ? [...updatedSubendorsements, ''] : updatedSubendorsements);
+                setSubendorsements(index === last ? [...updatedSubendorsements, ''] : updatedSubendorsements);
             }
 
-            if ((newAddress === '' && index === updatedSubendorsements.length - 1) || isValidContractAddress(newAddress, true)) {
-                setInvalidInputIndices(new Set([...invalidInputIndices].filter(i => i !== index)));
-                setInvalidInputReasons(({ index, ...rest }) => rest);
+            console.log('index', index);
+            console.log('last', last);
+            if ((newAddress === '' && index === last) || isValidContractAddress(newAddress, true)) {
+                console.log('updatedSubendorsements', updatedSubendorsements);
+                setInvalidInputIndices(new Set([...updatedSubendorsements].filter(i => i !== index)));
+                setInvalidInputReasons(Object.fromEntries(Object.entries(invalidInputReasons).filter((k, v) => k !== index)));
             }
 
         } catch (error) {
@@ -60,9 +66,9 @@ const SubEndorsementAddition = ({ contractAddress }) => {
             <Form.Field
 
             >
-                <label>Subendorsement <b>{i + 1}</b></label>
                 <Form.Input
                     value={subendorsements[i]}
+                    label={`Subendorsement ${i + 1}`}
                     placeholder='Contract address e.g. 0x123456789abcdf...'
                     onChange={e => handleChangeSubendorsementInputs(e.target.value, i)}
                     // onBlur={() => handleLoseDomainInputFocus()}
