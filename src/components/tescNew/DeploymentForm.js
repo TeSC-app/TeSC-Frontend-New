@@ -74,11 +74,14 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const [flags, setFlags] = useState(initInputs ? initInputs.flags : new BitSet('0x00'));
     const [currentDomain, setCurrentDomain] = useState(initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : domain);
     const [fingerprint, setFingerprint] = useState(defaultFingerprint);
+    const [tescAbi, setTescAbi] = useState([]);
+    const [tescBytecode, setTescBytecode] = useState('');
 
     const [privateKeyPEM, setPrivateKeyPEM] = useState('');
     const [privateKeyFileName, setPrivateKeyFileName] = useState('');
 
     const [solidityCode, setSolidityCode] = useState('');
+    const [endorsedSolidityCode, setEndorsedSolidityCode] = useState('');
     const [solidityFileName, setSolidityFileName] = useState('');
 
     const [costEstimated, setCostEstimated] = useState(null);
@@ -173,9 +176,9 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                 solidityCode: content
             }
         });
-        const compiled = compileRes.data.compiled;
+        const compileError = compileRes.data.compileError;
         
-        if(compiled){
+        if(!compileError){
             setSolidityCode(content);
             const contractsRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/contracts`, {
                 params: {
@@ -186,16 +189,38 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             setContractDropdownOptions(buildContractDropdownOptions(contractsInFile));
             setShowContractSelectionDropdown(true);
         }else{
-            // TODO show compile error messages
-            const compileError = compileRes.data.compileError;
+            // TODO show compile error messages (you picked an invalid sol file)
             console.log(compileError);
         }
   
     };
 
-    const handleContractSelected = (e, { name, value } ) => {
-        console.log(value);
-        console.log(solidityCode);
+    const handleContractSelected = async (e, { name, value } ) => {
+        const addInterfaceRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/addInterface`, {
+            params: {
+                solidityCode: solidityCode,
+                selectedContract: value
+            }
+        });
+        const solidityCodeWithInterface = addInterfaceRes.data.solidityCodeWithInterface;
+
+        const compileRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/compileAndGetJson`, {
+            params: {
+                solidityCode: solidityCodeWithInterface,
+                selectedContract: value
+            }
+        });
+        const json = compileRes.data.json;
+
+        if(json){
+            setEndorsedSolidityCode(solidityCodeWithInterface);
+            setTescAbi(json.abi);
+            setTescBytecode(json.bytecode);
+        }else{
+            // TODO handle compile error that occured after endorsement (sorry, there was a problem)
+            const compileError = compileRes.data.compileError;
+            console.log(compileError);
+        }
     }
 
     const buildContractDropdownOptions = (contractNames) => {
@@ -444,11 +469,18 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                         onChange={handleContractSelected}
                                         options={contractDropdownOptions}>
                                     </Dropdown>
+
+                                    {endorsedSolidityCode !== '' && (
+                                        <Segment inverted textAlign='left' style={{ wordBreak: 'keep-all'}}>
+                                            {endorsedSolidityCode}
+                                        </Segment>
+                                    )}
                                 </p>
                             )}
 
                         </Fragment>
-                    )
+                    ),
+                    completed: tescAbi !== [] && tescBytecode !== '' 
                 }
             case 1:
                 return {
