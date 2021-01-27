@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { Input, Loader, Icon, Label, Grid, Card, Form, Dimmer, Popup, Button, Modal } from 'semantic-ui-react';
+import { Input, Loader, Icon, Label, Grid, Card, Form, Dimmer, Popup, Button, Modal, Segment, Header } from 'semantic-ui-react';
 import BitSet from 'bitset';
 import axios from 'axios';
 import AppContext from '../appContext';
@@ -147,7 +147,7 @@ const TeSCInspect = ({ location }) => {
         try {
             isValidContractAddress(contractAddress, true);
             await fetchTescData(contractAddress);
-
+            await verifyTesc();
         } catch (err) {
             showMessage(buildNegativeMsg({
                 header: 'Invalid smart contract address',
@@ -162,11 +162,11 @@ const TeSCInspect = ({ location }) => {
         setIsPlainDomainSubmitted(true);
     };
 
-    const handleCloseTescUpdate = (e) => {
+    const handleCloseTescUpdate = async (e) => {
         showMessage(null);
         console.log("CONTRACT ADDRESS", contractAddress);
-        fetchTescData(contractAddress);
-        verifyTesc();
+        await fetchTescData(contractAddress);
+        await verifyTesc();
     };
 
 
@@ -190,16 +190,55 @@ const TeSCInspect = ({ location }) => {
             />
             <Grid style={{ margin: '0 auto' }}>
                 <Grid.Row>
-                    {
-                        domainFromChain && expiry && signature && flags &&
-                        (
-                            <Grid.Column width={10}>
+                    {domainFromChain && expiry && signature && flags && (
+                        <Grid.Column width={10}>
+                            <Segment style={{paddingBottom: '4em'}}>
+                                <Header as='h3' content='Contract Data' />
                                 <TescDataTable
                                     data={{ contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint }}
                                 />
-                            </Grid.Column>
-                        )
-                    }
+                                <div style={{marginTop: '0.5em'}}>
+                                    {web3.currentProvider.selectedAddress === contractOwner && (
+                                        <Modal
+                                            closeIcon
+                                            trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
+                                            onClose={handleCloseTescUpdate}
+                                            style={{ borderRadius: '20px', height: '80%', width: '75%' }}
+                                        >
+                                            <Modal.Header style={{ borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
+                                                Update TLS-endorsed Smart Contract
+                                            </Modal.Header>
+                                            <Modal.Content style={{ borderBottomLeftRadius: '15px', borderBottomRightRadius: '15px' }}>
+                                                <DeploymentForm
+                                                    initInputs={{
+                                                        contractAddress,
+                                                        domain: domainFromChain,
+                                                        expiry, flags,
+                                                        signature,
+                                                        fingerprint: fingerprint.substring(2),
+                                                    }}
+                                                    typedInDomain={typedInDomain}
+                                                    onMatchOriginalDomain={setTypedInDomain}
+                                                />
+                                            </Modal.Content>
+                                        </Modal>
+                                    )}
+                                    <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
+                                        trigger={
+                                            <Button
+                                                basic
+                                                color='pink'
+                                                icon={tescIsInFavourites ? 'heart' : 'heart outline'}
+                                                className={tescIsInFavourites ? "favourite" : "notFavourite"}
+                                                onClick={() => addRemoveFavourites(contractAddress)}
+                                                content={tescIsInFavourites ? 'Unfavourite' : 'Favourite'}
+                                                style={{ float: 'right' }}
+                                            />}
+                                    />
+                                </div>
+                            </Segment>
+                        </Grid.Column>
+                    )}
 
                     <Grid.Column width={6} centered='true'>
                         {domainFromChain && signature &&
@@ -256,51 +295,49 @@ const TeSCInspect = ({ location }) => {
                         }
                     </Grid.Column>
                 </Grid.Row>
-                {domainFromChain && expiry && signature && flags && (
-                    <>
-                        <Grid.Row style={{ width: `${1000 / 16}%` }}>
-                            <Grid.Column width={10} >
-                                {web3.currentProvider.selectedAddress === contractOwner && (
-                                    <Modal
-                                        closeIcon
-                                        trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
-                                        onClose={handleCloseTescUpdate}
-                                        style={{ borderRadius: '20px', height: '80%', width: '75%' }}
-                                    >
-                                        <Modal.Header style={{ borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
-                                            Update TLS-endorsed Smart Contract
+                {/* {domainFromChain && expiry && signature && flags && (
+                    <Grid.Row style={{ width: `${1000 / 16}%` }}>
+                        <Grid.Column width={10} >
+                            {web3.currentProvider.selectedAddress === contractOwner && (
+                                <Modal
+                                    closeIcon
+                                    trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
+                                    onClose={handleCloseTescUpdate}
+                                    style={{ borderRadius: '20px', height: '80%', width: '75%' }}
+                                >
+                                    <Modal.Header style={{ borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
+                                        Update TLS-endorsed Smart Contract
                                             </Modal.Header>
-                                        <Modal.Content style={{ borderBottomLeftRadius: '15px', borderBottomRightRadius: '15px' }}>
-                                            <DeploymentForm
-                                                initInputs={{
-                                                    contractAddress,
-                                                    domain: domainFromChain,
-                                                    expiry, flags,
-                                                    signature,
-                                                    fingerprint: fingerprint.substring(2),
-                                                }}
-                                                typedInDomain={typedInDomain}
-                                                onMatchOriginalDomain={setTypedInDomain}
-                                            />
-                                        </Modal.Content>
-                                    </Modal>
-                                )}
-                                <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
-                                    trigger={
-                                        <Button
-                                            basic
-                                            color='pink'
-                                            icon={tescIsInFavourites ? 'heart' : 'heart outline'}
-                                            className={tescIsInFavourites ? "favourite" : "notFavourite"}
-                                            onClick={() => addRemoveFavourites(contractAddress)}
-                                            content={tescIsInFavourites ? 'Unfavourite' : 'Favourite'}
-                                            style={{ float: 'right' }}
-                                        />}
-                                />
-                            </Grid.Column>
-                        </Grid.Row>
-                    </>
-                )}
+                                    <Modal.Content style={{ borderBottomLeftRadius: '15px', borderBottomRightRadius: '15px' }}>
+                                        <DeploymentForm
+                                            initInputs={{
+                                                contractAddress,
+                                                domain: domainFromChain,
+                                                expiry, flags,
+                                                signature,
+                                                fingerprint: fingerprint.substring(2),
+                                            }}
+                                            typedInDomain={typedInDomain}
+                                            onMatchOriginalDomain={setTypedInDomain}
+                                        />
+                                    </Modal.Content>
+                                </Modal>
+                            )}
+                            <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
+                                trigger={
+                                    <Button
+                                        basic
+                                        color='pink'
+                                        icon={tescIsInFavourites ? 'heart' : 'heart outline'}
+                                        className={tescIsInFavourites ? "favourite" : "notFavourite"}
+                                        onClick={() => addRemoveFavourites(contractAddress)}
+                                        content={tescIsInFavourites ? 'Unfavourite' : 'Favourite'}
+                                        style={{ float: 'right' }}
+                                    />}
+                            />
+                        </Grid.Column>
+                    </Grid.Row>
+                )} */}
                 <Grid.Row style={{ width: `${1000 / 16}%` }}>
                     <Grid.Column width={10}>
                         {!!flags.get(FLAGS.ALLOW_SUBENDORSEMENT) && contractAddress &&

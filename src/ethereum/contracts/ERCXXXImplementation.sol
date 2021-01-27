@@ -160,6 +160,12 @@ contract ERCXXXImplementation is ERCXXX {
         subendorsements.push(subendorsementAddress);
         emit SubendorsementsChanged(subendorsementAddress, EventType.Add);
     }
+
+    function updateSubendorsements(address[] calldata _subendorsements) external isOwner {
+        require(keccak256(abi.encodePacked(subendorsements)) != keccak256(abi.encodePacked(_subendorsements)), "Subendorsement arrays identical");
+        subendorsements = _subendorsements;
+        emit MultiSubendorsementsChanged(_subendorsements, EventType.Add);
+    }
     
     // @notice Removes an address from the array of subendorsements
     // @param subendorsementAddress The address to be removed from the subendorsements

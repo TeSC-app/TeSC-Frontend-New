@@ -1,5 +1,6 @@
 import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
-import { Input, Form, Label, Button as BtnSuir, Segment, Popup, Radio, Header, TextArea, Divider, Icon, Grid } from 'semantic-ui-react';
+import { Form, Label, Button, Segment, Header, Input } from 'semantic-ui-react';
+import { isSuperSet, intersection } from "set-operations";
 
 import TeSC from '../../ethereum/build/contracts/ERCXXXImplementation.json';
 import AppContext from '../../appContext';
@@ -10,81 +11,132 @@ import { isValidContractAddress } from '../../utils/tesc';
 
 
 const SubEndorsementAddition = ({ contractAddress }) => {
-    const { web3, showMessage } = useContext(AppContext);
-    const [subendorsements, setSubendorsements] = useState(['']);
-    const [invalidInputIndices, setInvalidInputIndices] = useState(new Set());
-    const [invalidInputReasons, setInvalidInputReasons] = useState(null);
+    const { web3, showMessage, account, handleBlockScreen } = useContext(AppContext);
+    const [subendorsements, setSubendorsements] = useState(new Set());
+    const [newSubendorsement, setNewSubendorsement] = useState('');
+    const [invalidInputReason, setInvalidInputReason] = useState('');
+
+    const [loadingButtonIndex, setLoadingButtonIndex] = useState(-1);
+
+    const contractInstance = useRef(new web3.eth.Contract(TeSC.abi, contractAddress));
 
     useEffect(() => {
         (async () => {
-            const contract = new web3.eth.Contract(TeSC.abi, contractAddress);
-            const fetchedSubendorsements = await contract.methods.getSubendorsements().call();
-            console.log('fetchedSubendorsements', fetchedSubendorsements);
-            setSubendorsements([...fetchedSubendorsements, '']);
+            const fetchedSubendorsements = await contractInstance.current.methods.getSubendorsements().call();
+            setSubendorsements(new Set(fetchedSubendorsements.map(addr => addr.toLowerCase())));
         })();
     }, [contractAddress, web3.eth]);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-    };
-
-    const handleChangeSubendorsementInputs = (newAddress, index) => {
+    const handleChangeSubendorsementInputs = (newAddress) => {
         try {
-            let last = subendorsements.length - 1;
-            let updatedSubendorsements = subendorsements.map((curAddress, i) => {
-                if (index === i) return newAddress;
-                return curAddress;
-            });
+            setNewSubendorsement(newAddress);
 
-            if (newAddress === '' && index !== last) {
-                updatedSubendorsements = updatedSubendorsements.slice(0, last);
-                last = updatedSubendorsements.length - 1;
-                setSubendorsements(updatedSubendorsements);
-            } else if (newAddress) {
-                setSubendorsements(index === last ? [...updatedSubendorsements, ''] : updatedSubendorsements);
+            if (isValidContractAddress(newAddress, true)) {
+                if (subendorsements.has(newAddress.toLowerCase())) {
+                    setInvalidInputReason(`Contract ${newAddress} already added`);
+                } else if (newAddress.toLowerCase() === contractAddress.toLowerCase()) {
+                    setInvalidInputReason('A contract cannot subendorse itself');
+                } else {
+                    setInvalidInputReason('');
+                }
             }
 
-            console.log('index', index);
-            console.log('last', last);
-            if ((newAddress === '' && index === last) || isValidContractAddress(newAddress, true)) {
-                console.log('updatedSubendorsements', updatedSubendorsements);
-                setInvalidInputIndices(new Set([...updatedSubendorsements].filter(i => i !== index)));
-                setInvalidInputReasons(Object.fromEntries(Object.entries(invalidInputReasons).filter((k, v) => k !== index)));
-            }
 
         } catch (error) {
-            setInvalidInputIndices(new Set([...invalidInputIndices, index]));
-            setInvalidInputReasons({ ...invalidInputReasons, [index]: error.message });
+            setInvalidInputReason(newAddress ? error.message : '');
         }
 
 
     };
 
+    const refresh = (resetInput = true) => {
+        if (resetInput) {
+            setNewSubendorsement('');
+        }
+        setInvalidInputReason('');
+        setLoadingButtonIndex(-1);
+        handleBlockScreen(false);
+    };
 
-    const renderInputs = () => {
-        return subendorsements.map((address, i) =>
-            <Form.Field
+    const handleRemoveEndorsement = async (index) => {
+        try {
+            handleBlockScreen(true);
+            setLoadingButtonIndex(index);
+            await contractInstance.current.methods.removeSubendorsementAtIndex(index).send({ from: account, gas: '3000000' });
+            const updatedSubendorsements = [...subendorsements].filter((address, i) => index !== i);
+            setSubendorsements(new Set(updatedSubendorsements));
+            refresh();
+        } catch (error) {
+            showMessage(buildNegativeMsg({
+                header: `Unable to remove Subendorsement ${subendorsements[index]}`,
+                content: error.message
+            }));
+            refresh(false);
+        }
+    };
 
-            >
-                <Form.Input
-                    value={subendorsements[i]}
-                    label={`Subendorsement ${i + 1}`}
-                    placeholder='Contract address e.g. 0x123456789abcdf...'
-                    onChange={e => handleChangeSubendorsementInputs(e.target.value, i)}
-                    // onBlur={() => handleLoseDomainInputFocus()}
-                    icon='address'
-                    error={invalidInputIndices.has(i) ? invalidInputReasons[i] : false}
+    const handleAddEndorsement = async () => {
+        try {
+            setLoadingButtonIndex(subendorsements.size);
+            handleBlockScreen(true);
+            await contractInstance.current.methods.addSubendorsement(newSubendorsement.toLowerCase()).send({ from: account, gas: '3000000' });
+            setSubendorsements(new Set([...subendorsements, newSubendorsement]));
+            refresh();
+        } catch (error) {
+            showMessage(buildNegativeMsg({
+                header: `Unable to add Subendorsement ${newSubendorsement}`,
+                content: error.message
+            }));
+            refresh(false);
+        }
+    };
+
+
+    const renderSubendorsements = () => {
+        const subendorsementsArray = [...subendorsements];
+        return subendorsementsArray.map((address, i) =>
+            <>
+                {/* <div style={{marginBottom: '3px', fontWeight: 'bold'}}> Subendorsement {i + 1}</div> */}
+                <Label
+                    className='ui input'
+                    style={{ width: '75%', marginRight: '10px', marginBottom: '10px', color: '#292929', fontSize: '1em', lineHeight: '1.21428571em' }}
+                >
+                    {subendorsementsArray[i]}
+                </Label>
+                <Button icon='x' color='red' basic
+                    loading={loadingButtonIndex === i}
+                    onClick={() => handleRemoveEndorsement(i)}
+                    disabled={loadingButtonIndex === i}
                 />
-            </Form.Field>
+            </>
         );
     };
 
     return (
         <Segment>
-            <Header as='h3' content='Add Subendorsements' />
-            <p>{contractAddress}</p>
-            <Form onSubmit={handleSubmit}>
-                {renderInputs()}
+            <Header as='h3' content='Subendorsements' />
+            <p>Contract {contractAddress} is endorsing <b className='main-color'>{subendorsements.size}</b> other contract{subendorsements.size - 1 !== 1 ? 's' : ''}</p>
+            {renderSubendorsements()}
+            <Form style={{ marginTop: '10px' }}>
+                <Form.Field error={invalidInputReason}>
+                    <label>New Subendorsement</label>
+                    <Input
+                        value={newSubendorsement}
+                        placeholder='Contract address e.g. 0x123456789abcdf...'
+                        onChange={e => handleChangeSubendorsementInputs(e.target.value)}
+                        icon='address'
+                        style={{ width: '75%', marginRight: '10px' }}
+                    />
+                    <Button icon='plus' color='green' basic
+                        onClick={() => handleAddEndorsement()}
+                        disabled={!!invalidInputReason || !newSubendorsement}
+                        loading={loadingButtonIndex === subendorsements.size}
+                    />
+                    {invalidInputReason &&
+                        <Label pointing color='red' basic>{invalidInputReason}</Label>
+                    }
+
+                </Form.Field>
             </Form>
         </Segment>
     );
