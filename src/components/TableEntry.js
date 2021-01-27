@@ -155,7 +155,7 @@ function TableEntry(props) {
                         trigger={<Button basic color='red' onClick={removeFromRegistry} content='Remove' icon='delete' className='button-remove' />} />
                     :
                     <Popup inverted content={`Add entry to the TeSC registry. This would cost around ${costEstimatedAdd.toFixed(5)} ETH.`}
-                        trigger={<Button basic disabled={!verified} color='blue' onClick={addToRegistry} content='Add' icon='plus' className='button-add' />}
+                        trigger={<Button basic disabled={!verified && !(domain.length === 64 && domain.split('.').length === 1)} color='blue' onClick={addToRegistry} content='Add' icon='plus' className='button-add' />}
                     />
             );
         } else {
