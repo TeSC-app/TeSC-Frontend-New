@@ -136,9 +136,9 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         
     }
 
-    const makeDeploymentTx = useCallback(async (currentDomain) => {
-        return await new web3.eth.Contract(TeSC.abi).deploy({
-            data: TeSC.bytecode,
+    const makeDeploymentTx = useCallback(async (currentDomain, tescAbi, tescBytecode) => {
+        return await new web3.eth.Contract(tescAbi).deploy({
+            data: tescBytecode,
             arguments: [currentDomain, prevExpiry.current, flagsToBytes24Hex(prevFlags.current), padToBytesX(prevFingerprint.current, 32), prevSignature.current]
         });
     }, [web3.eth.Contract]);
@@ -275,7 +275,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
                 if (signature) {
                     console.log(5)
-                    const tx = !initInputs ? await makeDeploymentTx(currentDomain) : await makeUpdateTx(currentDomain);
+                    const tx = !initInputs ? await makeDeploymentTx(currentDomain, tescAbi, tescBytecode) : await makeUpdateTx(currentDomain);
                     if (!initInputs || contractAddress) {
                         const estCost = await estimateDeploymentCost(web3, tx);
                         setCostEstimated(estCost);
@@ -315,7 +315,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         if (currentDomain && expiry && signature) {
             try {
                 await validateEndorsement();
-                const tx = !initInputs ? await makeDeploymentTx(currentDomain) : await makeUpdateTx(currentDomain);
+                const tx = !initInputs ? await makeDeploymentTx(currentDomain, tescAbi, tescBytecode) : await makeUpdateTx(currentDomain);
                 console.log("tx", tx)
                 await tx.send({ from: account, gas: '2000000' })
                     .on('receipt', async (txReceipt) => {
@@ -811,7 +811,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                         Back
                                 </BtnSuir>
 
-                                    {((activeStep < 3 && !costPaid) || (activeStep <= 3 && costPaid)) && (
+                                    {((activeStep < 4 && !costPaid) || (activeStep <= 4 && costPaid)) && (
                                         <BtnSuir
                                             basic
                                             color="purple"
@@ -821,7 +821,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                             Next
                                         </BtnSuir>
                                     )}
-                                    {activeStep === 3 && !costPaid && (
+                                    {activeStep === 4 && !costPaid && (
                                         <BtnSuir
                                             icon='play circle'
                                             basic
