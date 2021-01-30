@@ -3,14 +3,16 @@ import { Grid } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import FeedbackMessage from "../components/FeedbackMessage";
 
-const PageHeader = ({ title }) => {
+const PageHeader = ({ title, isRegistryAnalytics }) => {
     const { sysMsg, handleDismissMessage } = useContext(AppContext);
 
     return (
-        <Grid style={{ marginBottom: '20px', height: '50px' }}>
+        <Grid className={isRegistryAnalytics ? 'analytics' : 'regular'}>
             <Grid.Row style={{ height: '100%' }}>
-                <Grid.Column width={5}>
-                    <h1>{title}</h1>
+                <Grid.Column width={isRegistryAnalytics ? 16 : 5}>
+                    {
+                        isRegistryAnalytics ? <h3>{title}</h3> : <h1>{title}</h1>
+                    }
                     {/* <Header as='h1' content={title} color='purple'/> */}
                 </Grid.Column>
                 <Grid.Column width={11} >

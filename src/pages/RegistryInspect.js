@@ -1,18 +1,14 @@
 import React, { useContext, useEffect, useState, useCallback } from 'react'
 import { Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
-import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
-import SearchBox from '../components/SearchBox';
 import PageHeader from '../components/PageHeader';
 import TableOverview from '../components/TableOverview';
 import axios from 'axios'
 import moment from 'moment'
 
 function RegistryInspect(props) {
-    const { contractRegistry } = props
-    const { web3, loadStorage } = useContext(AppContext);
-    const [domain, setDomain] = useState('')
-    const [entries, setEntries] = useState(null)
+    const { loadStorage } = useContext(AppContext);
+    const [entries, setEntries] = useState([])
     const [loading, setLoading] = useState(false)
 
     //add createdAt and isFavourite prop to objects retrieved from the backend - compares with localStorage values
@@ -51,40 +47,11 @@ function RegistryInspect(props) {
         })();
     }, [updateCreatedAtAndFavouritesForRegistryInspectEntries])
 
-
-    const handleInput = domain => {
-        setDomain(domain);
-    }
-
-    const handleSubmit = async () => {
-        setLoading(true)
-        setEntries(null);
-        try {
-            const contractAddresses = await contractRegistry.methods.getContractsFromDomain(domain).call();
-            const contractInstances = [];
-            //generate contracts out of the ERCXXX interface using the contract addresses so that the getExpiry method can be used
-            for (let i = 0; i < contractAddresses.length; i++) {
-                const contractInstance = new web3.eth.Contract(
-                    ERCXXX.abi,
-                    contractAddresses[i],
-                )
-                const expiry = await contractInstance.methods.getExpiry().call()
-                //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
-                contractInstances.push({ contractAddress: contractAddresses[i], domain, expiry })
-            }
-            setEntries(contractInstances);
-            setLoading(false)
-        } catch (err) {
-            setLoading(false)
-        }
-    }
-
-
     const renderTable = () => {
         if (entries && entries.length > 0 && !loading) {
             return (
                 <div style={{justifyContent: 'center'}}>
-                    <TableOverview rowData={entries} isRegistryInspect={true} />
+                    <TableOverview rowData={entries} isRegistryInspect={true} handleLoading={handleLoading} />
                 </div>
             )
         } else if (entries && entries.length === 0 && !loading) {
@@ -108,18 +75,14 @@ function RegistryInspect(props) {
         }
     }
 
+    const handleLoading = loading => {
+        setLoading(loading)
+    }
+
     return (
         <div>
             <PageHeader title='Explore TeSC Registry' />
             {/* Smart Contracts associated with Domain */}
-            <SearchBox
-                onChange={handleInput}
-                onSubmit={handleSubmit}
-                value={domain}
-                placeholder='www.mysite.com'
-                label='Domain'
-                icon='search'
-                validInput={true} />
             {renderTable()}
         </div>
     )

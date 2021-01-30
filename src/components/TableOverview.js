@@ -4,6 +4,7 @@ import { Table, Dropdown, Pagination, Icon } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import TableEntry from './TableEntry';
 import moment from 'moment'
+import SearchBox from './SearchBox';
 
 const ENTRY_PER_PAGE = 5
 
@@ -11,7 +12,8 @@ function TableOverview(props) {
     const {
         rowData,
         isDashboard,
-        isRegistryInspect
+        isRegistryInspect,
+        handleLoading
     } = props;
 
     const { web3, account, loadStorage } = useContext(AppContext);
@@ -22,7 +24,11 @@ function TableOverview(props) {
     const [filterOption, setFilterOption] = useState(0);
     const [displayedEntries, setDisplayedEntries] = useState([]);
 
+    //for search input
+    const [domain, setDomain] = useState('')
+
     useEffect(() => {
+        console.log(tescs)
         const init = async () => {
             try {
                 // setTescs(account ? (isDashboard? loadStorage() : []) : []);
@@ -73,7 +79,7 @@ function TableOverview(props) {
         }
     };
 
-    const showAllTescs = () => {
+    const showAllTescs = (tescs) => {
         setCurrentPage(1);
         setFilterOption(0);
         setTotalPages(Math.ceil(tescs.length / ENTRY_PER_PAGE));
@@ -94,8 +100,6 @@ function TableOverview(props) {
         localStorage.getItem(account.toLowerCase()) ? setDisplayedEntries(tescs.filter(tesc => tesc.own === true).slice(0, ENTRY_PER_PAGE)) : setTescs([]);
     };
 
-
-
     const changePage = (event, { activePage }) => {
         //check if there are filters applied
         setCurrentPage(activePage);
@@ -115,8 +119,30 @@ function TableOverview(props) {
         ));
     };
 
+    const handleSearchInput = domain => {
+        setDomain(domain);
+    }
+
+    const handleSearchSubmit = async () => {
+        handleLoading(true)
+        setTescs(tescs.filter(entry => entry.domain === domain));
+        handleLoading(false)
+    }
+
+    const renderSearchBox = () => {
+        return isRegistryInspect ? (<SearchBox
+            onChange={handleSearchInput}
+            onSubmit={handleSearchSubmit}
+            value={domain}
+            placeholder='www.mysite.com'
+            label='Domain'
+            icon='search'
+            validInput={true} />) : null
+    }
+
     return (
         <>
+            {renderSearchBox()}
             <Table color='purple'>
                 <Table.Header active='true' style={{ backgroundColor: 'purple' }}>
                     <Table.Row>
@@ -134,7 +160,8 @@ function TableOverview(props) {
                                 button
                                 className='icon dropdown-favourites'>
                                 <Dropdown.Menu>
-                                    <Dropdown.Item icon='redo' text='All' onClick={showAllTescs} />
+                                    <Dropdown.Item icon='redo' text={isRegistryInspect && domain.length > 0 ? 'All (by domain)' : 'All'} onClick={() => showAllTescs(tescs)} />
+                                    {isRegistryInspect && <Dropdown.Item icon='redo' text='All (reset)' onClick={() => showAllTescs(rowData)} />}
                                     <Dropdown.Item icon='heart' text='By favourite' onClick={showFavouriteTescs} />
                                     <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
                                 </Dropdown.Menu>

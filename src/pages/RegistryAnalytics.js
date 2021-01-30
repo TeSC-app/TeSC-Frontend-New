@@ -5,6 +5,7 @@ import { ResponsiveBar } from '@nivo/bar'
 import { Dimmer, Image, Loader, Segment } from 'semantic-ui-react'
 import { FLAGS } from '../utils/tesc'
 import BitSet from 'bitset';
+import PageHeader from '../components/PageHeader'
 
 function RegistryAnalytics() {
     const [loading, setLoading] = useState(false)
@@ -349,12 +350,15 @@ function RegistryAnalytics() {
             gridGap: '10px',
             height: '300px'}}>
             <div style={{height: 300}}>
+                <PageHeader title='Valid To Invalid Ratio' isRegistryAnalytics={true} />
                 {renderPie()}
             </div>
             <div style={{ height: 300 }}>
+                <PageHeader title='Domains With Most Smart Contracts' isRegistryAnalytics={true} />
                 {renderBarChart()}
             </div>
             <div style={{ height: 300 }}>
+                <PageHeader title='Most Used Flags' isRegistryAnalytics={true} />
                 {renderPieFlags()}
             </div>
         </section>
