@@ -21,6 +21,7 @@ const App = ({ web3 }) => {
     const [account, setAccount] = useState('');
     const [hasAccountChanged, setHasAccountChanged] = useState(false);
     const [registryContract, setRegistryContract] = useState(undefined);
+    const [networkId, setNetworkId] = useState('')
 
     const loadStorage = () => {
         return JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress));
@@ -45,6 +46,8 @@ const App = ({ web3 }) => {
     useEffect(() => {
         const init = async () => {
             if (window.ethereum) {
+                const networkId = await web3.eth.net.getId()
+                setNetworkId(networkId)
                 const [selectedAccount] = await web3.eth.getAccounts();
                 setAccount(selectedAccount ? selectedAccount.toLowerCase() : '');
                 window.ethereum.on('accountsChanged', function (accounts) {
@@ -100,7 +103,8 @@ const App = ({ web3 }) => {
                 loadStorage,
                 hasAccountChanged,
                 handleAccountChanged,
-                registryContract
+                registryContract,
+                networkId
             }}
             >
                 {/* <Navbar hasWalletAddress={hasWalletAddress} selectedAccount={account} handleCollapseSidebar={handleCollapseSidebar} /> */}
