@@ -1,9 +1,9 @@
 import React, { useContext } from 'react';
-import { Grid } from 'semantic-ui-react';
+import { Grid, Icon, Popup } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import FeedbackMessage from "../components/FeedbackMessage";
 
-const PageHeader = ({ title, isRegistryAnalytics }) => {
+const PageHeader = ({ title, isRegistryAnalytics, isPieValidInvalid, isBarTop, isPieFlags }) => {
     const { sysMsg, handleDismissMessage } = useContext(AppContext);
 
     return (
@@ -11,7 +11,7 @@ const PageHeader = ({ title, isRegistryAnalytics }) => {
             <Grid.Row style={{ height: '100%' }}>
                 <Grid.Column width={isRegistryAnalytics ? 16 : 5}>
                     {
-                        isRegistryAnalytics ? <h3>{title}</h3> : <h1>{title}</h1>
+                        isRegistryAnalytics ? <div className='chart-info'><h3>{title}</h3><Popup content={isPieValidInvalid ? 'Shows the number of valid and invalid smart contracts in the registry' : isBarTop ? 'Shows the top 5 domains which have the most smart contracts associated to them' : isPieFlags ? 'Shows the number of the flags that are used in all smart contracts in the registry' : 'No info'} trigger={<Icon name='info circle' color='teal' size='big' />} /></div> : <h1>{title}</h1>
                     }
                     {/* <Header as='h1' content={title} color='purple'/> */}
                 </Grid.Column>
