@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { Input, Loader, Icon, Label, Grid, Card, Form, Dimmer, Popup, Button, Modal, Segment, Header } from 'semantic-ui-react';
+import { Input, Loader, Icon, Label, Grid, Card, Form, Dimmer, Popup, Button, Modal, Segment, Header, Checkbox } from 'semantic-ui-react';
 import BitSet from 'bitset';
 import axios from 'axios';
 import AppContext from '../appContext';
@@ -28,6 +28,8 @@ const TeSCInspect = ({ location }) => {
     const [verifResult, setVerifResult] = useState(null);
     const [tescIsInFavourites, setTescsIsInFavourites] = useState(false);
     const [tescs, setTescs] = useState(loadStorage());
+
+    const [isSubendorsement, setIsSubendorsement] = useState(false);
 
     useEffect(() => {
         setTescs(loadStorage());
@@ -169,10 +171,17 @@ const TeSCInspect = ({ location }) => {
         await verifyTesc();
     };
 
-
     useEffect(() => {
         setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
     }, [web3.currentProvider.selectedAddress]);
+
+    const handleToggleSubendorsement = () => {
+        setIsSubendorsement(!isSubendorsement);
+        clearResults();
+        if (isValidContractAddress(contractAddress)) {
+            const res = axios.get('/verify/');
+        }
+    };
 
     return (
         <div>
@@ -187,7 +196,21 @@ const TeSCInspect = ({ location }) => {
                 onSubmit={handleSubmitAddress}
                 icon='search'
                 validInput={true}
-            />
+            >
+                <div style={{width: '75%', marginLeft:'12.5%', textAlign: 'initial'}}>
+                    <Checkbox
+                        checked={isSubendorsement}
+                        onClick={e => handleToggleSubendorsement()}
+                        label='Subendorsement '
+                        toggle
+                    />
+                    <Popup
+                        inverted
+                        content={`If you don't know the address of the master TeSC that endorses the contract at the address above and this endorsed contract should be subject to inspection, you can activate this option. Note that, it could take some time to finish this type of inspection since we have to scan through the TeSC Registry to search for the master contract.`}
+                        trigger={<Icon name='question circle' />}
+                    />
+                </div>
+            </SearchBox>
             <Grid style={{ margin: '0 auto' }}>
                 <Grid.Row>
                     {domainFromChain && expiry && signature && flags && (
@@ -295,49 +318,7 @@ const TeSCInspect = ({ location }) => {
                         }
                     </Grid.Column>
                 </Grid.Row>
-                {/* {domainFromChain && expiry && signature && flags && (
-                    <Grid.Row style={{ width: `${1000 / 16}%` }}>
-                        <Grid.Column width={10} >
-                            {web3.currentProvider.selectedAddress === contractOwner && (
-                                <Modal
-                                    closeIcon
-                                    trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
-                                    onClose={handleCloseTescUpdate}
-                                    style={{ borderRadius: '20px', height: '80%', width: '75%' }}
-                                >
-                                    <Modal.Header style={{ borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
-                                        Update TLS-endorsed Smart Contract
-                                            </Modal.Header>
-                                    <Modal.Content style={{ borderBottomLeftRadius: '15px', borderBottomRightRadius: '15px' }}>
-                                        <DeploymentForm
-                                            initInputs={{
-                                                contractAddress,
-                                                domain: domainFromChain,
-                                                expiry, flags,
-                                                signature,
-                                                fingerprint: fingerprint.substring(2),
-                                            }}
-                                            typedInDomain={typedInDomain}
-                                            onMatchOriginalDomain={setTypedInDomain}
-                                        />
-                                    </Modal.Content>
-                                </Modal>
-                            )}
-                            <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
-                                trigger={
-                                    <Button
-                                        basic
-                                        color='pink'
-                                        icon={tescIsInFavourites ? 'heart' : 'heart outline'}
-                                        className={tescIsInFavourites ? "favourite" : "notFavourite"}
-                                        onClick={() => addRemoveFavourites(contractAddress)}
-                                        content={tescIsInFavourites ? 'Unfavourite' : 'Favourite'}
-                                        style={{ float: 'right' }}
-                                    />}
-                            />
-                        </Grid.Column>
-                    </Grid.Row>
-                )} */}
+
                 <Grid.Row style={{ width: `${1000 / 16}%` }}>
                     <Grid.Column width={10}>
                         {!!flags.get(FLAGS.ALLOW_SUBENDORSEMENT) && contractAddress && contractOwner &&
@@ -345,7 +326,6 @@ const TeSCInspect = ({ location }) => {
                                 contractAddress={contractAddress}
                                 owner={contractOwner}
                                 verified={verifResult ? verifResult.verified : false}
-
                             />
                         }
                     </Grid.Column>

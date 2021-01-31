@@ -1,7 +1,7 @@
 import React from 'react';
 import { Input, Form } from 'semantic-ui-react';
 
-const SearchBox = ({ label, value, onChange, placeholder, onSubmit, icon }) => (
+const SearchBox = ({ label, value, onChange, placeholder, onSubmit, icon, children }) => (
     <div centered='true' className='search-box'>
         <Form onSubmit={onSubmit}>
             <Form.Field>
@@ -15,6 +15,7 @@ const SearchBox = ({ label, value, onChange, placeholder, onSubmit, icon }) => (
                     className='search-box__input'
                 />
             </Form.Field>
+            {children}
         </Form>
     </div>
 );

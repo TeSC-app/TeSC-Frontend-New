@@ -1,5 +1,5 @@
 import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
-import { Form, Label, Button, Segment, Header, Input, Divider, Icon, Ref, Popup } from 'semantic-ui-react';
+import { Form, Label, Button, Segment, Header, Input, Divider, Icon, Ref, Popup, Checkbox } from 'semantic-ui-react';
 import { isSuperSet, intersection } from "set-operations";
 
 import TeSC from '../../ethereum/build/contracts/ERCXXXImplementation.json';
@@ -148,12 +148,12 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
     return (
         <Segment>
             <Header as='h3' content='Subendorsements' />
-            <p>Contract {contractAddress} is endorsing <b className='main-color'>{subendorsements.size}</b> other contract{subendorsements.size === 1 ? '' : 's'}</p>
+            <p>Contract <b>{contractAddress}</b> is endorsing <b className='main-color'>{subendorsements.size}</b> other contract{subendorsements.size === 1 ? '' : 's'}</p>
 
-            <Divider section horizontal>
+            <Divider section hidden>
                 <p style={{ fontSize: '0.8em' }}>
                     <Icon name='search' />
-                    Lookup and Verify
+                    Lookup & Verify
                 </p>
             </Divider>
 
@@ -178,7 +178,9 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
                     }
                 </Form.Field>
 
-                <Divider section horizontal>
+                <Divider section style={{width: '50%', margin: '40px auto'}} />
+
+                <Divider section hidden>
                     <p style={{ fontSize: '0.8em' }}>
                         <Icon name='plus' />
                     Add subendorsement
@@ -207,7 +209,7 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
                     }
                 </Form.Field>
             </Form>
-            <Divider section horizontal>
+            <Divider section hidden>
                 <p style={{ fontSize: '0.8em' }}>
                     <Icon name='list' />
                     Current Subendorsements
