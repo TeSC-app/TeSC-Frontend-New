@@ -192,12 +192,12 @@ const TeSCInspect = ({ location }) => {
                 <Grid.Row>
                     {domainFromChain && expiry && signature && flags && (
                         <Grid.Column width={10}>
-                            <Segment style={{paddingBottom: '4em'}}>
+                            <Segment style={{ paddingBottom: '4em' }}>
                                 <Header as='h3' content='Contract Data' />
                                 <TescDataTable
                                     data={{ contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint }}
                                 />
-                                <div style={{marginTop: '0.5em'}}>
+                                <div style={{ marginTop: '0.5em' }}>
                                     {web3.currentProvider.selectedAddress === contractOwner && (
                                         <Modal
                                             closeIcon
@@ -340,8 +340,13 @@ const TeSCInspect = ({ location }) => {
                 )} */}
                 <Grid.Row style={{ width: `${1000 / 16}%` }}>
                     <Grid.Column width={10}>
-                        {!!flags.get(FLAGS.ALLOW_SUBENDORSEMENT) && contractAddress &&
-                            <SubEndorsementAddition contractAddress={contractAddress} />
+                        {!!flags.get(FLAGS.ALLOW_SUBENDORSEMENT) && contractAddress && contractOwner &&
+                            <SubEndorsementAddition
+                                contractAddress={contractAddress}
+                                owner={contractOwner}
+                                verified={verifResult ? verifResult.verified : false}
+
+                            />
                         }
                     </Grid.Column>
                 </Grid.Row>

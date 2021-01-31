@@ -92,7 +92,7 @@ export const storeTesc = ({ account, claim }) => {
 export const isValidContractAddress = (address, withReason = false) => {
     if (!withReason) {
         return (address.substring(0, 2) === '0x')
-            && Boolean(address.match(/^0x[0-9a-fA-F]+$/i))
+            && Boolean(address.match(/^0x[0-9a-fA-F]*$/i))
             && (address.length === 42);
     }
 
@@ -100,7 +100,7 @@ export const isValidContractAddress = (address, withReason = false) => {
         throw new Error('Contract address is empty');
     } else if (address.substring(0, 2) !== '0x') {
         throw new Error('Contract address must start with 0x');
-    } else if (!Boolean(address.match(/^0x[0-9a-f]+$/i))) {
+    } else if (!Boolean(address.match(/^0x[0-9a-f]*$/i))) {
         throw new Error('Contract address contains non-hexadecimal digits');
     } else if (address.length !== 42) {
         throw new Error('Contract address must be 42 characters long (prefix 0x and 40 hexadecimal digits)');
