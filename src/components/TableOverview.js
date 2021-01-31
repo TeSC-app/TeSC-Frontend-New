@@ -74,8 +74,8 @@ function TableOverview(props) {
             }
             setTescs(updatedTescs.sort((tescA, tescB) => tescB.expiry - tescA.expiry))
         } else {
-        setTescs(updatedTescs.sort((tescA, tescB) => tescA.createdAt.localeCompare(tescB.createdAt)));
-        localStorage.setItem(account.toLowerCase(), JSON.stringify(updatedTescs));
+            setTescs(updatedTescs.sort((tescA, tescB) => tescA.createdAt.localeCompare(tescB.createdAt)));
+            localStorage.setItem(account.toLowerCase(), JSON.stringify(updatedTescs));
         }
     };
 
@@ -125,7 +125,11 @@ function TableOverview(props) {
 
     const handleSearchSubmit = async () => {
         handleLoading(true)
-        setTescs(tescs.filter(entry => entry.domain === domain));
+        if (domain === '') {
+            setTescs(loadStorage().sort((tescA, tescB) => tescB.expiry - tescA.expiry))
+        } else {
+            setTescs(loadStorage().filter(entry => entry.domain === domain).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
+        }
         handleLoading(false)
     }
 
