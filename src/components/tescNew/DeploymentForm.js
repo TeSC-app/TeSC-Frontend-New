@@ -1,5 +1,8 @@
 import React, { Fragment, useState, useContext, useCallback, useEffect, useRef } from 'react';
 import { Input, Form, Label, Button as BtnSuir, Segment, Popup, Radio, Header, TextArea, Divider, Icon, Grid, Dropdown } from 'semantic-ui-react';
+import Highlight from 'react-highlight.js';
+import hljs from 'highlight.js';
+import hljsSolidity from 'highlightjs-solidity';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { formatDate, parseDate } from 'react-day-picker/moment';
@@ -37,6 +40,8 @@ import {
 import { extractAxiosErrorMessage } from '../../utils/formatError';
 import axios from 'axios';
 
+hljsSolidity(hljs);
+hljs.initHighlightingOnLoad();
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -76,6 +81,9 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const [fingerprint, setFingerprint] = useState(defaultFingerprint);
     const [tescAbi, setTescAbi] = useState([]);
     const [tescBytecode, setTescBytecode] = useState('');
+    const [constructorParameters, setConstructorParameters] = useState([]);
+    const [constructorParameterValues, setConstructorParameterValues] = useState([]);
+    const [allParamsEntered, setAllParamsEntered] = useState(false);
 
     const [privateKeyPEM, setPrivateKeyPEM] = useState('');
     const [privateKeyFileName, setPrivateKeyFileName] = useState('');
@@ -139,7 +147,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const makeDeploymentTx = useCallback(async (currentDomain, tescAbi, tescBytecode) => {
         return await new web3.eth.Contract(tescAbi).deploy({
             data: tescBytecode,
-            arguments: [currentDomain, prevExpiry.current, flagsToBytes24Hex(prevFlags.current), padToBytesX(prevFingerprint.current, 32), prevSignature.current]
+            arguments: [currentDomain, prevExpiry.current, flagsToBytes24Hex(prevFlags.current), padToBytesX(prevFingerprint.current, 32), prevSignature.current].concat(constructorParameterValues)
         });
     }, [web3.eth.Contract]);
 
@@ -196,6 +204,14 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     };
 
     const handleContractSelected = async (e, { name, value } ) => {
+        const constructorParametersRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/constructorParameters`, {
+            params: {
+                solidityCode: solidityCode,
+                selectedContract: value
+            }
+        });
+        const constructorParameters = constructorParametersRes.data.constructorParameters;
+
         const addInterfaceRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/addInterface`, {
             params: {
                 solidityCode: solidityCode,
@@ -213,6 +229,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         const json = compileRes.data.json;
 
         if(json){
+            setConstructorParameters(constructorParameters);
             setEndorsedSolidityCode(solidityCodeWithInterface);
             setTescAbi(json.abi);
             setTescBytecode(json.bytecode);
@@ -376,6 +393,30 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         );
     };
 
+    const renderConstructorParameterInputFields = () => {
+        return constructorParameters.map((constructorParameter, i) => 
+            <p>
+                <Form.Field>
+                    {constructorParameter.type} {constructorParameter.name}:
+                </Form.Field>  
+                <Form.TextArea 
+                    placeholder="Please enter a value for the constructor parameter"
+                    onChange={e => handleTextChange(e.target.value, i)}
+                />
+            </p>
+        )
+    }
+
+    const handleTextChange = (value, index) => {
+        const updatedValues = constructorParameterValues;
+        updatedValues[index] = value;
+        if(value === ""){
+            updatedValues.splice(index, 1);
+        }
+        setConstructorParameterValues(updatedValues);
+        setAllParamsEntered(constructorParameters.length === constructorParameterValues.length);
+    }
+
     const handleEnterOriginalDomain = (originalDomain) => {
         setDomain(originalDomain);
         if (originalDomain && web3.utils.sha3(originalDomain).substring(2) === currentDomain) {
@@ -471,16 +512,17 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                     </Dropdown>
 
                                     {endorsedSolidityCode !== '' && (
-                                        <Segment inverted textAlign='left' style={{ wordBreak: 'keep-all'}}>
+                                        <Highlight language='solidity'>
                                             {endorsedSolidityCode}
-                                        </Segment>
+                                        </Highlight>
                                     )}
+                                    {constructorParameters !== [] && renderConstructorParameterInputFields()}         
                                 </p>
                             )}
 
                         </Fragment>
                     ),
-                    completed: tescAbi !== [] && tescBytecode !== '' 
+                    completed: tescAbi !== [] && tescBytecode !== '' && allParamsEntered
                 }
             case 1:
                 return {
