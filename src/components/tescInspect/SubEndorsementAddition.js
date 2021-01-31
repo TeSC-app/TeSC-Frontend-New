@@ -178,25 +178,26 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
                     }
                 </Form.Field>
 
-                <Divider section style={{width: '50%', margin: '40px auto'}} />
+                <Divider section style={{ width: '50%', margin: '40px auto' }} />
 
-                <Divider section hidden>
-                    <p style={{ fontSize: '0.8em' }}>
-                        <Icon name='plus' />
-                    Add subendorsement
-                    </p>
-                </Divider>
+                {owner && account && owner.toLowerCase() === account.toLowerCase() &&
+                    <>
+                        <Divider section hidden>
+                            <p style={{ fontSize: '0.8em' }}>
+                                <Icon name='plus' />
+                                Add subendorsement
+                            </p>
+                        </Divider>
 
-                <Form.Field error={invalidAddInputReason}>
-                    {/* <label>New subendorsement</label> */}
-                    <Input
-                        value={newSubendorsement}
-                        placeholder='Contract address e.g. 0x123456789abcdf...'
-                        onChange={e => handleChangeNewSubendorsement(e.target.value)}
-                        style={{ width: '75%', marginRight: '10px' }}
-                    />
-                    {owner && account && owner.toLowerCase() === account.toLowerCase() &&
-                        <>
+                        <Form.Field error={invalidAddInputReason}>
+                            {/* <label>New subendorsement</label> */}
+                            <Input
+                                value={newSubendorsement}
+                                placeholder='Contract address e.g. 0x123456789abcdf...'
+                                onChange={e => handleChangeNewSubendorsement(e.target.value)}
+                                style={{ width: '75%', marginRight: '10px' }}
+                            />
+
                             <Button icon='plus' color='green' basic
                                 onClick={() => handleAddEndorsement()}
                                 disabled={!!invalidAddInputReason || !newSubendorsement}
@@ -205,9 +206,9 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
                             {invalidAddInputReason &&
                                 <Label pointing prompt content={invalidAddInputReason} />
                             }
-                        </>
-                    }
-                </Form.Field>
+                        </Form.Field>
+                    </>
+                }
             </Form>
             <Divider section hidden>
                 <p style={{ fontSize: '0.8em' }}>
