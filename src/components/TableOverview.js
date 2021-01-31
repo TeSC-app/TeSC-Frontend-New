@@ -11,6 +11,7 @@ const ENTRY_PER_PAGE = 5
 function TableOverview(props) {
     const {
         rowData,
+        entriesWithOccurances,
         isDashboard,
         isRegistryInspect,
         handleLoading
