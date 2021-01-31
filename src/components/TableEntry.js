@@ -16,6 +16,7 @@ function TableEntry(props) {
         tesc,
         onTescsChange,
         isDashboard,
+        isExploringDomain
     } = props;
     const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
@@ -196,26 +197,28 @@ function TableEntry(props) {
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
+                {isExploringDomain ? 
                 <span className='contract-address-column'>
                     {
                         own && isDashboard ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
                     }
                     <LinkTescInspect contractAddress={contractAddress} />
-                </span>
+                </span> : domain
+                }
             </Table.Cell>
-            <Table.Cell>{isDashboard ? renderDomain() : domain}</Table.Cell>
-            <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
-            <TableCellVerification {...tableCellVerifProps} />
+            <Table.Cell textAlign='center'>{isDashboard ? renderDomain() : isExploringDomain ? domain : tesc.contractCount}</Table.Cell>
+            <Table.Cell textAlign='center'>{isExploringDomain ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : tesc.verifiedCount}</Table.Cell>
+            {isExploringDomain && <TableCellVerification {...tableCellVerifProps} />}
             {isDashboard &&
                 <Table.Cell textAlign="center">
                     {renderRegistryButtons()}
                 </Table.Cell>
             }
-
-            <Table.Cell textAlign="center">
-                {renderFavourites()}
-            </Table.Cell>
-            
+            { isExploringDomain &&
+                <Table.Cell textAlign="center">
+                    {renderFavourites()}
+                </Table.Cell>
+            }       
             {isDashboard &&
                 <Table.Cell>{renderCreatedAt()}</Table.Cell>
             }

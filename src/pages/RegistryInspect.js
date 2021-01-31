@@ -73,7 +73,12 @@ function RegistryInspect(props) {
         if (entriesRaw && entriesRaw.length > 0 && !loading) {
             return (
                 <div style={{ justifyContent: 'center' }}>
-                    <TableOverview rowData={entriesRaw} entriesWithOccurances={entriesWithOccurances} isRegistryInspect={true} handleLoading={handleLoading} />
+                    <TableOverview
+                        rowData={entriesRaw}
+                        entriesWithOccurances={entriesWithOccurances}
+                        isRegistryInspect={true}
+                        handleLoading={handleLoading}
+                        isExploringDomainDefault={false} />
                 </div>
             )
         } else if (entriesRaw && entriesRaw.length === 0 && !loading) {

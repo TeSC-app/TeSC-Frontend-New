@@ -14,27 +14,30 @@ function TableOverview(props) {
         entriesWithOccurances,
         isDashboard,
         isRegistryInspect,
-        handleLoading
+        handleLoading,
+        isExploringDomainDefault
     } = props;
 
     const { web3, account, loadStorage } = useContext(AppContext);
 
     const [tescs, setTescs] = useState(rowData);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(tescs ? Math.ceil(tescs.length / ENTRY_PER_PAGE) : 0);
+    const [totalPages, setTotalPages] = useState(!isExploringDomainDefault ? Math.ceil(entriesWithOccurances.length / ENTRY_PER_PAGE) : tescs ? Math.ceil(tescs.length / ENTRY_PER_PAGE) : 0);
     const [filterOption, setFilterOption] = useState(0);
     const [displayedEntries, setDisplayedEntries] = useState([]);
+    const [isExploringDomain, setIsExploringDomain] = useState(isExploringDomainDefault)
 
     //for search input
     const [domain, setDomain] = useState('')
 
     useEffect(() => {
         console.log(tescs)
+        console.log(entriesWithOccurances)
         const init = async () => {
             try {
                 // setTescs(account ? (isDashboard? loadStorage() : []) : []);
                 setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRY_PER_PAGE) : []);
-                setTotalPages(Math.ceil(tescs ? tescs.length / ENTRY_PER_PAGE : 0));
+                setTotalPages(!isExploringDomain ? Math.ceil(entriesWithOccurances.length / ENTRY_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRY_PER_PAGE : 0));
                 window.ethereum.on('accountsChanged', (accounts) => {
                     setTescs(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
                         JSON.parse(localStorage.getItem(accounts[0].toLowerCase())) :
@@ -49,7 +52,7 @@ function TableOverview(props) {
             }
         };
         init();
-    }, [tescs, account, web3.eth, web3.eth.Contract, web3.eth.net]);
+    }, [tescs, account, web3.eth, web3.eth.Contract, web3.eth.net, entriesWithOccurances, isExploringDomain]);
 
 
     const handleChangeTescs = (tesc) => {
@@ -104,20 +107,34 @@ function TableOverview(props) {
     const changePage = (event, { activePage }) => {
         //check if there are filters applied
         setCurrentPage(activePage);
+        if(isExploringDomain) {
         setTotalPages(Math.ceil(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc).length / ENTRY_PER_PAGE));
         setDisplayedEntries(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc)
             .slice((activePage - 1) * ENTRY_PER_PAGE, activePage * ENTRY_PER_PAGE));
+        } else {
+            setDisplayedEntries(entriesWithOccurances.slice((activePage - 1) * ENTRY_PER_PAGE, activePage * ENTRY_PER_PAGE))
+        }
     };
 
 
     const renderRows = () => {
-        if (displayedEntries) return displayedEntries.map((tesc) => (
+        if (displayedEntries && isExploringDomain) {
+            return displayedEntries.map((tesc) => (
             <TableEntry key={tesc.contractAddress}
                 tesc={tesc}
                 onTescsChange={handleChangeTescs}
                 isDashboard={isDashboard}
+                isExploringDomain={isExploringDomain}
             />
-        ));
+        )) 
+        } else if (displayedEntries && !isExploringDomain) {
+            return entriesWithOccurances.map((entry) => (
+                <TableEntry key={entry.domain}
+                    tesc={entry}
+                    isExploringDomain={isExploringDomain}
+                    isDashboard={isDashboard}
+                />))
+        }
     };
 
     const handleSearchInput = domain => {
@@ -127,8 +144,10 @@ function TableOverview(props) {
     const handleSearchSubmit = async () => {
         handleLoading(true)
         if (domain === '') {
-            setTescs(loadStorage().sort((tescA, tescB) => tescB.expiry - tescA.expiry))
+            setIsExploringDomain(false)
+            setTescs(entriesWithOccurances)
         } else {
+            setIsExploringDomain(true)
             setTescs(loadStorage().filter(entry => entry.domain === domain).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
         }
         handleLoading(false)
@@ -151,13 +170,15 @@ function TableOverview(props) {
             <Table color='purple'>
                 <Table.Header active='true' style={{ backgroundColor: 'purple' }}>
                     <Table.Row>
-                        <Table.HeaderCell>Address</Table.HeaderCell>
+                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Address</Table.HeaderCell>}
                         <Table.HeaderCell>Domain</Table.HeaderCell>
-                        <Table.HeaderCell>Expiry</Table.HeaderCell>
+                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Expiry</Table.HeaderCell>}
+                        {(isRegistryInspect && !isExploringDomain) && <Table.HeaderCell textAlign="center">Total Smart Contracts</Table.HeaderCell>}
                         <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
                         {isDashboard &&
                             <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
                         }
+                        {(isDashboard || (isRegistryInspect && isExploringDomain)) &&
                         <Table.HeaderCell textAlign="center">Favourites
                             <Dropdown
                                 icon='filter'
@@ -172,6 +193,7 @@ function TableOverview(props) {
                                 </Dropdown.Menu>
                             </Dropdown>
                         </Table.HeaderCell>
+                        }
                         {isDashboard &&
                             <Table.HeaderCell>Created At</Table.HeaderCell>
                         }
