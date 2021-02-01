@@ -4,6 +4,8 @@ import classNames from 'classnames';
 import { SectionProps } from '../../utils/SectionProps';
 import Input from '../elements/Input';
 
+import '../../assets/scss/landingPage.scoped.scss';
+
 const propTypes = {
   ...SectionProps.types,
   split: PropTypes.bool

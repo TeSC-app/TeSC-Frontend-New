@@ -1,6 +1,9 @@
 import React from 'react';
 import classNames from 'classnames';
 
+import '../../../assets/scss/landingPage.scoped.scss';
+
+
 const FooterSocial = ({
   className,
   ...props

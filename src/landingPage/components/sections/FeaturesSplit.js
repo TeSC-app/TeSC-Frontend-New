@@ -4,6 +4,8 @@ import { SectionSplitProps } from '../../utils/SectionProps';
 import SectionHeader from './partials/SectionHeader';
 import Image from '../elements/Image';
 
+import '../../assets/scss/landingPage.scoped.scss';
+
 const propTypes = {
   ...SectionSplitProps.types
 };

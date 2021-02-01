@@ -6,6 +6,9 @@ import FeaturesSplit from '../components/sections/FeaturesSplit';
 import Testimonial from '../components/sections/Testimonial';
 import Cta from '../components/sections/Cta';
 
+import '../assets/scss/landingPage.scoped.scss';
+
+
 const Home = () => {
 
   return (

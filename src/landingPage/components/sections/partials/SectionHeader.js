@@ -2,6 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 
+import '../../../assets/scss/landingPage.scoped.scss';
+
+
 const propTypes = {
   data: PropTypes.shape({
     title: PropTypes.string,

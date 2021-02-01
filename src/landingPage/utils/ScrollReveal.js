@@ -2,9 +2,12 @@ import React, { useState, useEffect, useImperativeHandle } from 'react';
 import PropTypes from 'prop-types';
 import { throttle } from 'lodash';
 
+import '../assets/scss/landingPage.scoped.scss';
+
+
 const ScrollReveal = React.forwardRef((props, ref) => {
 
-  const [viewportHeight, setViewportheight] = useState(window.innerHeight); 
+  const [viewportHeight, setViewportheight] = useState(window.innerHeight);
   const [revealEl, setRevealel] = useState([]);
 
   const checkComplete = () => {
@@ -38,7 +41,7 @@ const ScrollReveal = React.forwardRef((props, ref) => {
     init() {
       setRevealel(document.querySelectorAll('[class*=reveal-]'));
     }
-  }));  
+  }));
 
   useEffect(() => {
     if (typeof revealEl !== 'undefined' && revealEl.length > 0) {
@@ -48,7 +51,7 @@ const ScrollReveal = React.forwardRef((props, ref) => {
       }
       revealElements();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealEl]);
 
   const handleListeners = () => {
@@ -70,12 +73,14 @@ const ScrollReveal = React.forwardRef((props, ref) => {
     handleListeners();
     revealElements();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewportHeight]);  
+  }, [viewportHeight]);
 
   return (
-    <>
-      {props.children()}
-    </>
+    <body className="has-animations">
+      <div className="body-wrap">
+        {props.children()}
+      </div>
+    </body>
   );
 });
 

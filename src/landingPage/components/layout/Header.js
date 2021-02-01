@@ -4,6 +4,8 @@ import classNames from 'classnames';
 import { Link } from 'react-router-dom';
 import Logo from './partials/Logo';
 
+import '../../assets/scss/landingPage.scoped.scss';
+
 const propTypes = {
   navPosition: PropTypes.string,
   hideNav: PropTypes.bool,

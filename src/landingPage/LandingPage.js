@@ -5,6 +5,7 @@ import ScrollReveal from './utils/ScrollReveal';
 import App from '../components/App';
 import { Loader, Dimmer } from 'semantic-ui-react';
 
+import '../landingPage/assets/scss/landingPage.scoped.scss';
 
 // Layouts
 import LayoutDefault from './layouts/LayoutDefault';
@@ -22,12 +23,12 @@ const LandingPage = () => {
   const Layout = (LayoutDefault === undefined) ? props => (<>{props.children}</>) : LayoutDefault;
 
 
-  useEffect(() => {
-    (async () => {
-      await import('../landingPage/assets/scss/landing-page.scoped.scss');
-      setIsLoaded(true);
-    })();
-  }, []);
+  // useEffect(() => {
+  //   (async () => {
+  //     await import('../landingPage/assets/scss/landing-page.scoped.scss');
+  //     setIsLoaded(true);
+  //   })();
+  // }, []);
 
   useEffect(() => {
     document.body.classList.add('is-loaded');
@@ -38,15 +39,14 @@ const LandingPage = () => {
   return (
     <>
       <ScrollReveal
-        style={{ display: 'hidden' }}
         ref={childRef}
-        children={() => isLoaded &&  (
+        children={() => (
           <Layout>
             <Home />
           </Layout>
         )} />
 
-      {!isLoaded &&
+      {isLoaded &&
         <Dimmer active={true} >
           <Loader content='Loading...' />
         </Dimmer>

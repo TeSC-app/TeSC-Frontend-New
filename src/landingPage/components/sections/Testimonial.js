@@ -3,6 +3,8 @@ import classNames from 'classnames';
 import { SectionTilesProps } from '../../utils/SectionProps';
 import SectionHeader from './partials/SectionHeader';
 
+import '../../assets/scss/landingPage.scoped.scss';
+
 const propTypes = {
   ...SectionTilesProps.types
 }

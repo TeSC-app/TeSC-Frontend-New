@@ -6,7 +6,9 @@ import Button from '../elements/Button';
 import Image from '../elements/Image';
 import Modal from '../elements/Modal';
 
+import '../../assets/scss/landingPage.scoped.scss';
 import videoPlaceholder from './../../assets/images/video-placeholder.jpg';
+
 
 const propTypes = {
   ...SectionProps.types

@@ -5,6 +5,8 @@ import Logo from './partials/Logo';
 import FooterNav from './partials/FooterNav';
 import FooterSocial from './partials/FooterSocial';
 
+import '../../assets/scss/landingPage.scoped.scss';
+
 const propTypes = {
   topOuterDivider: PropTypes.bool,
   topDivider: PropTypes.bool

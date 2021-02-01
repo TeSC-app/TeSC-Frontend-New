@@ -5,4 +5,9 @@
 @import './components/registry';
 @import './components/sidebar';
 @import './components/search-box';
-@import './components/semantic-ui-component';
+
+@import './libs-overwritten/semantic-ui/basic-components';
+// @import './libs-overwritten/cruip-open-landing-page/has-animations';
+// @import './libs-overwritten/cruip-open-landing-page/body-wrap';
+
+// @import './../landingPage/assets/scss/core/layout/main'

@@ -4,6 +4,8 @@ import classNames from 'classnames';
 import FormLabel from './FormLabel';
 import FormHint from './FormHint';
 
+import '../../assets/scss/landingPage.scoped.scss';
+
 const propTypes = {
   children: PropTypes.node,
   label: PropTypes.string,

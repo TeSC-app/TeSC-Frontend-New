@@ -17,15 +17,11 @@ const history = createBrowserHistory();
 
 getWeb3().then(web3 => {
   ReactDOM.render(
-    // <Router history={history}>
     <React.StrictMode>
       <BrowserRouter>
-        <App web3={web3} />,
-
+        <App web3={web3} />
       </BrowserRouter>
     </React.StrictMode>,
-    // {<App web3={web3} />
-    // </Router>,
     document.getElementById('root')
   );
 });

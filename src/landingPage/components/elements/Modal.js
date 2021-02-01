@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 
+import '../../assets/scss/landingPage.scoped.scss';
+
 const propTypes = {
   children: PropTypes.node,
   handleClose: PropTypes.func.isRequired,

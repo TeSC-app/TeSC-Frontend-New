@@ -3,6 +3,7 @@ import classNames from 'classnames';
 import { Link } from 'react-router-dom';
 import Image from '../../elements/Image';
 
+import '../../../assets/scss/landingPage.scoped.scss';
 import logo from '../../../assets/images/logo.svg'
 
 const Logo = ({
