@@ -65,7 +65,7 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
             </SidebarHeader>
             <SidebarContent>
                 <Menu iconShape="circle">
-                    <MenuItem onClick={(e) => handlePageNavigation(e, "/")} icon={<FaChartBar size='1.5em' />} >
+                    <MenuItem onClick={(e) => handlePageNavigation(e, "/dashboard")} icon={<FaChartBar size='1.5em' />} >
                         Dashboard
                     </MenuItem>
                     <SubMenu title="TLS-endorsed Contract" icon={<FaScroll size='1.5em' />} defaultOpen >

@@ -1,6 +1,5 @@
 import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
 import { Form, Label, Button, Segment, Header, Input, Divider, Icon, Ref, Popup, Checkbox } from 'semantic-ui-react';
-import { isSuperSet, intersection } from "set-operations";
 
 import TeSC from '../../ethereum/build/contracts/ERCXXXImplementation.json';
 import AppContext from '../../appContext';

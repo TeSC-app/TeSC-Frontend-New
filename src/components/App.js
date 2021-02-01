@@ -1,16 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Route } from 'react-router-dom';
+import { BrowserRouter, Route, useLocation } from 'react-router-dom';
 import { Container, Loader, Dimmer, Segment } from 'semantic-ui-react';
 import 'semantic-ui-css/semantic.min.css';
+
+import AppContext from '../appContext';
 import Sidebar from './Sidebar';
+import LandingPage from '../landingPage/LandingPage';
 import Dashboard from '../pages/Dashboard';
 import TeSCNew from '../pages/TescNew';
 import TeSCInspect from '../pages/TescInspect';
 import RegistryInspect from '../pages/RegistryInspect';
 import RegistryAdd from '../pages/RegistryAdd';
-import AppContext from '../appContext';
-import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import RegistryAnalytics from '../pages/RegistryAnalytics';
+
+
+import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
+// import LandingPage from '../landingPage/LandingPage';
 
 const App = ({ web3 }) => {
     const [collapsed, setCollapsed] = useState(false);
@@ -22,11 +27,14 @@ const App = ({ web3 }) => {
     const [hasAccountChanged, setHasAccountChanged] = useState(false);
     const [registryContract, setRegistryContract] = useState(undefined);
 
+    const location = useLocation();
+
     const loadStorage = () => {
         return JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress));
     };
 
     useEffect(() => {
+        console.log('location', location);
         const init = async () => {
             try {
                 const registryContract = new web3.eth.Contract(
@@ -87,32 +95,40 @@ const App = ({ web3 }) => {
         setHasAccountChanged(newHasAccountChanged);
     };
 
+    const renderLandingPage = () => {
+        return (
+            <Route path='/' exact component={LandingPage} />
+        );
+    };
+
     return (
-        <BrowserRouter>
-            <AppContext.Provider value={{
-                web3,
-                handleBlockScreen,
-                sysMsg,
-                showMessage,
-                handleDismissMessage,
-                account,
-                hasWalletAddress,
-                loadStorage,
-                hasAccountChanged,
-                handleAccountChanged,
-                registryContract
-            }}
-            >
-                {/* <Navbar hasWalletAddress={hasWalletAddress} selectedAccount={account} handleCollapseSidebar={handleCollapseSidebar} /> */}
+        <AppContext.Provider value={{
+            web3,
+            handleBlockScreen,
+            sysMsg,
+            showMessage,
+            handleDismissMessage,
+            account,
+            hasWalletAddress,
+            loadStorage,
+            hasAccountChanged,
+            handleAccountChanged,
+            registryContract
+        }}
+        >
+            {/* <Navbar hasWalletAddress={hasWalletAddress} selectedAccount={account} handleCollapseSidebar={handleCollapseSidebar} /> */}
+            {location.pathname === '/' ?
+                <Route path='/' exact component={LandingPage} />
+                :
                 <div className='layout'>
                     <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} handleCollapseSidebar={handleCollapseSidebar} />
                     <Container className="page">
                         <Segment className='main-segment' raised>
-                            <Route path="/" exact render={props => {
-                                return <Dashboard
-                                    {...props}
-                                />;
-                            }} />
+                            <Route
+                                path="/dashboard"
+                                exact
+                                render={props => <Dashboard{...props} />}
+                            />
                             <Route path="/tesc/new" component={TeSCNew} exact />
                             <Route path="/tesc/inspect" component={TeSCInspect} exact />
                             <Route path="/registry/inspect" exact render={props => {
@@ -129,11 +145,11 @@ const App = ({ web3 }) => {
                         </Segment>
                     </Container>
                 </div>
-                <Dimmer active={screenBlocked} style={{ zIndex: '9999' }}>
-                    <Loader indeterminate content='Waiting for transaction to finish...' />
-                </Dimmer>
-            </AppContext.Provider>
-        </BrowserRouter>
+            }
+            <Dimmer active={screenBlocked} style={{ zIndex: '9999' }}>
+                <Loader indeterminate content='Waiting for transaction to finish...' />
+            </Dimmer>
+        </AppContext.Provider>
     );
 };
 
