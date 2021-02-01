@@ -10,6 +10,7 @@ import {
     estimateRegistryRemoveCost,
 } from '../utils/tesc';
 import TableCellVerification from './TableCellVerification';
+import PieChart from '../components/analytics/PieChart';
 
 function TableEntry(props) {
     const {
@@ -212,6 +213,11 @@ function TableEntry(props) {
             : !isExploringDomain ? <Button basic onClick={exploreDomain}>{domain}</Button> : domain
     }
 
+    const renderPieChartForVerified = () => {
+        const data = [{id: 'Valid', value: tesc.verifiedCount}, {id: 'Invalid', value: tesc.contractCount - tesc.verifiedCount}]
+        return <PieChart loading={false} data={data} isRegistryInspect={true} />
+    }
+
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
@@ -225,7 +231,7 @@ function TableEntry(props) {
                 }
             </Table.Cell>
             <Table.Cell textAlign='center'>{isDashboard ? renderDomain() : isExploringDomain ? renderDomainForRegistryInspect() : tesc.contractCount}</Table.Cell>
-            <Table.Cell textAlign='center'>{isExploringDomain ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : tesc.verifiedCount}</Table.Cell>
+            <Table.Cell textAlign='center'>{isExploringDomain ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
             {isExploringDomain && <TableCellVerification {...tableCellVerifProps} />}
             {isDashboard &&
                 <Table.Cell textAlign="center">

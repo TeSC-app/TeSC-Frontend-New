@@ -42,7 +42,7 @@ function RegistryInspect(props) {
                         domain: entry.domain, contractCount: entriesRaw.reduce((counter, entry_) =>
                                 entry_.domain === entry.domain ? counter += 1 : counter, 0),
                         verifiedCount: entriesRaw.reduce((counter, entry_) =>
-                            entry_.verified === entry.verified && entry_.domain === entry.domain ? counter += 1 : counter, 0)
+                            entry_.verified === true && entry_.domain === entry.domain ? counter += 1 : counter, 0)
                     }))
                     let distinctEntriesWithOccurances = []
                     const map = new Map();
