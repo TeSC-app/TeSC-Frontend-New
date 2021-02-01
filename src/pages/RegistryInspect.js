@@ -39,8 +39,7 @@ function RegistryInspect(props) {
                     //console.log(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })))
                     const entriesRaw = registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry)
                     const entriesWithOccurances = entriesRaw.map(entry => ({
-                        domain: (entry.domain.length === 64 && entry.domain.split('.').length === 1)
-                            ? 'hashed domain' : entry.domain, contractCount: entriesRaw.reduce((counter, entry_) =>
+                        domain: entry.domain, contractCount: entriesRaw.reduce((counter, entry_) =>
                                 entry_.domain === entry.domain ? counter += 1 : counter, 0),
                         verifiedCount: entriesRaw.reduce((counter, entry_) =>
                             entry_.verified === entry.verified && entry_.domain === entry.domain ? counter += 1 : counter, 0)

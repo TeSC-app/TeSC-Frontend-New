@@ -16,7 +16,9 @@ function TableEntry(props) {
         tesc,
         onTescsChange,
         isDashboard,
-        isExploringDomain
+        isExploringDomain,
+        handleSearchInput,
+        handleSearchSubmit
     } = props;
     const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
@@ -29,18 +31,20 @@ function TableEntry(props) {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const checkRegistry = async () => {
-            try {
-            const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call()
-            setIsInRegistry(isInRegistry)
-            setLoading(false)
-            } catch (error) {
-                console.log(error)
-                setLoading(false)
+        if (isExploringDomain) {
+            const checkRegistry = async () => {
+                try {
+                    const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call()
+                    setIsInRegistry(isInRegistry)
+                    setLoading(false)
+                } catch (error) {
+                    console.log(error)
+                    setLoading(false)
+                }
             }
+            checkRegistry()
         }
-        checkRegistry()
-    }, [contractAddress, registryContract])
+    }, [contractAddress, registryContract, isExploringDomain])
 
     useEffect(() => {
         if (isDashboard) handleAccountChanged(false);
@@ -194,19 +198,33 @@ function TableEntry(props) {
         return typeof createdAt === 'undefined' ? moment().format('DD/MM/YYYY HH:mm') : createdAt
     }
 
+    const exploreDomain = () => {
+        handleSearchInput(domain)
+        handleSearchSubmit(domain)
+    }
+
+    const renderDomainForRegistryInspect = () => {
+        return (domain.length === 64 && domain.split('.').length === 1) ?
+            <Popup content={`0x${domain}`} trigger={
+                !isExploringDomain ?
+                    <Button basic onClick={exploreDomain}>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
+                    <i>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
+            : !isExploringDomain ? <Button basic onClick={exploreDomain}>{domain}</Button> : domain
+    }
+
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
-                {isExploringDomain ? 
-                <span className='contract-address-column'>
-                    {
-                        own && isDashboard ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
-                    }
-                    <LinkTescInspect contractAddress={contractAddress} />
-                </span> : domain
+                {isExploringDomain ?
+                    <span className='contract-address-column'>
+                        {
+                            own && isDashboard ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
+                        }
+                        <LinkTescInspect contractAddress={contractAddress} />
+                    </span> : renderDomainForRegistryInspect()
                 }
             </Table.Cell>
-            <Table.Cell textAlign='center'>{isDashboard ? renderDomain() : isExploringDomain ? domain : tesc.contractCount}</Table.Cell>
+            <Table.Cell textAlign='center'>{isDashboard ? renderDomain() : isExploringDomain ? renderDomainForRegistryInspect() : tesc.contractCount}</Table.Cell>
             <Table.Cell textAlign='center'>{isExploringDomain ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : tesc.verifiedCount}</Table.Cell>
             {isExploringDomain && <TableCellVerification {...tableCellVerifProps} />}
             {isDashboard &&
@@ -218,7 +236,7 @@ function TableEntry(props) {
                 <Table.Cell textAlign="center">
                     {renderFavourites()}
                 </Table.Cell>
-            }       
+            }
             {isDashboard &&
                 <Table.Cell>{renderCreatedAt()}</Table.Cell>
             }

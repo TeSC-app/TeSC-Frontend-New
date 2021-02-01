@@ -133,6 +133,8 @@ function TableOverview(props) {
                     tesc={entry}
                     isExploringDomain={isExploringDomain}
                     isDashboard={isDashboard}
+                    handleSearchInput={handleSearchInput}
+                    handleSearchSubmit={handleSearchSubmit}
                 />))
         }
     };
@@ -141,7 +143,7 @@ function TableOverview(props) {
         setDomain(domain);
     }
 
-    const handleSearchSubmit = async () => {
+    const handleSearchSubmit = (domain) => {
         handleLoading(true)
         if (domain === '') {
             setIsExploringDomain(false)

@@ -3,7 +3,7 @@ import { Input, Form } from 'semantic-ui-react';
 
 const SearchBox = ({ label, value, onChange, placeholder, onSubmit, icon }) => (
     <div centered='true' className='search-box'>
-        <Form onSubmit={onSubmit}>
+        <Form onSubmit={() => onSubmit(value)}>
             <Form.Field>
                 <Input
                     value={value}
