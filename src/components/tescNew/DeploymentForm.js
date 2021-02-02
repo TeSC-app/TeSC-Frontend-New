@@ -230,6 +230,12 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
         if(json){
             setConstructorParameters(constructorParameters);
+            // setting the initial constructor parameter values
+            const initialConstructorParameterValues = [];
+            constructorParameters.forEach(() => {
+                initialConstructorParameterValues.push("");
+            });
+            setConstructorParameterValues(initialConstructorParameterValues);
             setEndorsedSolidityCode(solidityCodeWithInterface);
             setTescAbi(json.abi);
             setTescBytecode(json.bytecode);
@@ -396,25 +402,66 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const renderConstructorParameterInputFields = () => {
         return constructorParameters.map((constructorParameter, i) => 
             <p>
-                <Form.Field>
-                    {constructorParameter.type} {constructorParameter.name}:
-                </Form.Field>  
-                <Form.TextArea 
-                    placeholder="Please enter a value for the constructor parameter"
-                    onChange={e => handleTextChange(e.target.value, i)}
+                <Form.Input 
+                    label={constructorParameter.type + " " + constructorParameter.name + ":"}
+                    required={true}
+                    onChange={e => handleTextChange(e.target.value, i, constructorParameter.type)}
                 />
             </p>
         )
     }
 
-    const handleTextChange = (value, index) => {
+    const handleTextChange = (value, index, type) => {
+        // the empty string is a valid input
+        if(type !== "string" && value === ""){
+            setConstructorParameterInvalid(index);
+            return;
+        }
+        
+        switch(type){
+            case "uint": 
+                if(!isNaN(value)){
+                    const valueAsInt = parseInt(value);
+                    if(valueAsInt >= 0){
+                        break;
+                    } 
+                } 
+                setConstructorParameterInvalid(index);
+                return;
+            case "bool":
+                if(value === "true" && value === "false"){
+                    break;
+                }
+                setConstructorParameterInvalid(index);
+                return;
+        }
+        
         const updatedValues = constructorParameterValues;
         updatedValues[index] = value;
-        if(value === ""){
-            updatedValues.splice(index, 1);
-        }
         setConstructorParameterValues(updatedValues);
-        setAllParamsEntered(constructorParameters.length === constructorParameterValues.length);
+        setAllParamsEntered(validateConstructorParameterInput());
+    }
+
+    const setConstructorParameterInvalid = (index) => {
+        const updatedValues = constructorParameterValues;
+        updatedValues[index] = "";
+        setConstructorParameterValues(updatedValues);
+        setAllParamsEntered(false);
+    }
+
+    const validateConstructorParameterInput = () => {
+        let result = true;
+        constructorParameterValues.forEach((value, index) => {
+            if(value === ""){
+                const type = constructorParameters[index].type;
+                // empty input is only allowed for string
+                if(type !== "string"){
+                    result = false;
+                    return;
+                }
+            }
+        });
+        return result;
     }
 
     const handleEnterOriginalDomain = (originalDomain) => {
@@ -516,7 +563,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                             {endorsedSolidityCode}
                                         </Highlight>
                                     )}
-                                    {constructorParameters !== [] && renderConstructorParameterInputFields()}         
+                                    {constructorParameters !== [] && 
+                                        <Form>
+                                            {renderConstructorParameterInputFields()}
+                                        </Form>}         
                                 </p>
                             )}
 
