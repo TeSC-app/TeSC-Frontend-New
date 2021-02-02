@@ -17,3 +17,15 @@
     margin-top: 0.2em !important;
     color: royalblue !important
 }
+
+.smart-contracts {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-column-gap: 10px;
+    grid-row-gap: 10px;
+}
+
+.smart-contracts__icon {
+  width: 50px !important;
+}
+

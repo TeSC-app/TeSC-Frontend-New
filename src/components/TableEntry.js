@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import moment from 'moment';
-import { Table, Icon, Popup, Button } from 'semantic-ui-react';
+import { Table, Icon, Popup, Button, Image } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
 import AppContext from '../appContext';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
@@ -208,14 +208,18 @@ function TableEntry(props) {
         return (domain.length === 64 && domain.split('.').length === 1) ?
             <Popup content={`0x${domain}`} trigger={
                 !isExploringDomain ?
-                    <Button basic onClick={exploreDomain}>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
+                    <Button basic size='medium' onClick={exploreDomain}>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
                     <i>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
-            : !isExploringDomain ? <Button basic onClick={exploreDomain}>{domain}</Button> : domain
+            : !isExploringDomain ? <Button basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain
     }
 
     const renderPieChartForVerified = () => {
         const data = [{id: 'Valid', value: tesc.verifiedCount}, {id: 'Invalid', value: tesc.contractCount - tesc.verifiedCount}]
         return <PieChart loading={false} data={data} isRegistryInspect={true} />
+    }
+
+    const renderTescContractCount = () => {
+        return (<div className='smart-contracts'>{tesc.contractAddresses.map((contractAddress) => (<Popup content={contractAddress} trigger={<Image src='../images/smart-contract-icon.png' className='smart-contracts__icon' alt='Smart Contract' size='mini' />} />))}</div>)
     }
 
     return (
@@ -230,7 +234,7 @@ function TableEntry(props) {
                     </span> : renderDomainForRegistryInspect()
                 }
             </Table.Cell>
-            <Table.Cell textAlign='center'>{isDashboard ? renderDomain() : isExploringDomain ? renderDomainForRegistryInspect() : tesc.contractCount}</Table.Cell>
+            <Table.Cell textAlign='center'>{isDashboard ? renderDomain() : isExploringDomain ? renderDomainForRegistryInspect() : renderTescContractCount()}</Table.Cell>
             <Table.Cell textAlign='center'>{isExploringDomain ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
             {isExploringDomain && <TableCellVerification {...tableCellVerifProps} />}
             {isDashboard &&

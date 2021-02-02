@@ -31,8 +31,8 @@ function TableOverview(props) {
     const [domain, setDomain] = useState('')
 
     useEffect(() => {
-        console.log(tescs)
-        console.log(entriesWithOccurances)
+        //console.log(tescs)
+        //console.log(entriesWithOccurances)
         const init = async () => {
             try {
                 // setTescs(account ? (isDashboard? loadStorage() : []) : []);
