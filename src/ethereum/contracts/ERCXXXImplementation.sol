@@ -160,27 +160,6 @@ contract ERCXXXImplementation is ERCXXX {
         subendorsements.push(subendorsementAddress);
         emit SubendorsementsChanged(subendorsementAddress, EventType.Add);
     }
-
-    function updateSubendorsements(address[] calldata _subendorsements) external isOwner {
-        require(keccak256(abi.encodePacked(subendorsements)) != keccak256(abi.encodePacked(_subendorsements)), "Subendorsement arrays identical");
-        subendorsements = _subendorsements;
-        emit MultiSubendorsementsChanged(_subendorsements, EventType.Add);
-    }
-    
-    // @notice Removes an address from the array of subendorsements
-    // @param subendorsementAddress The address to be removed from the subendorsements
-    function removeSubendorsement(address subendorsementAddress) external isOwner {
-        uint N = subendorsements.length;
-        for (uint i = 0; i < N; i++) {
-            if (subendorsements[i] == subendorsementAddress) {
-                subendorsements[i] = subendorsements[N-1];
-                N = N-1;
-                i -= 1;
-                subendorsements.pop();
-            }
-        }
-        emit SubendorsementsChanged(subendorsementAddress, EventType.Remove);
-    }
     
     // @notice Removes an address at a specific index from the array of subendorsements
     // @param index of address which should be removed
@@ -190,6 +169,10 @@ contract ERCXXXImplementation is ERCXXX {
         subendorsements[index] = subendorsements[subendorsements.length-1];
         subendorsements.pop();
         emit SubendorsementsChanged(addr, EventType.Remove);
+    }
+    
+    function supportsInterface(bytes4 interfaceID) external pure returns (bool) {
+        return interfaceID == 0xd7de9043;
     }
     
 }

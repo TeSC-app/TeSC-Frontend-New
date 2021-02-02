@@ -27,14 +27,14 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
     useEffect(() => {
         (async () => {
             const fetchedSubendorsements = await contractInstance.current.methods.getSubendorsements().call();
-            setSubendorsements(new Set(fetchedSubendorsements.map(addr => addr.toLowerCase())));
+            setSubendorsements(new Set(fetchedSubendorsements));
         })();
 
     }, [contractAddress, web3.eth]);
 
     const validateAddressInput = (address, checkDuplicate = true) => {
         if (isValidContractAddress(address, true)) {
-            if (checkDuplicate && subendorsements.has(address.toLowerCase())) {
+            if (checkDuplicate && subendorsements.has(address)) {
                 setInvalidAddInputReason(`Contract ${address} already added`);
             } else {
                 setInvalidAddInputReason('');
@@ -96,7 +96,7 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
         try {
             setLoadingButtonIndex(subendorsements.size);
             handleBlockScreen(true);
-            await contractInstance.current.methods.addSubendorsement(newSubendorsement.toLowerCase()).send({ from: account, gas: '3000000' });
+            await contractInstance.current.methods.addSubendorsement(newSubendorsement).send({ from: account, gas: '3000000' });
             setSubendorsements(new Set([...subendorsements, newSubendorsement]));
             refresh();
         } catch (error) {
@@ -121,7 +121,7 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
                     className='ui input'
                     style={{ width: '75%', marginRight: '10px', marginBottom: '10px', color: '#292929', fontSize: '1em', lineHeight: '1.21428571em' }}
                 />
-                {owner && account && owner.toLowerCase() === account.toLowerCase() &&
+                {owner === account &&
                     <Button icon='x' color='red' basic
                         loading={loadingButtonIndex === i}
                         onClick={() => handleRemoveEndorsement(addr, i)}
@@ -179,7 +179,7 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
 
                 <Divider section style={{ width: '50%', margin: '40px auto' }} />
 
-                {owner && account && owner.toLowerCase() === account.toLowerCase() &&
+                {owner === account &&
                     <>
                         <Divider section hidden>
                             <p style={{ fontSize: '0.8em' }}>

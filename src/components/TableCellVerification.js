@@ -1,12 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useContext } from 'react'
 import axios from 'axios'
+
+import AppContext from '../appContext';
 import {
     isSha3Hash
 } from '../utils/tesc';
 import { Table, Popup, Loader, Icon } from 'semantic-ui-react';
 import LinkTescInspect from './InternalLink';
 
+
 function TableCellVerification(props) {
+    const { web3 } = useContext(AppContext);
     const { domain, contractAddress, verified, handleVerified } = props
     const [isVerified, setIsVerified] = useState(verified);
     const contractAddress_ = useRef(contractAddress);
@@ -32,14 +36,14 @@ function TableCellVerification(props) {
             try {
                 if(typeof verified !== 'boolean') {
                     console.log("verified", verified);
-                    const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress_.current.toLowerCase()}`);
+                    const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${web3.utils.toChecksumAddress(contractAddress_.current)}`);
                     setIsVerified(response.data.verified)
                 }
             } catch (error) {
                 console.log(error);
             }
         })();
-    }, [verified]);
+    }, [verified, web3.utils]);
 
 
     useEffect(() => {

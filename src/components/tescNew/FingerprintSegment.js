@@ -73,9 +73,8 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
                         claim: claim.current
                     }
                 });
-                const fingerprintLowerCase = res.data.fingerprint.toLowerCase();
-                setFingerprint(fingerprintLowerCase);
-                cache.current[domain.current] = fingerprintLowerCase;
+                setFingerprint(res.data.fingerprint);
+                cache.current[domain.current] = res.data.fingerprint;
 
             } else {
                 setFingerprint(cache.current[domain.current]);
@@ -117,9 +116,8 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
                         claim: claim.current
                     }
                 });
-                const fingerprintLowerCase = res.data.fingerprint.toLowerCase();
-                setFingerprint(fingerprintLowerCase);
-                cache.current[domain.current] = fingerprintLowerCase;
+                setFingerprint(res.data.fingerprint);
+                cache.current[domain.current] = res.data.fingerprint;
 
             } else {
                 setFingerprint(cache.current[domain.current]);
@@ -140,7 +138,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
 
     useEffect(() => {
         (async () => {
-            if (!contractAddress.current && web3.currentProvider.selectedAddress) {
+            if (!contractAddress.current && account) {
                 contractAddress.current = await predictContractAddress(web3);
             }
             if (signature.current !== inputs.signature) {

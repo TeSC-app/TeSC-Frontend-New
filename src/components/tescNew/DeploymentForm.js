@@ -65,8 +65,8 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
     const defaultFingerprint = !initInputs || parseInt(initInputs.fisngerprint, 16) === 0 ? '' : initInputs.fingerprint;
 
-    const [contractAddress, setContractAddress] = useState(initInputs ? initInputs.contractAddress.toLowerCase() : '');
-    const [futureContractAddress, setFutureContractAddress] = useState(initInputs ? initInputs.contractAddress.toLowerCase() : '');
+    const [contractAddress, setContractAddress] = useState(initInputs ? initInputs.contractAddress : '');
+    const [futureContractAddress, setFutureContractAddress] = useState(initInputs ? initInputs.contractAddress : '');
 
     const [domain, setDomain] = useState(initInputs && !initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : typedInDomain);
     const [expiry, setExpiry] = useState(initInputs ? initInputs.expiry : null);

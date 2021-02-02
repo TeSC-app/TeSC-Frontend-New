@@ -29,12 +29,11 @@ function TableOverview(props) {
                 setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRY_PER_PAGE) : []);
                 setTotalPages(Math.ceil(tescs ? tescs.length / ENTRY_PER_PAGE : 0));
                 window.ethereum.on('accountsChanged', (accounts) => {
-                    setTescs(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
-                        JSON.parse(localStorage.getItem(accounts[0].toLowerCase())) :
-                        []);
-                    setDisplayedEntries(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
-                        JSON.parse(localStorage.getItem(accounts[0].toLowerCase())).slice(0, ENTRY_PER_PAGE) :
-                        []);
+                    const account = web3.utils.toChecksumAddress(accounts[0]);
+                    setTescs(accounts[0] && localStorage.getItem(account) ?
+                        JSON.parse(localStorage.getItem(account)) : []);
+                    setDisplayedEntries(account && localStorage.getItem(account) ?
+                        JSON.parse(localStorage.getItem(account)).slice(0, ENTRY_PER_PAGE) : []);
                 });
             }
             catch (error) {
@@ -42,7 +41,7 @@ function TableOverview(props) {
             }
         };
         init();
-    }, [tescs, account, web3.eth, web3.eth.Contract, web3.eth.net]);
+    }, [tescs, account, web3]);
 
 
     const handleChangeTescs = (tesc) => {
@@ -58,18 +57,18 @@ function TableOverview(props) {
                     } else {
                         tescNew.isFavourite = true;
                     }
-                    localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+                    localStorage.setItem(account, JSON.stringify(tescsNew));
                     break;
                 }
             }
             if (!found) {
                 tescsNew.push({ contractAddress: tesc.contractAddress, domain: tesc.domain, expiry: tesc.expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') });
-                localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+                localStorage.setItem(account, JSON.stringify(tescsNew));
             }
             setTescs(updatedTescs.sort((tescA, tescB) => tescB.expiry - tescA.expiry))
         } else {
         setTescs(updatedTescs.sort((tescA, tescB) => tescA.createdAt.localeCompare(tescB.createdAt)));
-        localStorage.setItem(account.toLowerCase(), JSON.stringify(updatedTescs));
+        localStorage.setItem(account, JSON.stringify(updatedTescs));
         }
     };
 
@@ -77,21 +76,21 @@ function TableOverview(props) {
         setCurrentPage(1);
         setFilterOption(0);
         setTotalPages(Math.ceil(tescs.length / ENTRY_PER_PAGE));
-        localStorage.getItem(account.toLowerCase()) ? setDisplayedEntries(tescs.slice(0, ENTRY_PER_PAGE)) : setTescs([]);
+        localStorage.getItem(account) ? setDisplayedEntries(tescs.slice(0, ENTRY_PER_PAGE)) : setTescs([]);
     };
 
     const showFavouriteTescs = () => {
         setCurrentPage(1);
         setFilterOption(1);
         setTotalPages(Math.ceil(tescs.filter(tesc => tesc.isFavourite === true).length / ENTRY_PER_PAGE));
-        localStorage.getItem(account.toLowerCase()) ? setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === true).slice(0, ENTRY_PER_PAGE)) : setTescs([]);
+        localStorage.getItem(account) ? setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === true).slice(0, ENTRY_PER_PAGE)) : setTescs([]);
     };
 
     const showOwnTescs = () => {
         setCurrentPage(1);
         setFilterOption(2);
         setTotalPages(Math.ceil(tescs.filter(tesc => tesc.own === true).length / ENTRY_PER_PAGE));
-        localStorage.getItem(account.toLowerCase()) ? setDisplayedEntries(tescs.filter(tesc => tesc.own === true).slice(0, ENTRY_PER_PAGE)) : setTescs([]);
+        localStorage.getItem(account) ? setDisplayedEntries(tescs.filter(tesc => tesc.own === true).slice(0, ENTRY_PER_PAGE)) : setTescs([]);
     };
 
 

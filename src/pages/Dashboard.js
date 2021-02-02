@@ -8,10 +8,10 @@ import AppContext from '../appContext';
 const Dashboard = () => {
     const { account } = useContext(AppContext);
 
-    const [rowData, setRowData] = useState(account ? JSON.parse(localStorage.getItem(account.toLowerCase())) : []);
+    const [rowData, setRowData] = useState(account ? JSON.parse(localStorage.getItem(account)) : []);
 
     useEffect(() => {
-        setRowData(JSON.parse(localStorage.getItem(account.toLowerCase())));
+        setRowData(JSON.parse(localStorage.getItem(account)));
         console.log('account', account);
     }, [account]);
 

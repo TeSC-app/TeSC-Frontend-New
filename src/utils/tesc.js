@@ -14,7 +14,7 @@ export const FLAGS = {
 };
 
 export const predictContractAddress = async (web3) => {
-    const senderAddress = web3.currentProvider.selectedAddress;
+    const senderAddress = web3.utils.toChecksumAddress(web3.currentProvider.selectedAddress);
     console.log("Sender address:", senderAddress);
 
     if (!senderAddress) {
@@ -26,7 +26,7 @@ export const predictContractAddress = async (web3) => {
     const futureAddress = "0x" + web3.utils.sha3(RLP.encode([senderAddress, nonce])).substring(26);
     console.log("Faddress:", futureAddress);
 
-    return futureAddress;
+    return  web3.utils.toChecksumAddress(futureAddress);
 };
 
 export const generateSignature = async ({ address, domain, expiry, flagsHex }, privateKeyPem) => {
@@ -64,7 +64,7 @@ export const hexStringToBitSet = (hexStr) => {
 
 
 export const estimateDeploymentCost = async (web3, tx) => {
-    const gasEstimation = await tx.estimateGas({ from: web3.currentProvider.selectedAddress, gas: '3000000' });
+    const gasEstimation = await tx.estimateGas({ from: web3.utils.toChecksumAddress(web3.currentProvider.selectedAddress), gas: '3000000' });
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 };
 
@@ -81,12 +81,12 @@ export const estimateRegistryRemoveCost = async (web3, selectedAccount, contract
 
 export const storeTesc = ({ account, claim }) => {
     const { contractAddress, domain, expiry } = claim;
-    let tescs = JSON.parse(localStorage.getItem(account.toLowerCase()));
+    let tescs = JSON.parse(localStorage.getItem(account));
     if (!tescs) {
         tescs = [];
     }
     tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, createdAt: moment().format('DD/MM/YYYY HH:mm') });
-    localStorage.setItem(account.toLowerCase(), JSON.stringify(tescs));
+    localStorage.setItem(account, JSON.stringify(tescs));
 };
 
 export const isValidContractAddress = (address, withReason = false) => {
@@ -100,7 +100,7 @@ export const isValidContractAddress = (address, withReason = false) => {
         throw new Error('Contract address is empty');
     } else if (address.substring(0, 2) !== '0x') {
         throw new Error('Contract address must start with 0x');
-    } else if (!Boolean(address.match(/^0x[0-9a-f]*$/i))) {
+    } else if (!Boolean(address.match(/^0x[0-9a-fA-F]*$/i))) {
         throw new Error('Contract address contains non-hexadecimal digits');
     } else if (address.length !== 42) {
         throw new Error('Contract address must be 42 characters long (prefix 0x and 40 hexadecimal digits)');

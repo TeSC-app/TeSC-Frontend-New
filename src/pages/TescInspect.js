@@ -4,6 +4,7 @@ import BitSet from 'bitset';
 import axios from 'axios';
 import AppContext from '../appContext';
 import { FLAGS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc';
+import { extractAxiosErrorMessage } from '../utils/formatError';
 import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
 import { buildNegativeMsg } from "../components/FeedbackMessage";
 import SearchBox from "../components/SearchBox";
@@ -14,7 +15,7 @@ import SubEndorsementAddition from "../components/tescInspect/SubEndorsementAddi
 import moment from 'moment';
 
 const TeSCInspect = ({ location }) => {
-    const { web3, showMessage, loadStorage } = useContext(AppContext);
+    const { web3, account, showMessage, loadStorage } = useContext(AppContext);
     const [contractAddress, setContractAddress] = useState('');
     const [contractOwner, setContractOwner] = useState('');
     const [domainFromChain, setDomainFromChain] = useState('');
@@ -26,7 +27,7 @@ const TeSCInspect = ({ location }) => {
     const [typedInDomain, setTypedInDomain] = useState('');
     const [isPlainDomainSubmitted, setIsPlainDomainSubmitted] = useState(false);
     const [verifResult, setVerifResult] = useState(null);
-    const [tescIsInFavourites, setTescsIsInFavourites] = useState(false);
+    const [isInFavourites, setIsInFavourites] = useState(null);
     const [tescs, setTescs] = useState(loadStorage());
 
     const [isSubendorsement, setIsSubendorsement] = useState(false);
@@ -34,6 +35,10 @@ const TeSCInspect = ({ location }) => {
     useEffect(() => {
         setTescs(loadStorage());
     }, [loadStorage]);
+
+    useEffect(() => {
+        setTescs(JSON.parse(localStorage.getItem(account)));
+    }, [account]);
 
     useEffect(() => {
         if (!!flags.get(FLAGS.DOMAIN_HASHED) && typedInDomain && web3.utils.sha3(typedInDomain).substring(2) === domainFromChain && !verifResult) {
@@ -56,14 +61,8 @@ const TeSCInspect = ({ location }) => {
             setSignature(await contract.methods.getSignature().call());
             setFingerprint(await contract.methods.getFingerprint().call());
 
-            setContractOwner((await contract.methods.owner().call()).toLowerCase());
+            setContractOwner(await contract.methods.owner().call());
 
-            for (const tesc of tescs) {
-                if (tesc.contractAddress === contractAddress) {
-                    setTescsIsInFavourites(tesc.isFavourite);
-                    break;
-                }
-            }
 
         } catch (err) {
             showMessage(buildNegativeMsg({
@@ -71,7 +70,7 @@ const TeSCInspect = ({ location }) => {
                 msg: err.message
             }));
         };
-    }, [contractAddress, showMessage, tescs, web3.eth.Contract]);
+    }, [showMessage, web3.eth.Contract]);
 
     const addRemoveFavourites = async (address) => {
         let tescsNew = tescs ? tescs : [];
@@ -81,38 +80,49 @@ const TeSCInspect = ({ location }) => {
                 found = true;
                 if (tesc.isFavourite) {
                     tesc.isFavourite = false;
-                    setTescsIsInFavourites(false);
+                    setIsInFavourites(false);
                 } else {
                     tesc.isFavourite = true;
-                    setTescsIsInFavourites(true);
+                    setIsInFavourites(true);
                 }
-                localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+                localStorage.setItem(account, JSON.stringify(tescsNew));
                 break;
             }
         }
         if (!found) {
             tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') });
-            localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
-            setTescsIsInFavourites(true);
+            localStorage.setItem(account, JSON.stringify(tescsNew));
+            setIsInFavourites(true);
         }
     };
 
     const verifyTesc = useCallback(async () => {
         if (isDomainHashed !== null && (!isDomainHashed || (isDomainHashed && isPlainDomainSubmitted))) {
-            const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress.toLowerCase()}`, {
-                params: { plainDomain: typedInDomain }
-            });
-            console.log('VERIF_RESULT', response);
-            setVerifResult(response.data);
-            setIsPlainDomainSubmitted(false);
+            try {
+                console.log('contractAddress', contractAddress);
+                console.log('typedInDomain', typedInDomain);
+                const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/verify/${contractAddress}`, {
+                    params: { plainDomain: typedInDomain }
+                });
+                console.log('VERIF_RESULT', response);
+                setVerifResult(response.data);
+                setIsPlainDomainSubmitted(false);
+            } catch (error) {
+                const msg = extractAxiosErrorMessage({ error, subject: isDomainHashed ? typedInDomain : domainFromChain });
+                showMessage(buildNegativeMsg({
+                    header: `Unable to verify contract ${contractAddress}`,
+                    msg,
+                }));
+            }
         }
-    }, [contractAddress, isDomainHashed, typedInDomain, isPlainDomainSubmitted]);
+    }, [contractAddress, domainFromChain, isDomainHashed, typedInDomain, isPlainDomainSubmitted, showMessage]);
 
     useEffect(() => {
-        verifyTesc();
-    }, [contractAddress, isPlainDomainSubmitted, verifyTesc]);
+        
+    }, []);
 
     const handleChangeAddress = useCallback(async (address) => {
+        console.log('addresssssss', address)
         setContractAddress(address);
         if (isValidContractAddress(address)) {
             try {
@@ -123,6 +133,12 @@ const TeSCInspect = ({ location }) => {
                     msg: err.message
                 }));
                 console.log(err);
+            }
+            for (const tesc of tescs) {
+                if (tesc.contractAddress === contractAddress) {
+                    setIsInFavourites(tesc.isFavourite);
+                    break;
+                }
             }
         }
     }, [fetchTescData, showMessage]);
@@ -162,6 +178,7 @@ const TeSCInspect = ({ location }) => {
         e.preventDefault();
         setVerifResult(null);
         setIsPlainDomainSubmitted(true);
+        verifyTesc();
     };
 
     const handleCloseTescUpdate = async (e) => {
@@ -170,10 +187,6 @@ const TeSCInspect = ({ location }) => {
         await fetchTescData(contractAddress);
         await verifyTesc();
     };
-
-    useEffect(() => {
-        setTescs(JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress)));
-    }, [web3.currentProvider.selectedAddress]);
 
     const handleToggleSubendorsement = () => {
         setIsSubendorsement(!isSubendorsement);
@@ -197,7 +210,7 @@ const TeSCInspect = ({ location }) => {
                 icon='search'
                 validInput={true}
             >
-                <div style={{width: '75%', marginLeft:'12.5%', textAlign: 'initial'}}>
+                <div style={{ width: '75%', marginLeft: '12.5%', textAlign: 'initial' }}>
                     <Checkbox
                         checked={isSubendorsement}
                         onClick={e => handleToggleSubendorsement()}
@@ -221,7 +234,7 @@ const TeSCInspect = ({ location }) => {
                                     data={{ contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint }}
                                 />
                                 <div style={{ marginTop: '0.5em' }}>
-                                    {web3.currentProvider.selectedAddress === contractOwner && (
+                                    {account === contractOwner && (
                                         <Modal
                                             closeIcon
                                             trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
@@ -246,15 +259,15 @@ const TeSCInspect = ({ location }) => {
                                             </Modal.Content>
                                         </Modal>
                                     )}
-                                    <Popup content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
+                                    <Popup content={isInFavourites ? 'Remove from favourites' : 'Add to favourites'}
                                         trigger={
                                             <Button
                                                 basic
                                                 color='pink'
-                                                icon={tescIsInFavourites ? 'heart' : 'heart outline'}
-                                                className={tescIsInFavourites ? "favourite" : "notFavourite"}
+                                                icon={isInFavourites ? 'heart' : 'heart outline'}
+                                                className={isInFavourites ? "favourite" : "notFavourite"}
                                                 onClick={() => addRemoveFavourites(contractAddress)}
-                                                content={tescIsInFavourites ? 'Unfavourite' : 'Favourite'}
+                                                content={isInFavourites ? 'Unfavourite' : 'Favourite'}
                                                 style={{ float: 'right' }}
                                             />}
                                     />
@@ -321,7 +334,7 @@ const TeSCInspect = ({ location }) => {
 
                 <Grid.Row style={{ width: `${1000 / 16}%` }}>
                     <Grid.Column width={10}>
-                        {!!flags.get(FLAGS.ALLOW_SUBENDORSEMENT) && contractAddress && contractOwner &&
+                        {!!flags.get(FLAGS.ALLOW_SUBENDORSEMENT) && isValidContractAddress(contractAddress) && isValidContractAddress(contractOwner) &&
                             <SubEndorsementAddition
                                 contractAddress={contractAddress}
                                 owner={contractOwner}

@@ -28,8 +28,6 @@ interface ERCXXX /* is ERC165 */ {
     // @dev This emits when an address was added or removed from the subendorsements
     event SubendorsementsChanged(address indexed contractAddr, EventType eventType);
 
-    event MultiSubendorsementsChanged(address[] indexed addresses, EventType eventType);
-
     /*
         Getter-Functions
     */

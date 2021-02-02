@@ -54,7 +54,8 @@ const App = ({ web3 }) => {
         const init = async () => {
             if (window.ethereum) {
                 const [selectedAccount] = await web3.eth.getAccounts();
-                setAccount(selectedAccount ? selectedAccount.toLowerCase() : '');
+                // setAccount(selectedAccount ? selectedAccount.toLowerCase() : '');
+                setAccount(web3.utils.toChecksumAddress(selectedAccount));
                 window.ethereum.on('accountsChanged', function (accounts) {
                     setHasAccountChanged(true);
                     if (!accounts[0]) {
