@@ -30,7 +30,8 @@ const App = ({ web3 }) => {
     const location = useLocation();
 
     const loadStorage = () => {
-        return JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress));
+        const storage = JSON.parse(localStorage.getItem(web3.utils.toChecksumAddress(web3.currentProvider.selectedAddress)));
+        return storage ? storage : [];
     };
 
     useEffect(() => {
