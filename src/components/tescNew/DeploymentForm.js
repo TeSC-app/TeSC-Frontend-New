@@ -35,6 +35,7 @@ import {
     storeTesc,
     estimateDeploymentCost,
     formatClaim,
+    isValidContractAddress,
     FLAGS,
 } from '../../utils/tesc';
 import { extractAxiosErrorMessage } from '../../utils/formatError';
@@ -79,8 +80,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const [flags, setFlags] = useState(initInputs ? initInputs.flags : new BitSet('0x00'));
     const [currentDomain, setCurrentDomain] = useState(initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : domain);
     const [fingerprint, setFingerprint] = useState(defaultFingerprint);
-    const [tescAbi, setTescAbi] = useState([]);
-    const [tescBytecode, setTescBytecode] = useState('');
+    const [deploymentJson, setDeploymentJson] = useState({abi: TeSC.abi, bytecode: TeSC.bytecode});
     const [constructorParameters, setConstructorParameters] = useState([]);
     const [constructorParameterValues, setConstructorParameterValues] = useState([]);
     const [allParamsEntered, setAllParamsEntered] = useState(false);
@@ -144,9 +144,9 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         
     }
 
-    const makeDeploymentTx = useCallback(async (currentDomain, tescAbi, tescBytecode) => {
-        return await new web3.eth.Contract(tescAbi).deploy({
-            data: tescBytecode,
+    const makeDeploymentTx = useCallback(async (currentDomain, json, constructorParameterValues) => {
+        return await new web3.eth.Contract(json.abi).deploy({
+            data: json.bytecode,
             arguments: [currentDomain, prevExpiry.current, flagsToBytes24Hex(prevFlags.current), padToBytesX(prevFingerprint.current, 32), prevSignature.current].concat(constructorParameterValues)
         });
     }, [web3.eth.Contract]);
@@ -237,8 +237,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             });
             setConstructorParameterValues(initialConstructorParameterValues);
             setEndorsedSolidityCode(solidityCodeWithInterface);
-            setTescAbi(json.abi);
-            setTescBytecode(json.bytecode);
+            setDeploymentJson(json);
         }else{
             // TODO handle compile error that occured after endorsement (sorry, there was a problem)
             const compileError = compileRes.data.compileError;
@@ -298,7 +297,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
                 if (signature) {
                     console.log(5)
-                    const tx = !initInputs ? await makeDeploymentTx(currentDomain, tescAbi, tescBytecode) : await makeUpdateTx(currentDomain);
+                    const tx = !initInputs ? await makeDeploymentTx(currentDomain, deploymentJson, constructorParameterValues) : await makeUpdateTx(currentDomain);
                     if (!initInputs || contractAddress) {
                         const estCost = await estimateDeploymentCost(web3, tx);
                         setCostEstimated(estCost);
@@ -338,7 +337,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         if (currentDomain && expiry && signature) {
             try {
                 await validateEndorsement();
-                const tx = !initInputs ? await makeDeploymentTx(currentDomain, tescAbi, tescBytecode) : await makeUpdateTx(currentDomain);
+                const tx = !initInputs ? await makeDeploymentTx(currentDomain, deploymentJson, constructorParameterValues) : await makeUpdateTx(currentDomain);
                 console.log("tx", tx)
                 await tx.send({ from: account, gas: '2000000' })
                     .on('receipt', async (txReceipt) => {
@@ -417,19 +416,32 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             setConstructorParameterInvalid(index);
             return;
         }
+
+        if(type.startsWith("uint")){
+            if(isNaN(value)){
+                setConstructorParameterInvalid(index);
+                return;
+            } 
+            if(parseInt(value) < 0){
+                setConstructorParameterInvalid(index);
+                return;
+            } 
+        }else if(type.startsWith("int")){
+            if(isNaN(value)){
+                setConstructorParameterInvalid(index);
+                return;
+            }
+        }
         
-        switch(type){
-            case "uint": 
-                if(!isNaN(value)){
-                    const valueAsInt = parseInt(value);
-                    if(valueAsInt >= 0){
-                        break;
-                    } 
-                } 
+        switch(type){   
+            case "address": 
+                if(isValidContractAddress(value)){
+                    break;
+                }
                 setConstructorParameterInvalid(index);
                 return;
             case "bool":
-                if(value === "true" && value === "false"){
+                if(value === "true" || value === "false"){
                     break;
                 }
                 setConstructorParameterInvalid(index);
@@ -572,7 +584,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
                         </Fragment>
                     ),
-                    completed: tescAbi !== [] && tescBytecode !== '' && allParamsEntered
+                    completed: constructorParameters.length === 0 ? true : allParamsEntered
                 }
             case 1:
                 return {
