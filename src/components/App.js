@@ -37,7 +37,6 @@ const App = ({ web3 }) => {
     };
 
     useEffect(() => {
-        console.log('location', location);
         const init = async () => {
             try {
                 const registryContract = new web3.eth.Contract(

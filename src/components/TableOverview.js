@@ -3,9 +3,9 @@ import { Table, Dropdown, Pagination, Icon } from 'semantic-ui-react';
 
 import AppContext from '../appContext';
 import TableEntry from './TableEntry';
-import moment from 'moment'
+import moment from 'moment';
 
-const ENTRY_PER_PAGE = 5
+const ENTRIES_PER_PAGE = 5;
 
 function TableOverview(props) {
     const {
@@ -18,7 +18,7 @@ function TableOverview(props) {
 
     const [tescs, setTescs] = useState(rowData);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(tescs ? Math.ceil(tescs.length / ENTRY_PER_PAGE) : 0);
+    const [totalPages, setTotalPages] = useState(tescs ? Math.ceil(tescs.length / ENTRIES_PER_PAGE) : 0);
     const [filterOption, setFilterOption] = useState(0);
     const [displayedEntries, setDisplayedEntries] = useState([]);
 
@@ -26,14 +26,14 @@ function TableOverview(props) {
         const init = async () => {
             try {
                 // setTescs(account ? (isDashboard? loadStorage() : []) : []);
-                setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRY_PER_PAGE) : []);
-                setTotalPages(Math.ceil(tescs ? tescs.length / ENTRY_PER_PAGE : 0));
+                setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRIES_PER_PAGE) : []);
+                setTotalPages(Math.ceil(tescs ? tescs.length / ENTRIES_PER_PAGE : 0));
                 window.ethereum.on('accountsChanged', (accounts) => {
                     const account = web3.utils.toChecksumAddress(accounts[0]);
                     setTescs(accounts[0] && localStorage.getItem(account) ?
                         JSON.parse(localStorage.getItem(account)) : []);
                     setDisplayedEntries(account && localStorage.getItem(account) ?
-                        JSON.parse(localStorage.getItem(account)).slice(0, ENTRY_PER_PAGE) : []);
+                        JSON.parse(localStorage.getItem(account)).slice(0, ENTRIES_PER_PAGE) : []);
                 });
             }
             catch (error) {
@@ -47,8 +47,8 @@ function TableOverview(props) {
     const handleChangeTescs = (tesc) => {
         const updatedTescs = [...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), tesc];
         if (isRegistryInspect) {
-            let tescsNew = loadStorage() ? loadStorage() : []
-            let found = false
+            let tescsNew = loadStorage() ? loadStorage() : [];
+            let found = false;
             for (const tescNew of tescsNew) {
                 if (tescNew.contractAddress === tesc.contractAddress) {
                     found = true;
@@ -65,32 +65,33 @@ function TableOverview(props) {
                 tescsNew.push({ contractAddress: tesc.contractAddress, domain: tesc.domain, expiry: tesc.expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') });
                 localStorage.setItem(account, JSON.stringify(tescsNew));
             }
-            setTescs(updatedTescs.sort((tescA, tescB) => tescB.expiry - tescA.expiry))
+
+            setTescs(updatedTescs.sort((tescA, tescB) => tescB.expiry - tescA.expiry));
         } else {
-        setTescs(updatedTescs.sort((tescA, tescB) => tescA.createdAt.localeCompare(tescB.createdAt)));
-        localStorage.setItem(account, JSON.stringify(updatedTescs));
+            setTescs(updatedTescs.sort((tescA, tescB) => tescA.createdAt.localeCompare(tescB.createdAt)));
+            localStorage.setItem(account, JSON.stringify(updatedTescs));
         }
     };
 
     const showAllTescs = () => {
         setCurrentPage(1);
         setFilterOption(0);
-        setTotalPages(Math.ceil(tescs.length / ENTRY_PER_PAGE));
-        localStorage.getItem(account) ? setDisplayedEntries(tescs.slice(0, ENTRY_PER_PAGE)) : setTescs([]);
+        setTotalPages(Math.ceil(tescs.length / ENTRIES_PER_PAGE));
+        localStorage.getItem(account) ? setDisplayedEntries(tescs.slice(0, ENTRIES_PER_PAGE)) : setTescs([]);
     };
 
     const showFavouriteTescs = () => {
         setCurrentPage(1);
         setFilterOption(1);
-        setTotalPages(Math.ceil(tescs.filter(tesc => tesc.isFavourite === true).length / ENTRY_PER_PAGE));
-        localStorage.getItem(account) ? setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === true).slice(0, ENTRY_PER_PAGE)) : setTescs([]);
+        setTotalPages(Math.ceil(tescs.filter(tesc => tesc.isFavourite === true).length / ENTRIES_PER_PAGE));
+        localStorage.getItem(account) ? setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === true).slice(0, ENTRIES_PER_PAGE)) : setTescs([]);
     };
 
     const showOwnTescs = () => {
         setCurrentPage(1);
         setFilterOption(2);
-        setTotalPages(Math.ceil(tescs.filter(tesc => tesc.own === true).length / ENTRY_PER_PAGE));
-        localStorage.getItem(account) ? setDisplayedEntries(tescs.filter(tesc => tesc.own === true).slice(0, ENTRY_PER_PAGE)) : setTescs([]);
+        setTotalPages(Math.ceil(tescs.filter(tesc => tesc.own === true).length / ENTRIES_PER_PAGE));
+        localStorage.getItem(account) ? setDisplayedEntries(tescs.filter(tesc => tesc.own === true).slice(0, ENTRIES_PER_PAGE)) : setTescs([]);
     };
 
 
@@ -98,9 +99,9 @@ function TableOverview(props) {
     const changePage = (event, { activePage }) => {
         //check if there are filters applied
         setCurrentPage(activePage);
-        setTotalPages(Math.ceil(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc).length / ENTRY_PER_PAGE));
+        setTotalPages(Math.ceil(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc).length / ENTRIES_PER_PAGE));
         setDisplayedEntries(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc)
-            .slice((activePage - 1) * ENTRY_PER_PAGE, activePage * ENTRY_PER_PAGE));
+            .slice((activePage - 1) * ENTRIES_PER_PAGE, activePage * ENTRIES_PER_PAGE));
     };
 
 

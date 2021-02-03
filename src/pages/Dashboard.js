@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import 'react-day-picker/lib/style.css';
 import PageHeader from '../components/PageHeader';
 import TableOverview from '../components/TableOverview';
@@ -6,18 +6,9 @@ import AppContext from '../appContext';
 
 
 const Dashboard = () => {
-    const { account } = useContext(AppContext);
+    const { loadStorage } = useContext(AppContext);
 
-    const [rowData, setRowData] = useState(account ? JSON.parse(localStorage.getItem(account)) : []);
-
-    useEffect(() => {
-        setRowData(JSON.parse(localStorage.getItem(account)));
-        console.log('account', account);
-    }, [account]);
-
-    useEffect(() => {
-        console.log('rowData', rowData);
-    }, [rowData])
+    const rowData = useRef(loadStorage())
 
     return (
         <React.Fragment>
@@ -25,7 +16,7 @@ const Dashboard = () => {
             {rowData && 
                 <TableOverview
                     isDashboard={true}
-                    rowData={rowData}
+                    rowData={rowData.current}
                 />
             }
         </React.Fragment>
