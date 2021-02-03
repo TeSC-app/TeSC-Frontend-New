@@ -232,8 +232,12 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             setConstructorParameters(constructorParameters);
             // setting the initial constructor parameter values
             const initialConstructorParameterValues = [];
-            constructorParameters.forEach(() => {
-                initialConstructorParameterValues.push("");
+            constructorParameters.forEach((parameter) => {
+                if(parameter.type.endsWith("[]")){
+                    initialConstructorParameterValues.push([]);
+                }else{
+                    initialConstructorParameterValues.push("");
+                } 
             });
             setConstructorParameterValues(initialConstructorParameterValues);
             setEndorsedSolidityCode(solidityCodeWithInterface);
@@ -412,12 +416,22 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
     const handleTextChange = (value, index, type) => {
         // the empty string is a valid input
-        if(type !== "string" && value === ""){
+        if(value === "" && !(type === "string" || type.endsWith("[]"))){
             setConstructorParameterInvalid(index);
             return;
         }
 
-        if(type.startsWith("uint")){
+        if(type.endsWith("[]")){
+            const updatedValues = constructorParameterValues;
+            if(value === ""){
+                updatedValues[index] = [];
+            }else{
+                updatedValues[index] = value.split(',');
+            }
+            setConstructorParameterValues(updatedValues);
+            setAllParamsEntered(validateConstructorParameterInput());
+            return;
+        }else if(type.startsWith("uint")){
             if(isNaN(value)){
                 setConstructorParameterInvalid(index);
                 return;
@@ -464,10 +478,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const validateConstructorParameterInput = () => {
         let result = true;
         constructorParameterValues.forEach((value, index) => {
-            if(value === ""){
+            if(value === "" || value === []){
                 const type = constructorParameters[index].type;
-                // empty input is only allowed for string
-                if(type !== "string"){
+                // empty input is only allowed for string and arrays
+                if(type !== "string" && !type.endsWith("[]")){
                     result = false;
                     return;
                 }
