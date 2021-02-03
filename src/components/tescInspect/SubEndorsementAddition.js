@@ -22,10 +22,11 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
 
     const [loadingButtonIndex, setLoadingButtonIndex] = useState(-1);
 
-    const contractInstance = useRef(new web3.eth.Contract(TeSC.abi, contractAddress));
+    const contractInstance = useRef(null);
 
     useEffect(() => {
         (async () => {
+            contractInstance.current = new web3.eth.Contract(TeSC.abi, contractAddress)
             const fetchedSubendorsements = await contractInstance.current.methods.getSubendorsements().call();
             setSubendorsements(new Set(fetchedSubendorsements));
         })();
@@ -115,9 +116,10 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
             <>
                 {/* <div style={{marginBottom: '3px', fontWeight: 'bold'}}> Subendorsement {i + 1}</div> */}
                 <Label
+                    key={addr}
                     content={addr}
                     basic={hasSubendorsementMatch}
-                    color={hasSubendorsementMatch ? 'purple' : ''}
+                    color={hasSubendorsementMatch ? 'purple' : undefined}
                     className='ui input'
                     style={{ width: '75%', marginRight: '10px', marginBottom: '10px', color: '#292929', fontSize: '1em', lineHeight: '1.21428571em' }}
                 />
@@ -157,7 +159,7 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
             </Divider>
 
             <Form style={{ marginTop: '10px' }}>
-                <Form.Field error={invalidSearchInputReason}>
+                <Form.Field error={!!invalidSearchInputReason}>
                     {/* <label>Lookup & Verify</label> */}
                     <Input
                         value={subendorsementSearchAddress}
@@ -188,7 +190,7 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
                             </p>
                         </Divider>
 
-                        <Form.Field error={invalidAddInputReason}>
+                        <Form.Field error={!!invalidAddInputReason}>
                             {/* <label>New subendorsement</label> */}
                             <Input
                                 value={newSubendorsement}
@@ -215,7 +217,7 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
                     Current Subendorsements
                 </p>
             </Divider>
-            {renderSubendorsements()}
+            {contractAddress && renderSubendorsements()}
         </Segment>
     );
 };
