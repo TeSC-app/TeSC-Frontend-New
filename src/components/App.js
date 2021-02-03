@@ -30,7 +30,9 @@ const App = ({ web3 }) => {
     const location = useLocation();
 
     const loadStorage = () => {
-        const storage = JSON.parse(localStorage.getItem(web3.utils.toChecksumAddress(web3.currentProvider.selectedAddress)));
+        const walletAddress = web3.currentProvider.selectedAddress;
+        console.log('loadStorage of ', walletAddress)
+        const storage = JSON.parse(walletAddress? localStorage.getItem(web3.utils.toChecksumAddress(walletAddress)) : '');
         return storage ? storage : [];
     };
 

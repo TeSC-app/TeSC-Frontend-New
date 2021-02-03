@@ -2,6 +2,7 @@ import RLP from 'rlp-browser';
 import { PrivateKey } from '@fidm/x509';
 import BitSet from 'bitset';
 import moment from 'moment'
+import web3Utils from 'web3-utils'
 
 export const FLAGS = {
     DOMAIN_HASHED: 0,
@@ -93,7 +94,8 @@ export const isValidContractAddress = (address, withReason = false) => {
     if (!withReason) {
         return (address.substring(0, 2) === '0x')
             && Boolean(address.match(/^0x[0-9a-fA-F]*$/i))
-            && (address.length === 42);
+            && (address.length === 42)
+            && web3Utils.checkAddressChecksum(address);
     }
 
     if (!address) {
@@ -104,7 +106,9 @@ export const isValidContractAddress = (address, withReason = false) => {
         throw new Error('Contract address contains non-hexadecimal digits');
     } else if (address.length !== 42) {
         throw new Error('Contract address must be 42 characters long (prefix 0x and 40 hexadecimal digits)');
-    } 
+    } else if (web3Utils.checkAddressChecksum(address)) {
+        throw new Error('The capitalization checksum test for the contract address failed')
+    }
     return true;
 };
 

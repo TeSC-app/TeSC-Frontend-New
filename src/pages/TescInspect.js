@@ -32,14 +32,6 @@ const TeSCInspect = ({ location }) => {
 
     const [isSubendorsement, setIsSubendorsement] = useState(false);
 
-    useEffect(() => {
-        const tescArray = loadStorage();
-        console.log('tescArray', tescArray);
-        for (const tesc of tescArray) {
-            const { contractAddress, ...rest } = tesc;
-            tescs.current[contractAddress] = rest;
-        }
-    }, [loadStorage]);
 
     useEffect(() => {
         if (!!flags.get(FLAGS.DOMAIN_HASHED) && typedInDomain && web3.utils.sha3(typedInDomain).substring(2) === domainFromChain && !verifResult) {
@@ -79,7 +71,6 @@ const TeSCInspect = ({ location }) => {
             const isFav = !tescs.current[contractAddress].isFavourite;
             setIsInFavourites(isFav);
             tescs.current[contractAddress].isFavourite = isFav;
-
         }
 
         else {
@@ -94,7 +85,9 @@ const TeSCInspect = ({ location }) => {
     };
 
     const verifyTesc = useCallback(async () => {
-        if (isDomainHashed !== null &&
+        const isRepeated = verifResult && verifResult.contract && verifResult.contract.contractAddress.includes(contractAddress);
+        if (!isRepeated &&
+            isDomainHashed !== null &&
             (!isDomainHashed || (isDomainHashed && isPlainDomainSubmitted)) &&
             isValidContractAddress(contractAddress)
         ) {
@@ -115,7 +108,7 @@ const TeSCInspect = ({ location }) => {
                 }));
             }
         }
-    }, [contractAddress, domainFromChain, isDomainHashed, typedInDomain, isPlainDomainSubmitted, showMessage]);
+    }, [contractAddress, domainFromChain, isDomainHashed, typedInDomain, isPlainDomainSubmitted, showMessage, verifResult]);
 
     useEffect(() => {
         verifyTesc();
@@ -126,8 +119,8 @@ const TeSCInspect = ({ location }) => {
         setContractAddress(address);
         if (isValidContractAddress(address)) {
             try {
-                await fetchTescData(address);
                 setIsInFavourites(tescs.current[address] ? tescs.current[address].isFavourite : false);
+                await fetchTescData(address);
 
             } catch (err) {
                 showMessage(buildNegativeMsg({
@@ -141,11 +134,19 @@ const TeSCInspect = ({ location }) => {
     }, [fetchTescData, showMessage]);
 
     useEffect(() => {
-        showMessage(null);
-        if (location.state) {
-            handleChangeAddress(location.state.contractAddress);
+        if (Object.keys(tescs.current).length === 0) {
+            const tescArray = loadStorage();
+            console.log('tescArray', tescArray);
+            for (const tesc of tescArray) {
+                const { contractAddress, ...rest } = tesc;
+                tescs.current[contractAddress] = rest;
+            }
+            showMessage(null);
+            if (location.state) {
+                handleChangeAddress(location.state.contractAddress);
+            }
         }
-    }, [handleChangeAddress, location.state, showMessage]);
+    }, [loadStorage, showMessage, location.state, handleChangeAddress]);
 
     const clearResults = () => {
         setDomainFromChain(null);
@@ -160,6 +161,7 @@ const TeSCInspect = ({ location }) => {
         e.preventDefault();
         clearResults();
         try {
+            console.log('submit with ', contractAddress);
             isValidContractAddress(contractAddress, true);
             await fetchTescData(contractAddress);
             await verifyTesc();
@@ -185,13 +187,13 @@ const TeSCInspect = ({ location }) => {
         await verifyTesc();
     };
 
-    const handleToggleSubendorsement = () => {
-        setIsSubendorsement(!isSubendorsement);
-        clearResults();
-        if (isValidContractAddress(contractAddress)) {
-            const res = axios.get('/verify/');
-        }
-    };
+    // const handleToggleSubendorsement = () => {
+    //     setIsSubendorsement(!isSubendorsement);
+    //     clearResults();
+    //     if (isValidContractAddress(contractAddress)) {
+    //         const res = axios.get('/verify/');
+    //     }
+    // };
 
     return (
         <div>
@@ -206,8 +208,8 @@ const TeSCInspect = ({ location }) => {
                 onSubmit={handleSubmitAddress}
                 icon='search'
                 validInput={true}
-            >
-                <div style={{ width: '75%', marginLeft: '12.5%', textAlign: 'initial' }}>
+            />
+            {/* <div style={{ width: '75%', marginLeft: '12.5%', textAlign: 'initial' }}>
                     <Checkbox
                         checked={isSubendorsement}
                         onClick={e => handleToggleSubendorsement()}
@@ -219,8 +221,8 @@ const TeSCInspect = ({ location }) => {
                         content={`If you don't know the address of the master TeSC that endorses the contract at the address above and this endorsed contract should be subject to inspection, you can activate this option. Note that, it could take some time to finish this type of inspection since we have to scan through the TeSC Registry to search for the master contract.`}
                         trigger={<Icon name='question circle' />}
                     />
-                </div>
-            </SearchBox>
+                </div> */}
+            {/* </SearchBox> */}
             {isValidContractAddress(contractAddress) &&
                 <Grid style={{ margin: '0 auto' }}>
                     <Grid.Row>
