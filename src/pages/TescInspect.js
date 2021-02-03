@@ -54,8 +54,11 @@ const TeSCInspect = ({ location }) => {
             setSignature(await contract.methods.getSignature().call());
             setFingerprint(await contract.methods.getFingerprint().call());
 
-            setContractOwner(await contract.methods.owner().call());
-
+            const owner = await contract.methods.owner().call()
+            setContractOwner(owner);
+            if(owner.toLowerCase() === account.toLowerCase()) {
+                tescs.current[address].own = true;                
+            }
 
         } catch (err) {
             showMessage(buildNegativeMsg({
@@ -63,7 +66,7 @@ const TeSCInspect = ({ location }) => {
                 msg: err.message
             }));
         };
-    }, [showMessage, web3.eth.Contract]);
+    }, [showMessage, account, web3.eth.Contract]);
 
     const toggleFavourite = () => {
         let found = tescs.current[contractAddress] && Object.keys(tescs.current[contractAddress]).length > 0;
@@ -71,9 +74,10 @@ const TeSCInspect = ({ location }) => {
             const isFav = !tescs.current[contractAddress].isFavourite;
             setIsInFavourites(isFav);
             tescs.current[contractAddress].isFavourite = isFav;
-        }
-
-        else {
+            if(!tescs.current[contractAddress].isFavourite && !tescs.current[contractAddress].own) {
+                delete tescs.current[contractAddress]
+            }
+        } else {
             tescs.current[contractAddress] = { domain: domainFromChain, expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') };
             setIsInFavourites(true);
         }
@@ -149,7 +153,7 @@ const TeSCInspect = ({ location }) => {
     }, [loadStorage, showMessage, location.state, handleChangeAddress]);
 
     const clearResults = () => {
-        setDomainFromChain(null);
+        setDomainFromChain('');
         setExpiry('');
         setFlags(new BitSet('0x00'));
         setSignature('');
@@ -187,13 +191,6 @@ const TeSCInspect = ({ location }) => {
         await verifyTesc();
     };
 
-    // const handleToggleSubendorsement = () => {
-    //     setIsSubendorsement(!isSubendorsement);
-    //     clearResults();
-    //     if (isValidContractAddress(contractAddress)) {
-    //         const res = axios.get('/verify/');
-    //     }
-    // };
 
     return (
         <div>
@@ -209,20 +206,6 @@ const TeSCInspect = ({ location }) => {
                 icon='search'
                 validInput={true}
             />
-            {/* <div style={{ width: '75%', marginLeft: '12.5%', textAlign: 'initial' }}>
-                    <Checkbox
-                        checked={isSubendorsement}
-                        onClick={e => handleToggleSubendorsement()}
-                        label='Subendorsement '
-                        toggle
-                    />
-                    <Popup
-                        inverted
-                        content={`If you don't know the address of the master TeSC that endorses the contract at the address above and this endorsed contract should be subject to inspection, you can activate this option. Note that, it could take some time to finish this type of inspection since we have to scan through the TeSC Registry to search for the master contract.`}
-                        trigger={<Icon name='question circle' />}
-                    />
-                </div> */}
-            {/* </SearchBox> */}
             {isValidContractAddress(contractAddress) &&
                 <Grid style={{ margin: '0 auto' }}>
                     <Grid.Row>

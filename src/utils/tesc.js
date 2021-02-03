@@ -106,7 +106,7 @@ export const isValidContractAddress = (address, withReason = false) => {
         throw new Error('Contract address contains non-hexadecimal digits');
     } else if (address.length !== 42) {
         throw new Error('Contract address must be 42 characters long (prefix 0x and 40 hexadecimal digits)');
-    } else if (web3Utils.checkAddressChecksum(address)) {
+    } else if (!web3Utils.checkAddressChecksum(address)) {
         throw new Error('The capitalization checksum test for the contract address failed')
     }
     return true;
