@@ -408,6 +408,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                 <Form.Input 
                     label={constructorParameter.type + " " + constructorParameter.name + ":"}
                     required={true}
+                    key={"constructor-input-field-" + i}
                     onChange={e => handleTextChange(e.target.value, i, constructorParameter.type)}
                 />
             </p>
@@ -573,7 +574,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                             />
 
                             {showContractSelectionDropdown === true && (
-                                <p>
+                                <div>
                                     <div>Please select the contract that you would like to endorse:</div>
                                     
                                     <Dropdown 
@@ -593,7 +594,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                         <Form>
                                             {renderConstructorParameterInputFields()}
                                         </Form>}         
-                                </p>
+                                </div>
                             )}
 
                         </Fragment>
