@@ -7,11 +7,19 @@ import moment from 'moment';
 
 const ENTRIES_PER_PAGE = 5;
 
+export const COL = {
+    VERIF: 'Verification',
+    REG: 'Registry',
+    FAV: 'Favorites',
+    CA: 'Created At',
+};
+
 function TableOverview(props) {
     const {
         rowData,
         isDashboard,
-        isRegistryInspect
+        isRegistryInspect,
+        cols
     } = props;
 
     const { web3, account, loadStorage } = useContext(AppContext);
@@ -111,6 +119,7 @@ function TableOverview(props) {
                 tesc={tesc}
                 onTescsChange={handleChangeTescs}
                 isDashboard={isDashboard}
+                cols={cols}
             />
         ));
     };
@@ -123,24 +132,29 @@ function TableOverview(props) {
                         <Table.HeaderCell>Address</Table.HeaderCell>
                         <Table.HeaderCell>Domain</Table.HeaderCell>
                         <Table.HeaderCell>Expiry</Table.HeaderCell>
-                        <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
-                        {isDashboard &&
+                        {cols.has(COL.VERIF) &&
+                            <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
+                        }
+                        {cols.has(COL.REG) &&
                             <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
                         }
-                        <Table.HeaderCell textAlign="center">Favourites
+                        {cols.has(COL.VERIF) &&
+                            <Table.HeaderCell textAlign="center">Favourites
                             <Dropdown
-                                icon='filter'
-                                floating
-                                button
-                                className='icon dropdown-favourites'>
-                                <Dropdown.Menu>
-                                    <Dropdown.Item icon='redo' text='All' onClick={showAllTescs} />
-                                    <Dropdown.Item icon='heart' text='By favourite' onClick={showFavouriteTescs} />
-                                    <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
-                                </Dropdown.Menu>
-                            </Dropdown>
-                        </Table.HeaderCell>
-                        {isDashboard &&
+                                    icon='filter'
+                                    floating
+                                    button
+                                    className='icon dropdown-favourites'>
+                                    <Dropdown.Menu>
+                                        <Dropdown.Item icon='redo' text='All' onClick={showAllTescs} />
+                                        <Dropdown.Item icon='heart' text='By favourite' onClick={showFavouriteTescs} />
+                                        <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </Table.HeaderCell>
+                        }
+
+                        {cols.has(COL.CA) &&
                             <Table.HeaderCell>Created At</Table.HeaderCell>
                         }
                     </Table.Row>

@@ -10,12 +10,14 @@ import {
     estimateRegistryRemoveCost,
 } from '../utils/tesc';
 import TableCellVerification from './TableCellVerification';
+import { COL } from './TableOverview';
 
 function TableEntry(props) {
     const {
         tesc,
         onTescsChange,
         isDashboard,
+        cols
     } = props;
     const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
@@ -205,18 +207,21 @@ function TableEntry(props) {
             </Table.Cell>
             <Table.Cell>{isDashboard ? renderDomain() : domain}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
-            <TableCellVerification {...tableCellVerifProps} />
-            {isDashboard &&
+            {cols.has(COL.VERIF) &&
+                <TableCellVerification {...tableCellVerifProps} />
+            }
+            {cols.has(COL.REG) &&
                 <Table.Cell textAlign="center">
                     {renderRegistryButtons()}
                 </Table.Cell>
             }
-
-            <Table.Cell textAlign="center">
-                {renderFavourites()}
-            </Table.Cell>
+            {cols.has(COL.FAV) &&
+                <Table.Cell textAlign="center">
+                    {renderFavourites()}
+                </Table.Cell>
+            }
             
-            {isDashboard &&
+            {cols.has(COL.CA) &&
                 <Table.Cell>{renderCreatedAt()}</Table.Cell>
             }
 

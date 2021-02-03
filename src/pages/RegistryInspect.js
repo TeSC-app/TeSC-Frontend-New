@@ -1,63 +1,63 @@
-import React, { useContext, useEffect, useState, useCallback } from 'react'
+import React, { useContext, useEffect, useState, useCallback } from 'react';
 import { Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
 import SearchBox from '../components/SearchBox';
 import PageHeader from '../components/PageHeader';
-import TableOverview from '../components/TableOverview';
-import axios from 'axios'
-import moment from 'moment'
+import TableOverview, { COL } from '../components/TableOverview';
+import axios from 'axios';
+import moment from 'moment';
 
 function RegistryInspect(props) {
-    const { contractRegistry } = props
+    const { contractRegistry } = props;
     const { web3, loadStorage } = useContext(AppContext);
-    const [domain, setDomain] = useState('')
-    const [entries, setEntries] = useState(null)
-    const [loading, setLoading] = useState(false)
+    const [domain, setDomain] = useState('');
+    const [entries, setEntries] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     //add createdAt and isFavourite prop to objects retrieved from the backend - compares with localStorage values
     const updateCreatedAtAndFavouritesForRegistryInspectEntries = useCallback((newTesc) => {
-        const tescsLocalStorage = loadStorage() ? loadStorage() : []
+        const tescsLocalStorage = loadStorage() ? loadStorage() : [];
         let isIdentical = false;
         for (const tesc of tescsLocalStorage) {
             if (tesc.contractAddress === newTesc.contractAddress) {
-                isIdentical = true
-                return { isFavourite: tesc.isFavourite, createdAt: tesc.createdAt }
+                isIdentical = true;
+                return { isFavourite: tesc.isFavourite, createdAt: tesc.createdAt };
             }
         }
-        if (!isIdentical) return { isFavourite: false, createdAt: moment().format('DD/MM/YYYY HH:mm') }
-    }, [loadStorage])
+        if (!isIdentical) return { isFavourite: false, createdAt: moment().format('DD/MM/YYYY HH:mm') };
+    }, [loadStorage]);
 
     useEffect(() => {
         (async () => {
             try {
-                setLoading(true)
+                setLoading(true);
                 const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/registry`);
                 //for each object key that is an array get the values associated to that key and out of these values build an array of objects
                 const registryEntries = Object.keys(response.data['registryEntries'])
                     .map(domain => Object.values(response.data['registryEntries'][domain])
                         .map(({ contract }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, createdAt: moment().format('DD/MM/YYYY HH:mm') })))
-                    .flat()
-                if(response.status === 200) {
+                    .flat();
+                if (response.status === 200) {
                     //console.log(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })))
-                    setEntries(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry))
+                    setEntries(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry));
                 } else {
-                    setEntries([])
+                    setEntries([]);
                 }
-                setLoading(false)
+                setLoading(false);
             } catch (error) {
                 console.log(error);
             }
         })();
-    }, [updateCreatedAtAndFavouritesForRegistryInspectEntries])
+    }, [updateCreatedAtAndFavouritesForRegistryInspectEntries]);
 
 
     const handleInput = domain => {
         setDomain(domain);
-    }
+    };
 
     const handleSubmit = async () => {
-        setLoading(true)
+        setLoading(true);
         setEntries(null);
         try {
             const contractAddresses = await contractRegistry.methods.getContractsFromDomain(domain).call();
@@ -67,26 +67,26 @@ function RegistryInspect(props) {
                 const contractInstance = new web3.eth.Contract(
                     ERCXXX.abi,
                     contractAddresses[i],
-                )
-                const expiry = await contractInstance.methods.getExpiry().call()
+                );
+                const expiry = await contractInstance.methods.getExpiry().call();
                 //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
-                contractInstances.push({ contractAddress: contractAddresses[i], domain, expiry })
+                contractInstances.push({ contractAddress: contractAddresses[i], domain, expiry });
             }
             setEntries(contractInstances);
-            setLoading(false)
+            setLoading(false);
         } catch (err) {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
 
     const renderTable = () => {
         if (entries && entries.length > 0 && !loading) {
             return (
-                <div style={{justifyContent: 'center'}}>
-                    <TableOverview rowData={entries} isRegistryInspect={true} />
+                <div style={{ justifyContent: 'center' }}>
+                    <TableOverview rowData={entries} isRegistryInspect={true} cols={new Set([COL.VERIF, COL.FAV])} />
                 </div>
-            )
+            );
         } else if (entries && entries.length === 0 && !loading) {
             return (
                 <div className="ui placeholder segment">
@@ -95,7 +95,7 @@ function RegistryInspect(props) {
                   We could not find a Smart Contract associated to this domain in the registry. Look for a different domain.
                 </div>
                 </div>
-            )
+            );
         } else if (loading) {
             return (
                 <Segment>
@@ -104,9 +104,9 @@ function RegistryInspect(props) {
                     </Dimmer>
                     <Image src='https://react.semantic-ui.com/images/wireframe/paragraph.png' />
                 </Segment>
-            )
+            );
         }
-    }
+    };
 
     return (
         <div>
@@ -122,7 +122,7 @@ function RegistryInspect(props) {
                 validInput={true} />
             {renderTable()}
         </div>
-    )
+    );
 }
 
-export default RegistryInspect
+export default RegistryInspect;

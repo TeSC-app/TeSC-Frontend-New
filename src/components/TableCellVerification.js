@@ -36,7 +36,7 @@ function TableCellVerification(props) {
             try {
                 if(typeof verified !== 'boolean') {
                     console.log("verified", verified);
-                    const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${web3.utils.toChecksumAddress(contractAddress_.current)}`);
+                    const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/verify/${web3.utils.toChecksumAddress(contractAddress_.current)}`);
                     setIsVerified(response.data.verified)
                 }
             } catch (error) {
