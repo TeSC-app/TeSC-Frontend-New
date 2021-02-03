@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Table, Dropdown, Pagination, Icon } from 'semantic-ui-react';
+import { Table, Dropdown, Pagination, Icon, Button, Popup } from 'semantic-ui-react';
 
 import AppContext from '../appContext';
 import TableEntry from './TableEntry';
@@ -29,6 +29,9 @@ function TableOverview(props) {
 
     //for search input
     const [domain, setDomain] = useState('')
+
+    //for sorting
+    const [isSortingAddressAsc, setIsSortingAddressAsc] = useState(true)
 
     useEffect(() => {
         //console.log(tescs)
@@ -107,10 +110,10 @@ function TableOverview(props) {
     const changePage = (event, { activePage }) => {
         //check if there are filters applied
         setCurrentPage(activePage);
-        if(isExploringDomain) {
-        setTotalPages(Math.ceil(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc).length / ENTRY_PER_PAGE));
-        setDisplayedEntries(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc)
-            .slice((activePage - 1) * ENTRY_PER_PAGE, activePage * ENTRY_PER_PAGE));
+        if (isExploringDomain) {
+            setTotalPages(Math.ceil(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc).length / ENTRY_PER_PAGE));
+            setDisplayedEntries(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc)
+                .slice((activePage - 1) * ENTRY_PER_PAGE, activePage * ENTRY_PER_PAGE));
         } else {
             setDisplayedEntries(entriesWithOccurances.slice((activePage - 1) * ENTRY_PER_PAGE, activePage * ENTRY_PER_PAGE))
         }
@@ -120,13 +123,13 @@ function TableOverview(props) {
     const renderRows = () => {
         if (displayedEntries && isExploringDomain) {
             return displayedEntries.map((tesc) => (
-            <TableEntry key={tesc.contractAddress}
-                tesc={tesc}
-                onTescsChange={handleChangeTescs}
-                isDashboard={isDashboard}
-                isExploringDomain={isExploringDomain}
-            />
-        )) 
+                <TableEntry key={tesc.contractAddress}
+                    tesc={tesc}
+                    onTescsChange={handleChangeTescs}
+                    isDashboard={isDashboard}
+                    isExploringDomain={isExploringDomain}
+                />
+            ))
         } else if (displayedEntries && !isExploringDomain) {
             return entriesWithOccurances.map((entry) => (
                 <TableEntry key={entry.domain}
@@ -167,13 +170,29 @@ function TableOverview(props) {
             isRegistryInspect={isRegistryInspect} />) : null
     }
 
+    const sortItems = () => {
+        if (isSortingAddressAsc) {
+            displayedEntries.sort((tescA, tescB) => tescA.contractAddress - tescB.contractAddress)
+            setIsSortingAddressAsc(false)
+        } else {
+            displayedEntries.sort((tescA, tescB) => tescB.contractAddress - tescA.contractAddress)
+            setIsSortingAddressAsc(true)
+        }
+    }
+
+    const renderSortingIcon = () => {
+        return (<Popup content={isSortingAddressAsc ? 'Sort asc': 'Sort desc'} trigger={<Button icon={isSortingAddressAsc ? 'sort ascending' : 'sort descending'}
+            className="not-favourite-dashboard"
+            onClick={sortItems} />} />)
+    }
+
     return (
         <>
             {renderSearchBox()}
             <Table color='purple'>
                 <Table.Header active='true' style={{ backgroundColor: 'purple' }}>
                     <Table.Row>
-                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Address</Table.HeaderCell>}
+                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Address{renderSortingIcon()}</Table.HeaderCell>}
                         <Table.HeaderCell>Domain</Table.HeaderCell>
                         {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Expiry</Table.HeaderCell>}
                         {(isRegistryInspect && !isExploringDomain) && <Table.HeaderCell textAlign="center">Total Smart Contracts</Table.HeaderCell>}
@@ -182,20 +201,20 @@ function TableOverview(props) {
                             <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
                         }
                         {(isDashboard || (isRegistryInspect && isExploringDomain)) &&
-                        <Table.HeaderCell textAlign="center">Favourites
+                            <Table.HeaderCell textAlign="center">Favourites
                             <Dropdown
-                                icon='filter'
-                                floating
-                                button
-                                className='icon dropdown-favourites'>
-                                <Dropdown.Menu>
-                                    <Dropdown.Item icon='redo' text={isRegistryInspect && domain.length > 0 ? 'All (by domain)' : 'All'} onClick={() => showAllTescs(tescs)} />
-                                    {isRegistryInspect && <Dropdown.Item icon='redo' text='All (reset)' onClick={() => setIsExploringDomain(false)} />}
-                                    <Dropdown.Item icon='heart' text='By favourite' onClick={showFavouriteTescs} />
-                                    <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
-                                </Dropdown.Menu>
-                            </Dropdown>
-                        </Table.HeaderCell>
+                                    icon='filter'
+                                    floating
+                                    button
+                                    className='icon dropdown-favourites'>
+                                    <Dropdown.Menu>
+                                        <Dropdown.Item icon='redo' text={isRegistryInspect && domain.length > 0 ? 'All (by domain)' : 'All'} onClick={() => showAllTescs(tescs)} />
+                                        {isRegistryInspect && <Dropdown.Item icon='redo' text='All (reset)' onClick={() => setIsExploringDomain(false)} />}
+                                        <Dropdown.Item icon='heart' text='By favourite' onClick={showFavouriteTescs} />
+                                        <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </Table.HeaderCell>
                         }
                         {isDashboard &&
                             <Table.HeaderCell>Created At</Table.HeaderCell>

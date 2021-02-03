@@ -222,15 +222,21 @@ function TableEntry(props) {
         return (<div className='smart-contracts'>{tesc.contractAddresses.map((contractAddress) => (<Popup key={contractAddress} content={contractAddress} trigger={<Image src='../images/smart-contract-icon.png' className='smart-contracts__icon' alt='Smart Contract' size='mini' />} />))}</div>)
     }
 
+    const renderOwnIcon = () => {
+        return (own && isDashboard ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null)
+    }
+
+    const renderContractAddress = () => {
+        return (<LinkTescInspect contractAddress={contractAddress} />)
+    }
+
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
                 {isExploringDomain ?
                     <span className='contract-address-column'>
-                        {
-                            own && isDashboard ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
-                        }
-                        <LinkTescInspect contractAddress={contractAddress} />
+                    {renderOwnIcon()} 
+                    {renderContractAddress()}   
                     </span> : renderDomainForRegistryInspect()
                 }
             </Table.Cell>
