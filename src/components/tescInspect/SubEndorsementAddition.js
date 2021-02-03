@@ -26,7 +26,7 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
 
     useEffect(() => {
         (async () => {
-            contractInstance.current = new web3.eth.Contract(TeSC.abi, contractAddress)
+            contractInstance.current = new web3.eth.Contract(TeSC.abi, contractAddress);
             const fetchedSubendorsements = await contractInstance.current.methods.getSubendorsements().call();
             setSubendorsements(new Set(fetchedSubendorsements));
         })();
@@ -151,45 +151,50 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
             <Header as='h3' content='Subendorsements' />
             <p>Contract <b>{contractAddress}</b> is endorsing <b className='main-color'>{subendorsements.size}</b> other contract{subendorsements.size === 1 ? '' : 's'}</p>
 
-            <Divider section hidden>
-                <p style={{ fontSize: '0.8em' }}>
-                    <Icon name='search' />
-                    Lookup & Verify
-                </p>
-            </Divider>
+            {subendorsements.size > 0 &&
+                <>
+                    <Divider section hidden>
+                        <p style={{ fontSize: '0.8em' }}>
+                            <Icon name='search' />
+                            Lookup & Verify
+                        </p>
+                    </Divider>
 
-            <Form style={{ marginTop: '10px' }}>
-                <Form.Field error={!!invalidSearchInputReason}>
-                    {/* <label>Lookup & Verify</label> */}
-                    <Input
-                        value={subendorsementSearchAddress}
-                        placeholder='Contract address e.g. 0x123456789abcdf...'
-                        onChange={e => handleChangeSubendorsementSearch(e.target.value)}
-                        icon='search'
-                        iconPosition='left'
-                        style={{ width: '75%', marginRight: '10px' }}
-                    />
-                    {/* <Button icon='search' color='purple' basic
+                    <Form style={{ marginTop: '10px' }}>
+                        <Form.Field error={!!invalidSearchInputReason}>
+                            {/* <label>Lookup & Verify</label> */}
+                            <Input
+                                value={subendorsementSearchAddress}
+                                placeholder='Contract address e.g. 0x123456789abcdf...'
+                                onChange={e => handleChangeSubendorsementSearch(e.target.value)}
+                                icon='search'
+                                iconPosition='left'
+                                style={{ width: '75%', marginRight: '10px' }}
+                            />
+                            {/* <Button icon='search' color='purple' basic
                         onClick={() => handleAddEndorsement()}
                         loading={loadingButtonIndex === subendorsements.size}
                     /> */}
 
-                    {invalidSearchInputReason &&
-                        <Label pointing prompt content={invalidSearchInputReason} />
-                    }
-                </Form.Field>
+                            {invalidSearchInputReason &&
+                                <Label pointing prompt content={invalidSearchInputReason} />
+                            }
+                        </Form.Field>
+                    </Form>
+                </>
+            }
 
-                <Divider section style={{ width: '50%', margin: '40px auto' }} />
+            {/* <Divider section style={{ width: '50%', margin: '40px auto' }} /> */}
 
-                {owner === account &&
-                    <>
-                        <Divider section hidden>
-                            <p style={{ fontSize: '0.8em' }}>
-                                <Icon name='plus' />
-                                Add subendorsement
-                            </p>
-                        </Divider>
-
+            {owner === account && verified &&
+                <>
+                    <Divider section hidden>
+                        <p style={{ fontSize: '0.8em' }}>
+                            <Icon name='plus' />
+                                        Add subendorsement
+                                    </p>
+                    </Divider>
+                    <Form style={{ marginTop: '10px' }}>
                         <Form.Field error={!!invalidAddInputReason}>
                             {/* <label>New subendorsement</label> */}
                             <Input
@@ -208,16 +213,20 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
                                 <Label pointing prompt content={invalidAddInputReason} />
                             }
                         </Form.Field>
-                    </>
-                }
-            </Form>
-            <Divider section hidden>
-                <p style={{ fontSize: '0.8em' }}>
-                    <Icon name='list' />
-                    Current Subendorsements
-                </p>
-            </Divider>
-            {contractAddress && renderSubendorsements()}
+                    </Form>
+                </>
+            }
+
+            {subendorsements.size > 0 && contractAddress &&
+                <>
+                    <Divider section hidden>
+                        <p style={{ fontSize: '0.8em' }}>
+                            <Icon name='list' /> Current Subendorsements
+                        </p>
+                    </Divider>
+                    {renderSubendorsements()}
+                </>
+            }
         </Segment>
     );
 };

@@ -9,9 +9,8 @@ import { Table, Popup, Loader, Icon } from 'semantic-ui-react';
 import LinkTescInspect from './InternalLink';
 
 
-function TableCellVerification(props) {
+function TableCellVerification({ domain, contractAddress, verified, handleChangeVerified }) {
     const { web3 } = useContext(AppContext);
-    const { domain, contractAddress, verified, handleVerified } = props
     const [isVerified, setIsVerified] = useState(verified);
     const contractAddress_ = useRef(contractAddress);
 
@@ -49,9 +48,9 @@ function TableCellVerification(props) {
     useEffect(() => {
         (async () => {
             if(typeof isVerified === 'boolean')
-                handleVerified(isVerified)    
+                handleChangeVerified(isVerified)    
         })();
-    }, [isVerified, handleVerified]);
+    }, [isVerified, handleChangeVerified]);
 
     return (
         <Table.Cell textAlign="center">

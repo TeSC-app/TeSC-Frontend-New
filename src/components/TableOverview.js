@@ -14,10 +14,13 @@ export const COL = {
     CA: 'Created At',
 };
 
+export const hasAllColumns = (cols) => {
+    return cols.has(COL.VERIF) && cols.has(COL.REG) && cols.has(COL.FAV) && cols.has(COL.CA);
+};
+
 function TableOverview(props) {
     const {
         rowData,
-        isDashboard,
         isRegistryInspect,
         cols
     } = props;
@@ -30,10 +33,10 @@ function TableOverview(props) {
     const [filterOption, setFilterOption] = useState(0);
     const [displayedEntries, setDisplayedEntries] = useState([]);
 
+
     useEffect(() => {
         const init = async () => {
             try {
-                // setTescs(account ? (isDashboard? loadStorage() : []) : []);
                 setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRIES_PER_PAGE) : []);
                 setTotalPages(Math.ceil(tescs ? tescs.length / ENTRIES_PER_PAGE : 0));
                 window.ethereum.on('accountsChanged', (accounts) => {
@@ -114,14 +117,18 @@ function TableOverview(props) {
 
 
     const renderRows = () => {
-        if (displayedEntries) return displayedEntries.map((tesc) => (
-            <TableEntry key={tesc.contractAddress}
-                tesc={tesc}
-                onTescsChange={handleChangeTescs}
-                isDashboard={isDashboard}
-                cols={cols}
-            />
-        ));
+        if (displayedEntries) return displayedEntries.map((tesc) => {
+            const isAlreadyVerfied = typeof tesc.verified === 'boolean';
+            const _tesc = isAlreadyVerfied ? tesc.contract : tesc;
+            return (
+                <TableEntry key={_tesc.contractAddress}
+                    tesc={_tesc}
+                    preverified={tesc.verified}
+                    onTescsChange={handleChangeTescs}
+                    cols={cols}
+                />
+            );
+        });
     };
 
     return (

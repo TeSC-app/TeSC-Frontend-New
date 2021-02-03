@@ -10,13 +10,13 @@ import {
     estimateRegistryRemoveCost,
 } from '../utils/tesc';
 import TableCellVerification from './TableCellVerification';
-import { COL } from './TableOverview';
+import { COL, hasAllColumns } from './TableOverview';
 
 function TableEntry(props) {
     const {
         tesc,
+        preverified,
         onTescsChange,
-        isDashboard,
         cols
     } = props;
     const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged } = useContext(AppContext);
@@ -24,7 +24,7 @@ function TableEntry(props) {
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
     const [costEstimatedRemove, setCostEstimatedRemove] = useState(0);
-    const [verified, setVerified] = useState(null);
+    const [verified, setVerified] = useState(typeof preverified === 'boolean' ? preverified : null);
     //registry buttons need this state to get rerendered
     const [isInRegistry, setIsInRegistry] = useState(false)
     const [loading, setLoading] = useState(true)
@@ -44,9 +44,9 @@ function TableEntry(props) {
     }, [contractAddress, registryContract])
 
     useEffect(() => {
-        if (isDashboard) handleAccountChanged(false);
+        if (hasAllColumns(cols)) handleAccountChanged(false); //???
         isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false);
-    }, [isFavourite, setTescIsInFavourites, handleAccountChanged, isDashboard]);
+    }, [isFavourite, setTescIsInFavourites, handleAccountChanged, cols]);
 
     useEffect(() => {
         const runEffect = async () => {
@@ -61,7 +61,7 @@ function TableEntry(props) {
         runEffect();
     }, [web3, contractAddress, account, registryContract, domain, isInRegistry, own, hasAccountChanged, loading]);
 
-    const handleVerified = (verified) => {
+    const handleChangeVerified = (verified) => {
         setVerified(verified);
     };
 
@@ -180,7 +180,7 @@ function TableEntry(props) {
         }
     };
 
-    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified, isDashboard: true };
+    const tableCellVerifProps = { domain, contractAddress, verified, handleChangeVerified };
 
     const renderFavourites = () => {
         return (
@@ -200,12 +200,12 @@ function TableEntry(props) {
             <Table.Cell>
                 <span className='contract-address-column'>
                     {
-                        own && isDashboard ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
+                        own ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
                     }
                     <LinkTescInspect contractAddress={contractAddress} />
                 </span>
             </Table.Cell>
-            <Table.Cell>{isDashboard ? renderDomain() : domain}</Table.Cell>
+            <Table.Cell>{renderDomain()}</Table.Cell>
             <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
             {cols.has(COL.VERIF) &&
                 <TableCellVerification {...tableCellVerifProps} />
