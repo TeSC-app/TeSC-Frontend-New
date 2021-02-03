@@ -1,9 +1,9 @@
 import React from 'react';
 import { Input, Form } from 'semantic-ui-react';
 
-const SearchBox = ({ label, value, onChange, placeholder, onSubmit, icon }) => (
+const SearchBox = ({ label, value, onChange, placeholder, onSubmit, icon, isRegistryInspect }) => (
     <div centered='true' className='search-box'>
-        <Form onSubmit={() => onSubmit(value)}>
+        <Form onSubmit={isRegistryInspect ? () => onSubmit(value) : onSubmit}>
             <Form.Field>
                 <Input
                     value={value}

@@ -163,7 +163,8 @@ function TableOverview(props) {
             placeholder='www.mysite.com'
             label='Domain'
             icon='search'
-            validInput={true} />) : null
+            validInput={true}
+            isRegistryInspect={isRegistryInspect} />) : null
     }
 
     return (
