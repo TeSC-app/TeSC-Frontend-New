@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import axios from 'axios'
 import {
     isSha3Hash
@@ -7,10 +7,13 @@ import { Table, Popup, Loader, Icon } from 'semantic-ui-react';
 import LinkTescInspect from './InternalLink';
 
 function TableCellVerification(props) {
-    const { domain, contractAddress, verified, handleVerified } = props
+    const { domain, contractAddress, verified, handleVerified, account, rowData, index } = props
     const [isVerified, setIsVerified] = useState(verified);
     const contractAddress_ = useRef(contractAddress);
 
+    const updateLocalStorageWithVerified = useCallback((verified) => {
+        localStorage.setItem(account.toLowerCase(), JSON.stringify(rowData.map((tesc, i) => i === index ? ({ ...tesc, verified: verified }) : tesc)))
+    }, [account, index, rowData])
 
     const renderVerifResult = () => {
         if (domain && isSha3Hash(domain)) {
@@ -23,6 +26,8 @@ function TableCellVerification(props) {
         if (isVerified === null || isVerified === undefined) {
             return <Loader active inline />;
         }
+        //update local storage with verification status
+        updateLocalStorageWithVerified(isVerified)
         return isVerified ? <Icon name="check" color="green" circular /> : <Icon name="delete" color="red" circular />;
         
     };
@@ -34,12 +39,13 @@ function TableCellVerification(props) {
                     console.log("verified", verified);
                     const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress_.current.toLowerCase()}`);
                     setIsVerified(response.data.verified)
+                    updateLocalStorageWithVerified(response.data.verified)
                 }
             } catch (error) {
                 console.log(error);
             }
         })();
-    }, [verified]);
+    }, [verified, updateLocalStorageWithVerified]);
 
 
     useEffect(() => {

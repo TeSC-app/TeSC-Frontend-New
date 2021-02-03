@@ -31,7 +31,13 @@ function TableOverview(props) {
     const [domain, setDomain] = useState('')
 
     //for sorting
-    const [isSortingAddressAsc, setIsSortingAddressAsc] = useState(true)
+    const [isSortingByAddressAsc, setIsSortingByAddressAsc] = useState(true)
+    const [isSortingByDomainAsc, setIsSortingByDomainAsc] = useState(true)
+    const [isSortingByExpiryAsc, setIsSortingByExpiryAsc] = useState(true)
+    const [isSortingByVerifiedAsc, setIsSortingByVerifiedAsc] = useState(true)
+    const [isSortingByInRegistryAsc, setIsSortingByInRegistryAsc] = useState(true)
+    const [isSortingByFavouritesAsc, setIsSortingByFavouritesAsc] = useState(true)
+    const [isSortingByCreatedAtAsc, setIsSortingByCreatedAtAsc] = useState(true)
 
     useEffect(() => {
         //console.log(tescs)
@@ -122,12 +128,15 @@ function TableOverview(props) {
 
     const renderRows = () => {
         if (displayedEntries && isExploringDomain) {
-            return displayedEntries.map((tesc) => (
+            return displayedEntries.map((tesc, index, tescs) => (
                 <TableEntry key={tesc.contractAddress}
                     tesc={tesc}
                     onTescsChange={handleChangeTescs}
                     isDashboard={isDashboard}
                     isExploringDomain={isExploringDomain}
+                    setVerificationInTescs={setVerificationInTescs}
+                    index={index}
+                    rowData={rowData}
                 />
             ))
         } else if (displayedEntries && !isExploringDomain) {
@@ -170,20 +179,56 @@ function TableOverview(props) {
             isRegistryInspect={isRegistryInspect} />) : null
     }
 
-    const sortItems = () => {
-        if (isSortingAddressAsc) {
-            displayedEntries.sort((tescA, tescB) => tescA.contractAddress - tescB.contractAddress)
-            setIsSortingAddressAsc(false)
+    const sortByContractAddress = () => {
+        if (isSortingByAddressAsc) {
+            setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.contractAddress - tescB.contractAddress).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByAddressAsc(false)
         } else {
-            displayedEntries.sort((tescA, tescB) => tescB.contractAddress - tescA.contractAddress)
-            setIsSortingAddressAsc(true)
+            setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.contractAddress - tescA.contractAddress).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByAddressAsc(true)
         }
     }
 
-    const renderSortingIcon = () => {
-        return (<Popup content={isSortingAddressAsc ? 'Sort asc': 'Sort desc'} trigger={<Button icon={isSortingAddressAsc ? 'sort ascending' : 'sort descending'}
-            className="not-favourite-dashboard"
-            onClick={sortItems} />} />)
+    const sortByDomain = () => {
+        if (isSortingByDomainAsc) {
+            setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.domain.localeCompare(tescB.domain)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByDomainAsc(false)
+        } else {
+            setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByDomainAsc(true)
+        }
+    }
+
+    const sortByExpiry = () => {
+        console.log(tescs)
+        if (isSortingByExpiryAsc) {
+            setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.expiry.toString().localeCompare(tescB.expiry)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByExpiryAsc(false)
+        } else {
+            setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.expiry.toString().localeCompare(tescA.expiry)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByExpiryAsc(true)
+        }
+    }
+
+    const sortByVerified = () => {
+        if (isSortingByVerifiedAsc) {
+            console.log(tescs)
+            setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.verified.toString().localeCompare(tescB.verified)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByVerifiedAsc(false)
+        } else {
+            setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.verified.toString().localeCompare(tescA.verified)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByVerifiedAsc(true)
+        }
+    }
+
+    const setVerificationInTescs = (tescsWithVerification) => {
+        setTescs(tescsWithVerification)
+    }
+
+    const renderSortingIcon = (isSortingAsc, sortByType) => {
+        return (<Popup content={isSortingAsc ? 'Sort asc': 'Sort desc'} trigger={<Button icon={isSortingAsc ? 'sort descending' : 'sort ascending'}
+            className="sorting-icon"
+            onClick={sortByType} />} />)
     }
 
     return (
@@ -192,9 +237,9 @@ function TableOverview(props) {
             <Table color='purple'>
                 <Table.Header active='true' style={{ backgroundColor: 'purple' }}>
                     <Table.Row>
-                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Address{renderSortingIcon()}</Table.HeaderCell>}
-                        <Table.HeaderCell>Domain</Table.HeaderCell>
-                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Expiry</Table.HeaderCell>}
+                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Address{renderSortingIcon(isSortingByAddressAsc, sortByContractAddress)}</Table.HeaderCell>}
+                        <Table.HeaderCell>Domain{renderSortingIcon(isSortingByDomainAsc, sortByDomain)}</Table.HeaderCell>
+                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Expiry{renderSortingIcon(isSortingByExpiryAsc, sortByExpiry)}</Table.HeaderCell>}
                         {(isRegistryInspect && !isExploringDomain) && <Table.HeaderCell textAlign="center">Total Smart Contracts</Table.HeaderCell>}
                         <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
                         {isDashboard &&
@@ -234,8 +279,8 @@ function TableOverview(props) {
                         activePage={currentPage}
                         onPageChange={changePage}
                         ellipsisItem={{ content: <Icon name='ellipsis horizontal' />, icon: true }}
-                        firstItem={{ content: <Icon name='angle double left' />, icon: true }}
-                        lastItem={{ content: <Icon name='angle double right' />, icon: true }}
+                        firstItem={totalPages > 8 ? { content: <Icon name='angle double left' />, icon: true } : null}
+                        lastItem={totalPages > 8 ?{ content: <Icon name='angle double right' />, icon: true } : null}
                         prevItem={{ content: <Icon name='angle left' />, icon: true }}
                         nextItem={{ content: <Icon name='angle right' />, icon: true }} />
                 </div> : null

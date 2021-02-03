@@ -19,7 +19,9 @@ function TableEntry(props) {
         isDashboard,
         isExploringDomain,
         handleSearchInput,
-        handleSearchSubmit
+        handleSearchSubmit,
+        index,
+        rowData
     } = props;
     const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
@@ -184,7 +186,7 @@ function TableEntry(props) {
         }
     };
 
-    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified, isDashboard: true };
+    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified, isDashboard: true, account, rowData, index };
 
     const renderFavourites = () => {
         return (
