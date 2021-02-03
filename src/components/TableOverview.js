@@ -189,7 +189,7 @@ function TableOverview(props) {
                                 className='icon dropdown-favourites'>
                                 <Dropdown.Menu>
                                     <Dropdown.Item icon='redo' text={isRegistryInspect && domain.length > 0 ? 'All (by domain)' : 'All'} onClick={() => showAllTescs(tescs)} />
-                                    {isRegistryInspect && <Dropdown.Item icon='redo' text='All (reset)' onClick={() => showAllTescs(rowData)} />}
+                                    {isRegistryInspect && <Dropdown.Item icon='redo' text='All (reset)' onClick={() => setIsExploringDomain(false)} />}
                                     <Dropdown.Item icon='heart' text='By favourite' onClick={showFavouriteTescs} />
                                     <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
                                 </Dropdown.Menu>
