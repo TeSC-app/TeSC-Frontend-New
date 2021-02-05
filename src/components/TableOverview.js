@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Table, Dropdown, Pagination, Icon, Button, Popup } from 'semantic-ui-react';
+import { Table, Dropdown, Pagination, Icon, Button, Popup, Input, Form } from 'semantic-ui-react';
 
 import AppContext from '../appContext';
 import TableEntry from './TableEntry';
@@ -39,6 +39,9 @@ function TableOverview(props) {
     const [isSortingByIsInRegistryAsc, setIsSortingByIsInRegistryAsc] = useState(true)
     const [isSortingByFavouriteAsc, setIsSortingByFavouriteAsc] = useState(true)
     const [isSortingByCreatedAtAsc, setIsSortingByCreatedAtAsc] = useState(true)
+
+    //for filtering
+    const [domainFilter, setDomainFilter] = useState('')
 
     useEffect(() => {
         const init = async () => {
@@ -268,20 +271,38 @@ function TableOverview(props) {
         setTescs(tescsWithVerification)
     }
 
-    const renderSortingIcon = (isSortingAsc, sortByType, title) => {
-        return (<Popup content={isSortingAsc ? 'Sort asc' : 'Sort desc'} trigger={<Button icon={isSortingAsc ? 'sort descending' : 'sort ascending'}
-            className="sorting-icon"
-            onClick={sortByType}>{title}</Button>} />)
+    const filterByDomain = (domain) => {
+        setDisplayedEntries(tescs.filter(tesc => tesc.domain === domain).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+    }
+
+    const renderSortingIcon = (isSortingAsc, sortByType, title, filterByType) => {
+        console.log(domainFilter)
+        return (
+            <Dropdown
+                text={title}
+                icon={isSortingAsc ? 'angle down' : 'angle up'}
+                floating
+                buttons
+                simple
+                className='icon dropdown-favourites'>
+                <Dropdown.Menu>
+                    <Dropdown.Item icon={isSortingAsc ? 'arrow down' : 'arrow up'} text={isSortingAsc ? 'Sort asc' : 'Sort desc'} onClick={sortByType} />
+                    <Form onSubmit={() => filterByDomain(domainFilter)}>
+                        <Form.Input label='Domain' placeholder='gaulug.de' onChange={e => setDomainFilter(e.target.value)} />
+                    </Form>
+                </Dropdown.Menu>
+            </Dropdown>)
     }
 
     return (
         <>
+            
             {renderSearchBox()}
             <Table color='purple'>
                 <Table.Header active='true' style={{ backgroundColor: 'purple' }}>
                     <Table.Row>
                         {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>{renderSortingIcon(isSortingByAddressAsc, sortByContractAddress, "Address")}</Table.HeaderCell>}
-                        <Table.HeaderCell>{renderSortingIcon(isSortingByDomainAsc, sortByDomain, "Domain")}</Table.HeaderCell>
+                        <Table.HeaderCell>{renderSortingIcon(isSortingByDomainAsc, sortByDomain, "Domain", () => filterByDomain(domainFilter))}</Table.HeaderCell>
                         {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>{renderSortingIcon(isSortingByExpiryAsc, sortByExpiry, "Expiry")}</Table.HeaderCell>}
                         {(isRegistryInspect && !isExploringDomain) && <Table.HeaderCell textAlign="center">{renderSortingIcon(isSortingByTotalSmartContractsAsc, sortByTotalSmartContracts, "Total Smart Contracts")}</Table.HeaderCell>}
                         <Table.HeaderCell textAlign="center">{renderSortingIcon(isSortingByVerifiedAsc, sortByVerified, "Verified")}</Table.HeaderCell>
@@ -290,7 +311,7 @@ function TableOverview(props) {
                         }
                         {(isDashboard || (isRegistryInspect && isExploringDomain)) &&
                             <Table.HeaderCell textAlign="center">{renderSortingIcon(isSortingByFavouriteAsc, sortByFavourite, "Favourites")}
-                            {/*<Dropdown
+                                {/*<Dropdown
                                     icon='filter'
                                     floating
                                     button
