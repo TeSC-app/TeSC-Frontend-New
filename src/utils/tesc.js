@@ -46,7 +46,7 @@ export const generateSignature = async ({ address, domain, expiry, flagsHex }, p
 export const flagsToBytes24Hex = (flagsBitVector) => {
     const flagsBitVectorWithSANITY = new BitSet(flagsBitVector.toString() + '1');
     let hex = flagsBitVectorWithSANITY.slice(0, Object.keys(FLAGS).length - 1).toString(16);
-    return padToBytesX(hex, 24);
+    return web3Utils.padLeft(hex, 24);
 };
 
 export const padToBytesX = (hexNumber, x) => {
@@ -93,7 +93,7 @@ export const storeTesc = ({ account, claim }) => {
 export const isValidContractAddress = (address, withReason = false) => {
     if (!withReason) {
         return (address.substring(0, 2) === '0x')
-            && Boolean(address.match(/^0x[0-9a-fA-F]*$/i))
+            && Boolean(address.match(/^0x[0-9a-fA-F]*$/i))  // could've used web3Utils.isHex() or web3Utils.isAddress() instead
             && (address.length === 42)
             && web3Utils.checkAddressChecksum(address);
     }
@@ -112,8 +112,8 @@ export const isValidContractAddress = (address, withReason = false) => {
     return true;
 };
 
-export const isSha3Hash = (str) => {
-    return str.length === 64 && Boolean(str.match(/^[0-9a-fA-F]+$/i))
+export const isSha3 = (str) => {
+    return str.length === 66 && web3Utils.isHex(str);
 }
 
 export const formatClaim = ({ contractAddress, domain, expiry, flags }) => {

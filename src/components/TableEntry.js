@@ -8,6 +8,7 @@ import LinkTescInspect from './InternalLink';
 import {
     estimateRegistryAddCost,
     estimateRegistryRemoveCost,
+    isSha3,
 } from '../utils/tesc';
 import TableCellVerification from './TableCellVerification';
 import { COL, hasAllColumns } from './TableOverview';
@@ -171,7 +172,7 @@ function TableEntry(props) {
     };
 
     const renderDomain = () => {
-        if (domain.length === 64 && domain.split('.').length === 1) {
+        if (isSha3(domain)) {
             return (<Popup inverted content={domain} trigger={<i>{'< hashed >'}</i>} />);
         } else if (domain.length > 32) {
             return (<Popup inverted on="click" content={domain} trigger={<i className='cursor-pointer'>{`${domain.substring(0, 6)}...${domain.substring(domain.length - 4, domain.length)}`}</i>} />);

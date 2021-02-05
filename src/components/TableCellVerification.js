@@ -3,7 +3,7 @@ import axios from 'axios'
 
 import AppContext from '../appContext';
 import {
-    isSha3Hash
+    isSha3
 } from '../utils/tesc';
 import { Table, Popup, Loader, Icon } from 'semantic-ui-react';
 import LinkTescInspect from './InternalLink';
@@ -16,7 +16,7 @@ function TableCellVerification({ domain, contractAddress, verified, handleChange
 
 
     const renderVerifResult = () => {
-        if (domain && isSha3Hash(domain)) {
+        if (domain && isSha3(domain)) {
             return (<Popup
                 inverted
                 content='Domain is hashed, please inspect the contract to run the verification'
