@@ -13,7 +13,7 @@ import TescDataTable from "../components/tesc/TescDataTable";
 import moment from 'moment';
 
 const TeSCInspect = ({ location }) => {
-    const { web3, showMessage, loadStorage } = useContext(AppContext);
+    const { web3, showMessage, loadStorage, account } = useContext(AppContext);
     const [contractAddress, setContractAddress] = useState('');
     const [contractOwner, setContractOwner] = useState('');
     const [domainFromChain, setDomainFromChain] = useState('');
@@ -88,11 +88,21 @@ const TeSCInspect = ({ location }) => {
             }
         }
         if (!found) {
-            tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') });
-            localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
-            setTescsIsInFavourites(true);
+            try {
+            const contract = new web3.eth.Contract(TeSC.abi, address);
+            const tescOwner = await contract.methods.owner.call().call()
+                tescOwner ? addEntryToStorage(tescsNew, address, tescOwner.toLowerCase() === account) : addEntryToStorage(tescsNew, address, false)
+            } catch {
+                addEntryToStorage(tescsNew, address, false)
+            }
         }
     };
+
+    const addEntryToStorage = (tescsNew, address, own) => {
+        tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: own, createdAt: moment().format('DD/MM/YYYY HH:mm') });
+        localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+        setTescsIsInFavourites(true);
+    }
 
     const verifyTesc = useCallback(async () => {
         if (isDomainHashed !== null && (!isDomainHashed || (isDomainHashed && isPlainDomainSubmitted))) {

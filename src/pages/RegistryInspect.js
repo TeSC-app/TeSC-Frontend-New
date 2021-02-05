@@ -6,7 +6,7 @@ import TableOverview from '../components/TableOverview';
 import axios from 'axios'
 import moment from 'moment'
 
-function RegistryInspect(props) {
+function RegistryInspect() {
     const { loadStorage } = useContext(AppContext);
     const [entriesRaw, setEntriesRaw] = useState([])
     const [entriesWithOccurances, setEntriesWithOccurances] = useState([])

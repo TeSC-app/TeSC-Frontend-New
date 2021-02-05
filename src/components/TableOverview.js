@@ -35,33 +35,33 @@ function TableOverview(props) {
     const [isSortingByDomainAsc, setIsSortingByDomainAsc] = useState(true)
     const [isSortingByExpiryAsc, setIsSortingByExpiryAsc] = useState(true)
     const [isSortingByVerifiedAsc, setIsSortingByVerifiedAsc] = useState(true)
-    const [isSortingByInRegistryAsc, setIsSortingByInRegistryAsc] = useState(true)
-    const [isSortingByFavouritesAsc, setIsSortingByFavouritesAsc] = useState(true)
+    const [isSortingByTotalSmartContracts, setIsSortingByTotalSmartContracts] = useState(true)
+    const [isSortingByFavouriteAsc, setIsSortingByFavouriteAsc] = useState(true)
     const [isSortingByCreatedAtAsc, setIsSortingByCreatedAtAsc] = useState(true)
 
     useEffect(() => {
-        //console.log(tescs)
-        //console.log(entriesWithOccurances)
         const init = async () => {
             try {
                 // setTescs(account ? (isDashboard? loadStorage() : []) : []);
                 setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRY_PER_PAGE) : []);
                 setTotalPages(!isExploringDomain ? Math.ceil(entriesWithOccurances.length / ENTRY_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRY_PER_PAGE : 0));
-                window.ethereum.on('accountsChanged', (accounts) => {
-                    setTescs(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
-                        JSON.parse(localStorage.getItem(accounts[0].toLowerCase())) :
-                        []);
-                    setDisplayedEntries(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
-                        JSON.parse(localStorage.getItem(accounts[0].toLowerCase())).slice(0, ENTRY_PER_PAGE) :
-                        []);
-                });
+                if (isDashboard) {
+                    window.ethereum.on('accountsChanged', (accounts) => {
+                        setTescs(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
+                            JSON.parse(localStorage.getItem(accounts[0].toLowerCase())) :
+                            []);
+                        setDisplayedEntries(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
+                            JSON.parse(localStorage.getItem(accounts[0].toLowerCase())).slice(0, ENTRY_PER_PAGE) :
+                            []);
+                    });
+                }
             }
             catch (error) {
                 console.log(error);
             }
         };
         init();
-    }, [tescs, account, web3.eth, web3.eth.Contract, web3.eth.net, entriesWithOccurances, isExploringDomain]);
+    }, [tescs, account, web3.eth, web3.eth.Contract, web3.eth.net, entriesWithOccurances, isExploringDomain, isDashboard]);
 
 
     const handleChangeTescs = (tesc) => {
@@ -82,7 +82,7 @@ function TableOverview(props) {
                 }
             }
             if (!found) {
-                tescsNew.push({ contractAddress: tesc.contractAddress, domain: tesc.domain, expiry: tesc.expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') });
+                tescsNew.push({ contractAddress: tesc.contractAddress, domain: tesc.domain, expiry: tesc.expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm'), verified: tesc.verified });
                 localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
             }
             setTescs(updatedTescs.sort((tescA, tescB) => tescB.expiry - tescA.expiry))
@@ -128,7 +128,7 @@ function TableOverview(props) {
 
     const renderRows = () => {
         if (displayedEntries && isExploringDomain) {
-            return displayedEntries.map((tesc, index, tescs) => (
+            return displayedEntries.map((tesc, index) => (
                 <TableEntry key={tesc.contractAddress}
                     tesc={tesc}
                     onTescsChange={handleChangeTescs}
@@ -136,7 +136,6 @@ function TableOverview(props) {
                     isExploringDomain={isExploringDomain}
                     setVerificationInTescs={setVerificationInTescs}
                     index={index}
-                    rowData={rowData}
                 />
             ))
         } else if (displayedEntries && !isExploringDomain) {
@@ -162,7 +161,7 @@ function TableOverview(props) {
             setTescs(entriesWithOccurances)
         } else {
             setIsExploringDomain(true)
-            setTescs(loadStorage().filter(entry => entry.domain === domain).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
+            setTescs(rowData.filter(entry => entry.domain === domain).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
         }
         handleLoading(false)
     }
@@ -221,12 +220,45 @@ function TableOverview(props) {
         }
     }
 
+    const sortByTotalSmartContracts = () => {
+        if (isSortingByTotalSmartContracts) {
+            console.log(tescs)
+            setDisplayedEntries(entriesWithOccurances.sort((tescA, tescB) => tescA.contractCount.toString().localeCompare(tescB.contractCount)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByTotalSmartContracts(false)
+        } else {
+            setDisplayedEntries(entriesWithOccurances.sort((tescA, tescB) => tescB.contractCount.toString().localeCompare(tescA.contractCount)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByTotalSmartContracts(true)
+        }
+    }
+
+    const sortByFavourite = () => {
+        if (isSortingByFavouriteAsc) {
+            console.log(tescs)
+            setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.isFavourite.toString().localeCompare(tescB.isFavourite)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByFavouriteAsc(false)
+        } else {
+            setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.isFavourite.toString().localeCompare(tescA.isFavourite)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByFavouriteAsc(true)
+        }
+    }
+
+    const sortByCreatedAt = () => {
+        if (isSortingByCreatedAtAsc) {
+            console.log(tescs)
+            setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.createdAt.toString().localeCompare(tescB.createdAt)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByCreatedAtAsc(false)
+        } else {
+            setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.createdAt.toString().localeCompare(tescA.createdAt)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByCreatedAtAsc(true)
+        }
+    }
+
     const setVerificationInTescs = (tescsWithVerification) => {
         setTescs(tescsWithVerification)
     }
 
     const renderSortingIcon = (isSortingAsc, sortByType) => {
-        return (<Popup content={isSortingAsc ? 'Sort asc': 'Sort desc'} trigger={<Button icon={isSortingAsc ? 'sort descending' : 'sort ascending'}
+        return (<Popup content={isSortingAsc ? 'Sort asc' : 'Sort desc'} trigger={<Button icon={isSortingAsc ? 'sort descending' : 'sort ascending'}
             className="sorting-icon"
             onClick={sortByType} />} />)
     }
@@ -240,14 +272,14 @@ function TableOverview(props) {
                         {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Address{renderSortingIcon(isSortingByAddressAsc, sortByContractAddress)}</Table.HeaderCell>}
                         <Table.HeaderCell>Domain{renderSortingIcon(isSortingByDomainAsc, sortByDomain)}</Table.HeaderCell>
                         {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Expiry{renderSortingIcon(isSortingByExpiryAsc, sortByExpiry)}</Table.HeaderCell>}
-                        {(isRegistryInspect && !isExploringDomain) && <Table.HeaderCell textAlign="center">Total Smart Contracts</Table.HeaderCell>}
-                        <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
+                        {(isRegistryInspect && !isExploringDomain) && <Table.HeaderCell textAlign="center">Total Smart Contracts{renderSortingIcon(isSortingByTotalSmartContracts, sortByTotalSmartContracts)}</Table.HeaderCell>}
+                        <Table.HeaderCell textAlign="center">Verified{renderSortingIcon(isSortingByVerifiedAsc, sortByVerified)}</Table.HeaderCell>
                         {isDashboard &&
                             <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
                         }
                         {(isDashboard || (isRegistryInspect && isExploringDomain)) &&
-                            <Table.HeaderCell textAlign="center">Favourites
-                            <Dropdown
+                            <Table.HeaderCell textAlign="center">Favourites{renderSortingIcon(isSortingByFavouriteAsc, sortByFavourite)}
+                            {/*<Dropdown
                                     icon='filter'
                                     floating
                                     button
@@ -258,11 +290,11 @@ function TableOverview(props) {
                                         <Dropdown.Item icon='heart' text='By favourite' onClick={showFavouriteTescs} />
                                         <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
                                     </Dropdown.Menu>
-                                </Dropdown>
+                            </Dropdown>*/}
                             </Table.HeaderCell>
                         }
                         {isDashboard &&
-                            <Table.HeaderCell>Created At</Table.HeaderCell>
+                            <Table.HeaderCell>Created At{renderSortingIcon(isSortingByCreatedAtAsc, sortByCreatedAt)}</Table.HeaderCell>
                         }
                     </Table.Row>
                 </Table.Header>
@@ -280,7 +312,7 @@ function TableOverview(props) {
                         onPageChange={changePage}
                         ellipsisItem={{ content: <Icon name='ellipsis horizontal' />, icon: true }}
                         firstItem={totalPages > 8 ? { content: <Icon name='angle double left' />, icon: true } : null}
-                        lastItem={totalPages > 8 ?{ content: <Icon name='angle double right' />, icon: true } : null}
+                        lastItem={totalPages > 8 ? { content: <Icon name='angle double right' />, icon: true } : null}
                         prevItem={{ content: <Icon name='angle left' />, icon: true }}
                         nextItem={{ content: <Icon name='angle right' />, icon: true }} />
                 </div> : null

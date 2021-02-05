@@ -20,10 +20,9 @@ function TableEntry(props) {
         isExploringDomain,
         handleSearchInput,
         handleSearchSubmit,
-        index,
-        rowData
+        index
     } = props;
-    const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged } = useContext(AppContext);
+    const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged, loadStorage } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
@@ -37,9 +36,11 @@ function TableEntry(props) {
         if (isExploringDomain) {
             const checkRegistry = async () => {
                 try {
-                    const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call()
-                    setIsInRegistry(isInRegistry)
-                    setLoading(false)
+                    if (contractAddress) {
+                        const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call()
+                        setIsInRegistry(isInRegistry)
+                        setLoading(false)
+                    }
                 } catch (error) {
                     console.log(error)
                     setLoading(false)
@@ -75,9 +76,11 @@ function TableEntry(props) {
         handleBlockScreen(true);
         if (domain && contractAddress) {
             try {
+                console.log(contractAddress)
                 const isContractRegistered = await registryContract.methods.isContractRegistered(contractAddress).call();
+                console.log(isContractRegistered)
                 if (!isContractRegistered) {
-                    await registryContract.methods.add(contractAddress).send({ from: account, gas: '2000000' })
+                    await registryContract.methods.add(contractAddress).send({ from: account, gas: '3000000' })
                         .on('receipt', async (txReceipt) => {
                             showMessage(buildPositiveMsg({
                                 header: 'Entry added to the registry',
@@ -152,7 +155,7 @@ function TableEntry(props) {
             isFavourite = true;
             setTescIsInFavourites(true);
         }
-        onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt })
+        onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt, verified: tesc.verified })
     };
 
     const renderRegistryButtons = () => {
@@ -177,7 +180,7 @@ function TableEntry(props) {
     };
 
     const renderDomain = () => {
-        if (domain.length === 64 && domain.split('.').length === 1) {
+        if (domain.length === 66 && domain.split('.').length === 1) {
             return (<Popup inverted content={domain} trigger={<i>{'< hashed >'}</i>} />);
         } else if (domain.length > 32) {
             return (<Popup inverted on="click" content={domain} trigger={<i className='cursor-pointer'>{`${domain.substring(0, 6)}...${domain.substring(domain.length - 4, domain.length)}`}</i>} />);
@@ -186,7 +189,7 @@ function TableEntry(props) {
         }
     };
 
-    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified, isDashboard: true, account, rowData, index };
+    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified, isDashboard: true, account, index, loadStorage };
 
     const renderFavourites = () => {
         return (
@@ -207,16 +210,16 @@ function TableEntry(props) {
     }
 
     const renderDomainForRegistryInspect = () => {
-        return (domain.length === 64 && domain.split('.').length === 1) ?
+        return (domain.length === 66 && domain.split('.').length === 1) ?
             <Popup content={`0x${domain}`} trigger={
                 !isExploringDomain ?
-                    <Button basic size='medium' onClick={exploreDomain}>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
-                    <i>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
+                    <Button basic size='medium' onClick={exploreDomain}>{`${domain.substring(0, 4)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
+                    <i>{`${domain.substring(0, 4)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
             : !isExploringDomain ? <Button basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain
     }
 
     const renderPieChartForVerified = () => {
-        const data = [{id: 'Valid', value: tesc.verifiedCount}, {id: 'Invalid', value: tesc.contractCount - tesc.verifiedCount}]
+        const data = [{ id: 'Valid', value: tesc.verifiedCount }, { id: 'Invalid', value: tesc.contractCount - tesc.verifiedCount }]
         return <PieChart loading={false} data={data} isRegistryInspect={true} />
     }
 
@@ -237,14 +240,17 @@ function TableEntry(props) {
             <Table.Cell>
                 {isExploringDomain ?
                     <span className='contract-address-column'>
-                    {renderOwnIcon()} 
-                    {renderContractAddress()}   
+                        {renderOwnIcon()}
+                        {renderContractAddress()}
                     </span> : renderDomainForRegistryInspect()
                 }
             </Table.Cell>
             <Table.Cell textAlign='center'>{isDashboard ? renderDomain() : isExploringDomain ? renderDomainForRegistryInspect() : renderTescContractCount()}</Table.Cell>
             <Table.Cell textAlign='center'>{isExploringDomain ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
-            {isExploringDomain && <TableCellVerification {...tableCellVerifProps} />}
+            {isDashboard && <TableCellVerification {...tableCellVerifProps} />}
+            {isExploringDomain && !isDashboard && <Table.Cell textAlign="center">
+                {tesc.verified ? <Icon name="check" color="green" circular /> : <Icon name="delete" color="red" circular />}
+            </Table.Cell> }
             {isDashboard &&
                 <Table.Cell textAlign="center">
                     {renderRegistryButtons()}

@@ -7,13 +7,14 @@ import { Table, Popup, Loader, Icon } from 'semantic-ui-react';
 import LinkTescInspect from './InternalLink';
 
 function TableCellVerification(props) {
-    const { domain, contractAddress, verified, handleVerified, account, rowData, index } = props
+    const { domain, contractAddress, verified, handleVerified, account, index, loadStorage } = props
     const [isVerified, setIsVerified] = useState(verified);
     const contractAddress_ = useRef(contractAddress);
 
     const updateLocalStorageWithVerified = useCallback((verified) => {
-        localStorage.setItem(account.toLowerCase(), JSON.stringify(rowData.map((tesc, i) => i === index ? ({ ...tesc, verified: verified }) : tesc)))
-    }, [account, index, rowData])
+        if (account)
+            localStorage.setItem(account.toLowerCase(), JSON.stringify(loadStorage().map((tesc, i) => i === index ? ({ ...tesc, verified: verified }) : tesc)))
+    }, [loadStorage, account, index])
 
     const renderVerifResult = () => {
         if (domain && isSha3Hash(domain)) {
@@ -26,17 +27,16 @@ function TableCellVerification(props) {
         if (isVerified === null || isVerified === undefined) {
             return <Loader active inline />;
         }
-        //update local storage with verification status
+        //update local storage with verification status only for dashboard elements
         updateLocalStorageWithVerified(isVerified)
         return isVerified ? <Icon name="check" color="green" circular /> : <Icon name="delete" color="red" circular />;
-        
+
     };
 
     useEffect(() => {
         (async () => {
             try {
                 if(typeof verified !== 'boolean') {
-                    console.log("verified", verified);
                     const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/isVerified/${contractAddress_.current.toLowerCase()}`);
                     setIsVerified(response.data.verified)
                     updateLocalStorageWithVerified(response.data.verified)
@@ -50,10 +50,11 @@ function TableCellVerification(props) {
 
     useEffect(() => {
         (async () => {
-            if(typeof isVerified === 'boolean')
-                handleVerified(isVerified)    
+            if (typeof isVerified === 'boolean')
+                handleVerified(isVerified)
+            updateLocalStorageWithVerified(isVerified)
         })();
-    }, [isVerified, handleVerified]);
+    }, [isVerified, handleVerified, updateLocalStorageWithVerified]);
 
     return (
         <Table.Cell textAlign="center">
