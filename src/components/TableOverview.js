@@ -35,7 +35,8 @@ function TableOverview(props) {
     const [isSortingByDomainAsc, setIsSortingByDomainAsc] = useState(true)
     const [isSortingByExpiryAsc, setIsSortingByExpiryAsc] = useState(true)
     const [isSortingByVerifiedAsc, setIsSortingByVerifiedAsc] = useState(true)
-    const [isSortingByTotalSmartContracts, setIsSortingByTotalSmartContracts] = useState(true)
+    const [isSortingByTotalSmartContractsAsc, setIsSortingByTotalSmartContractsAsc] = useState(true)
+    const [isSortingByIsInRegistryAsc, setIsSortingByIsInRegistryAsc] = useState(true)
     const [isSortingByFavouriteAsc, setIsSortingByFavouriteAsc] = useState(true)
     const [isSortingByCreatedAtAsc, setIsSortingByCreatedAtAsc] = useState(true)
 
@@ -135,7 +136,6 @@ function TableOverview(props) {
                     isDashboard={isDashboard}
                     isExploringDomain={isExploringDomain}
                     setVerificationInTescs={setVerificationInTescs}
-                    index={index}
                 />
             ))
         } else if (displayedEntries && !isExploringDomain) {
@@ -221,13 +221,24 @@ function TableOverview(props) {
     }
 
     const sortByTotalSmartContracts = () => {
-        if (isSortingByTotalSmartContracts) {
+        if (isSortingByTotalSmartContractsAsc) {
             console.log(tescs)
             setDisplayedEntries(entriesWithOccurances.sort((tescA, tescB) => tescA.contractCount.toString().localeCompare(tescB.contractCount)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
-            setIsSortingByTotalSmartContracts(false)
+            setIsSortingByTotalSmartContractsAsc(false)
         } else {
             setDisplayedEntries(entriesWithOccurances.sort((tescA, tescB) => tescB.contractCount.toString().localeCompare(tescA.contractCount)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
-            setIsSortingByTotalSmartContracts(true)
+            setIsSortingByTotalSmartContractsAsc(true)
+        }
+    }
+
+    const sortByIsInRegistry = () => {
+        if (isSortingByIsInRegistryAsc) {
+            console.log(tescs)
+            setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.isInRegistry.toString().localeCompare(tescB.isInRegistry)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByIsInRegistryAsc(false)
+        } else {
+            setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.isInRegistry.toString().localeCompare(tescA.isInRegistry)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setIsSortingByIsInRegistryAsc(true)
         }
     }
 
@@ -257,10 +268,10 @@ function TableOverview(props) {
         setTescs(tescsWithVerification)
     }
 
-    const renderSortingIcon = (isSortingAsc, sortByType) => {
+    const renderSortingIcon = (isSortingAsc, sortByType, title) => {
         return (<Popup content={isSortingAsc ? 'Sort asc' : 'Sort desc'} trigger={<Button icon={isSortingAsc ? 'sort descending' : 'sort ascending'}
             className="sorting-icon"
-            onClick={sortByType} />} />)
+            onClick={sortByType}>{title}</Button>} />)
     }
 
     return (
@@ -269,16 +280,16 @@ function TableOverview(props) {
             <Table color='purple'>
                 <Table.Header active='true' style={{ backgroundColor: 'purple' }}>
                     <Table.Row>
-                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Address{renderSortingIcon(isSortingByAddressAsc, sortByContractAddress)}</Table.HeaderCell>}
-                        <Table.HeaderCell>Domain{renderSortingIcon(isSortingByDomainAsc, sortByDomain)}</Table.HeaderCell>
-                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Expiry{renderSortingIcon(isSortingByExpiryAsc, sortByExpiry)}</Table.HeaderCell>}
-                        {(isRegistryInspect && !isExploringDomain) && <Table.HeaderCell textAlign="center">Total Smart Contracts{renderSortingIcon(isSortingByTotalSmartContracts, sortByTotalSmartContracts)}</Table.HeaderCell>}
-                        <Table.HeaderCell textAlign="center">Verified{renderSortingIcon(isSortingByVerifiedAsc, sortByVerified)}</Table.HeaderCell>
+                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>{renderSortingIcon(isSortingByAddressAsc, sortByContractAddress, "Address")}</Table.HeaderCell>}
+                        <Table.HeaderCell>{renderSortingIcon(isSortingByDomainAsc, sortByDomain, "Domain")}</Table.HeaderCell>
+                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>{renderSortingIcon(isSortingByExpiryAsc, sortByExpiry, "Expiry")}</Table.HeaderCell>}
+                        {(isRegistryInspect && !isExploringDomain) && <Table.HeaderCell textAlign="center">{renderSortingIcon(isSortingByTotalSmartContractsAsc, sortByTotalSmartContracts, "Total Smart Contracts")}</Table.HeaderCell>}
+                        <Table.HeaderCell textAlign="center">{renderSortingIcon(isSortingByVerifiedAsc, sortByVerified, "Verified")}</Table.HeaderCell>
                         {isDashboard &&
-                            <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
+                            <Table.HeaderCell textAlign="center">{renderSortingIcon(isSortingByIsInRegistryAsc, sortByIsInRegistry, "Registry")}</Table.HeaderCell>
                         }
                         {(isDashboard || (isRegistryInspect && isExploringDomain)) &&
-                            <Table.HeaderCell textAlign="center">Favourites{renderSortingIcon(isSortingByFavouriteAsc, sortByFavourite)}
+                            <Table.HeaderCell textAlign="center">{renderSortingIcon(isSortingByFavouriteAsc, sortByFavourite, "Favourites")}
                             {/*<Dropdown
                                     icon='filter'
                                     floating
@@ -294,7 +305,7 @@ function TableOverview(props) {
                             </Table.HeaderCell>
                         }
                         {isDashboard &&
-                            <Table.HeaderCell>Created At{renderSortingIcon(isSortingByCreatedAtAsc, sortByCreatedAt)}</Table.HeaderCell>
+                            <Table.HeaderCell>{renderSortingIcon(isSortingByCreatedAtAsc, sortByCreatedAt, "Created At")}</Table.HeaderCell>
                         }
                     </Table.Row>
                 </Table.Header>

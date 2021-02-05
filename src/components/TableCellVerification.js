@@ -7,14 +7,14 @@ import { Table, Popup, Loader, Icon } from 'semantic-ui-react';
 import LinkTescInspect from './InternalLink';
 
 function TableCellVerification(props) {
-    const { domain, contractAddress, verified, handleVerified, account, index, loadStorage } = props
+    const { domain, contractAddress, verified, handleVerified, account, loadStorage } = props
     const [isVerified, setIsVerified] = useState(verified);
     const contractAddress_ = useRef(contractAddress);
 
     const updateLocalStorageWithVerified = useCallback((verified) => {
         if (account)
-            localStorage.setItem(account.toLowerCase(), JSON.stringify(loadStorage().map((tesc, i) => i === index ? ({ ...tesc, verified: verified }) : tesc)))
-    }, [loadStorage, account, index])
+            localStorage.setItem(account.toLowerCase(), JSON.stringify(loadStorage().map((tesc) => tesc.contractAddress === contractAddress ? ({ ...tesc, verified: verified }) : tesc)))
+    }, [loadStorage, account, contractAddress])
 
     const renderVerifResult = () => {
         if (domain && isSha3Hash(domain)) {

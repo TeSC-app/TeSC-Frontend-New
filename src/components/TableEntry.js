@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import moment from 'moment';
 import { Table, Icon, Popup, Button, Image } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
@@ -19,8 +19,7 @@ function TableEntry(props) {
         isDashboard,
         isExploringDomain,
         handleSearchInput,
-        handleSearchSubmit,
-        index
+        handleSearchSubmit
     } = props;
     const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged, loadStorage } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
@@ -32,6 +31,11 @@ function TableEntry(props) {
     const [isInRegistry, setIsInRegistry] = useState(false)
     const [loading, setLoading] = useState(true)
 
+    const updateLocalStorageWithIsInRegistry = useCallback((isInRegistry) => {
+        if (account)
+            localStorage.setItem(account.toLowerCase(), JSON.stringify(loadStorage().map((tesc) => tesc.contractAddress === contractAddress ? ({ ...tesc, isInRegistry: isInRegistry }) : tesc)))
+    }, [loadStorage, account, contractAddress])
+
     useEffect(() => {
         if (isExploringDomain) {
             const checkRegistry = async () => {
@@ -39,6 +43,7 @@ function TableEntry(props) {
                     if (contractAddress) {
                         const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call()
                         setIsInRegistry(isInRegistry)
+                        updateLocalStorageWithIsInRegistry(isInRegistry)
                         setLoading(false)
                     }
                 } catch (error) {
@@ -48,7 +53,7 @@ function TableEntry(props) {
             }
             checkRegistry()
         }
-    }, [contractAddress, registryContract, isExploringDomain])
+    }, [contractAddress, registryContract, isExploringDomain, updateLocalStorageWithIsInRegistry])
 
     useEffect(() => {
         if (isDashboard) handleAccountChanged(false);
@@ -189,7 +194,7 @@ function TableEntry(props) {
         }
     };
 
-    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified, isDashboard: true, account, index, loadStorage };
+    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified, isDashboard: true, account, loadStorage };
 
     const renderFavourites = () => {
         return (
