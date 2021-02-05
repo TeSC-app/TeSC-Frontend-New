@@ -29,9 +29,9 @@ const TeSCInspect = ({ location }) => {
     const [isDomainHashed, setIsDomainHashed] = useState(null);
     const [typedInDomain, setTypedInDomain] = useState('');
     const [isPlainDomainSubmitted, setIsPlainDomainSubmitted] = useState(false);
-    const [verifResult, setVerifResult] = useState(null);
+    const [curVerifResult, setCurVerifResult] = useState(null);
     const [isFavourite, setIsInFavourites] = useState(null);
-    const [locationState, setLocationState] = useState(undefined);
+    const locationStateAddress = useRef(null);
     const localTescs = useRef({});
     const hasSentVerif = useRef(false);
 
@@ -42,10 +42,10 @@ const TeSCInspect = ({ location }) => {
 
 
     useEffect(() => {
-        if (!!flags.get(FLAGS.DOMAIN_HASHED) && typedInDomain && web3.utils.sha3(typedInDomain).substring(2) === domainFromChain && !verifResult) {
+        if (!!flags.get(FLAGS.DOMAIN_HASHED) && typedInDomain && web3.utils.sha3(typedInDomain).substring(2) === domainFromChain && !curVerifResult) {
             setIsPlainDomainSubmitted(true);
         }
-    }, [typedInDomain, domainFromChain, flags, verifResult, web3.utils]);
+    }, [typedInDomain, domainFromChain, flags, curVerifResult, web3.utils]);
 
     const fetchTescData = useCallback(async (address) => {
         showMessage(null);
@@ -96,51 +96,65 @@ const TeSCInspect = ({ location }) => {
         localStorage.setItem(account, JSON.stringify(tescArray));
     };
 
-    const verifyTesc = useCallback(async (address) => {
-        const isRepeated = verifResult && verifResult.contract && verifResult.contract.contractAddress.includes(address);
-        console.log('hasSentVerif.current', hasSentVerif.current);
+    const assignContractData = useCallback((contract) => {
+        const flagsHex = contract.flags;
+        console.log("Flaghex", flagsHex);
+        setIsDomainHashed(!!(new BitSet(flagsHex)).get(FLAGS.DOMAIN_HASHED + 1));
+        setFlags(hexStringToBitSet(flagsHex));
 
+        setDomainFromChain(contract.domain);
+        setExpiry(contract.expiry);
+        setSignature(contract.signature);
+        setFingerprint(contract.fingerprint);
+
+        setContractOwner(contract.owner);
+        if (contract.owner.toLowerCase() === account.toLowerCase()) {
+            localTescs.current[contract.contractAddress].own = true;
+        }
+    }, [account]);
+
+    const verifyTesc = useCallback(async (address) => {
+        const isRepeated = curVerifResult && (curVerifResult.target === address);
         if (!isRepeated &&
             !hasSentVerif.current &&
-            // isDomainHashed !== null &&
-            // (!isDomainHashed || (isDomainHashed && isPlainDomainSubmitted)) &&
             isValidContractAddress(address)
         ) {
+            let result;
             try {
                 hasSentVerif.current = true;
-                console.log('sending verif req...');
-                let response;
-
-                response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/verify/${address}`, {
+                console.log('sending req...');
+                const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/verify/${address}`, {
                     params: { plainDomain: typedInDomain },
                     timeout: 10000
                 });
-                hasSentVerif.current = false;
 
                 console.log('VERIF_RESULT', response);
-                const result = response.data;
+                result = response.data;
+                setCurVerifResult({ target: address, ...result });
+                setIsPlainDomainSubmitted(false);
 
                 if (result.endorsers && result.endorsers.length > 0) {
                     setEndorsers(result.endorsers);
+                } else if (result.contract) {
+                    // await fetchTescData(address);
+                    assignContractData(result.contract);
                 } else {
-                    await fetchTescData(address);
+                    throw new Error(`Unknow result from backend server: ${result}`);
                 }
 
 
-                setVerifResult(result);
-                setIsPlainDomainSubmitted(false);
-
             } catch (error) {
                 console.log(error);
-                const msg = extractAxiosErrorMessage({ error, subject: isDomainHashed ? typedInDomain : domainFromChain });
+                const msg = extractAxiosErrorMessage({ error, subject: typedInDomain ? typedInDomain : '' });
                 showMessage(buildNegativeMsg({
                     header: `Unable to verify contract ${address}`,
                     msg,
                 }));
             }
+            console.log('---------------------------------------------------------');
             hasSentVerif.current = false;
         }
-    }, [domainFromChain, isDomainHashed, typedInDomain, isPlainDomainSubmitted, showMessage, verifResult, fetchTescData]);
+    }, [isDomainHashed, typedInDomain, showMessage, curVerifResult, assignContractData]);
 
     useEffect(() => {
         if (isValidContractAddress(contractAddress)) {
@@ -149,19 +163,19 @@ const TeSCInspect = ({ location }) => {
     }, [verifyTesc, contractAddress]);
 
     const handleChangeAddress = useCallback(async (address) => {
-        clearResults();
+        clearDisplayData();
         setContractAddress(address);
         setLoading(true);
         if (isValidContractAddress(address)) {
             setIsInFavourites(localTescs.current[address] ? localTescs.current[address].isFavourite : false);
-            console.log('verifying...');
+            console.log('handleChangeAddress');
             await verifyTesc(address);
         }
         setLoading(false);
     }, [verifyTesc]);
 
     useEffect(() => {
-        if (Object.keys(localTescs.current).length === 0 || location.state !== locationState) {
+        if (Object.keys(localTescs.current).length === 0) {
             const tescArray = loadStorage();
             console.log('tescArray', tescArray);
             for (const tesc of tescArray) {
@@ -169,27 +183,29 @@ const TeSCInspect = ({ location }) => {
                 localTescs.current[contractAddress] = rest;
             }
             showMessage(null);
-            if (location.state) {
-                handleChangeAddress(location.state.contractAddress);
-                setLocationState(location.state);
-            }
-        }
-    }, [loadStorage, showMessage, location.state, handleChangeAddress, locationState]);
 
-    const clearResults = () => {
+        }
+
+        if (location.state && location.state.contractAddress !== locationStateAddress.current) {
+            handleChangeAddress(location.state.contractAddress);
+            locationStateAddress.current = location.state.contractAddress;
+        }
+
+    }, [loadStorage, showMessage, location.state, handleChangeAddress, locationStateAddress]);
+
+    const clearDisplayData = () => {
         setDomainFromChain('');
         setExpiry('');
         setFlags(new BitSet('0x00'));
         setSignature('');
         setTypedInDomain('');
-        setVerifResult(null);
         setEndorsers(null);
     };
 
     const handleSubmitAddress = async (e) => {
         e.preventDefault();
         setLoading(true);
-        clearResults();
+        clearDisplayData();
         try {
             console.log('submit with ', contractAddress);
             isValidContractAddress(contractAddress, true);
@@ -206,14 +222,13 @@ const TeSCInspect = ({ location }) => {
 
     const handleEnterOriginalDomain = async (e) => {
         e.preventDefault();
-        setVerifResult(null);
         setIsPlainDomainSubmitted(true);
         verifyTesc();
     };
 
     const handleCloseTescUpdate = async (e) => {
         showMessage(null);
-        await fetchTescData(contractAddress);
+        // await fetchTescData(contractAddress);
         await verifyTesc(contractAddress);
     };
 
@@ -292,8 +307,8 @@ const TeSCInspect = ({ location }) => {
                                         <Card style={{ width: '100%' }}>
                                             <Card.Content header="Verification" />
                                             <Card.Content>
-                                                <Dimmer active={(isPlainDomainSubmitted && !verifResult)
-                                                    || (!isDomainHashed && !verifResult)} inverted>
+                                                <Dimmer active={(isPlainDomainSubmitted && !curVerifResult)
+                                                    || (!isDomainHashed && !curVerifResult)} inverted>
                                                     <Loader content='Verifying...' />
                                                 </Dimmer>
                                                 {isDomainHashed &&
@@ -313,15 +328,15 @@ const TeSCInspect = ({ location }) => {
 
                                                     )
                                                 }
-                                                {verifResult && (
+                                                {curVerifResult && (
                                                     <div style={{ textAlign: 'center' }}>
                                                         {
-                                                            verifResult.verified ?
+                                                            curVerifResult.verified ?
                                                                 (
                                                                     <div>
                                                                         <Icon name="checkmark" circular={true} color="green" size='big' style={{ marginTop: '10px' }} />
                                                                         <br />
-                                                                        <Label basic color='green' size='large' style={{ marginTop: '10px' }}>{verifResult.message}</Label>
+                                                                        <Label basic color='green' size='large' style={{ marginTop: '10px' }}>{curVerifResult.message}</Label>
                                                                     </div>
 
                                                                 ) :
@@ -329,7 +344,7 @@ const TeSCInspect = ({ location }) => {
                                                                     <div>
                                                                         <Icon name="warning sign" color="red" size='huge' style={{ marginTop: '10px' }} />
                                                                         <br />
-                                                                        <Label basic color='red' size='large' style={{ marginTop: '10px' }}>{verifResult.message}</Label>
+                                                                        <Label basic color='red' size='large' style={{ marginTop: '10px' }}>{curVerifResult.message}</Label>
                                                                     </div>
                                                                 )
                                                         }
@@ -349,7 +364,7 @@ const TeSCInspect = ({ location }) => {
                                         <SubEndorsementAddition
                                             contractAddress={contractAddress}
                                             owner={contractOwner}
-                                            verified={verifResult ? verifResult.verified : false}
+                                            verified={curVerifResult ? curVerifResult.verified : false}
                                         />
                                     }
                                 </Grid.Column>
