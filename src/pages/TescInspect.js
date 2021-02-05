@@ -42,7 +42,7 @@ const TeSCInspect = ({ location }) => {
 
 
     useEffect(() => {
-        if (!!flags.get(FLAGS.DOMAIN_HASHED) && typedInDomain && web3.utils.sha3(typedInDomain).substring(2) === domainFromChain && !curVerifResult) {
+        if (!!flags.get(FLAGS.DOMAIN_HASHED) && typedInDomain && web3.utils.sha3(typedInDomain) === domainFromChain && !curVerifResult) {
             setIsPlainDomainSubmitted(true);
         }
     }, [typedInDomain, domainFromChain, flags, curVerifResult, web3.utils]);
@@ -114,24 +114,33 @@ const TeSCInspect = ({ location }) => {
     }, [account]);
 
     const verifyTesc = useCallback(async (address) => {
-        const isRepeated = curVerifResult && (curVerifResult.target === address);
+        console.log('address', address);
+        console.log('curVerifResult', curVerifResult);
+        const isRepeated = curVerifResult && (curVerifResult.target === address) && !curVerifResult.message.includes('Domain in TeSC is hashed');
         if (!isRepeated &&
             !hasSentVerif.current &&
+            (typedInDomain ? isPlainDomainSubmitted : true) &&
             isValidContractAddress(address)
         ) {
             let result;
+            let response;
             try {
                 hasSentVerif.current = true;
-                console.log('sending req...');
-                const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/verify/${address}`, {
+                console.log('sending req...', typedInDomain);
+                response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/verify/${address}`, {
                     params: { plainDomain: typedInDomain },
                     timeout: 10000
                 });
 
-                console.log('VERIF_RESULT', response);
+                if (response.data.message.includes('Domain in TeSC is hashed')) {
+                    setIsDomainHashed(true);
+                }
+                
+                console.log('>>> VERIF_RESULT', response);
                 result = response.data;
+
+
                 setCurVerifResult({ target: address, ...result });
-                setIsPlainDomainSubmitted(false);
 
                 if (result.endorsers && result.endorsers.length > 0) {
                     setEndorsers(result.endorsers);
@@ -142,7 +151,6 @@ const TeSCInspect = ({ location }) => {
                     throw new Error(`Unknow result from backend server: ${result}`);
                 }
 
-
             } catch (error) {
                 console.log(error);
                 const msg = extractAxiosErrorMessage({ error, subject: typedInDomain ? typedInDomain : '' });
@@ -152,9 +160,11 @@ const TeSCInspect = ({ location }) => {
                 }));
             }
             console.log('---------------------------------------------------------');
+            setIsPlainDomainSubmitted(false);
             hasSentVerif.current = false;
+
         }
-    }, [isDomainHashed, typedInDomain, showMessage, curVerifResult, assignContractData]);
+    }, [isPlainDomainSubmitted, typedInDomain, showMessage, curVerifResult, assignContractData]);
 
     useEffect(() => {
         if (isValidContractAddress(contractAddress)) {
@@ -199,6 +209,7 @@ const TeSCInspect = ({ location }) => {
         setFlags(new BitSet('0x00'));
         setSignature('');
         setTypedInDomain('');
+        setIsPlainDomainSubmitted(false);
         setEndorsers(null);
     };
 
@@ -223,7 +234,7 @@ const TeSCInspect = ({ location }) => {
     const handleEnterOriginalDomain = async (e) => {
         e.preventDefault();
         setIsPlainDomainSubmitted(true);
-        verifyTesc();
+        verifyTesc(contractAddress);
     };
 
     const handleCloseTescUpdate = async (e) => {
@@ -276,7 +287,7 @@ const TeSCInspect = ({ location }) => {
                                                                 domain: domainFromChain,
                                                                 expiry, flags,
                                                                 signature,
-                                                                fingerprint: fingerprint.substring(2),
+                                                                fingerprint: fingerprint,
                                                             }}
                                                             typedInDomain={typedInDomain}
                                                             onMatchOriginalDomain={setTypedInDomain}
