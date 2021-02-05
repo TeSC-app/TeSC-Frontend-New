@@ -285,7 +285,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
     const handleEnterOriginalDomain = (originalDomain) => {
         setDomain(originalDomain);
-        if (originalDomain && web3.utils.sha3(originalDomain).substring(2) === currentDomain) {
+        if (originalDomain && web3.utils.sha3(originalDomain) === currentDomain) {
             setIsMatchedOriginalDomain(true);
             onMatchOriginalDomain(originalDomain);
         }
@@ -324,7 +324,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         setFlags(newFlags);
         if (i === FLAGS.DOMAIN_HASHED) {
             if (domain && !selected) {
-                setCurrentDomain(web3.utils.sha3(domain).substring(2));
+                setCurrentDomain(web3.utils.sha3(domain));
             } else {
                 setCurrentDomain(domain)
             }

@@ -93,7 +93,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
     }, [showMessage]);
 
     const updateClaim = useCallback(() => {
-        const curDomain = !!flags.current.get(FLAGS.DOMAIN_HASHED) ? web3.utils.sha3(domain.current).substring(2) : domain.current;
+        const curDomain = !!flags.current.get(FLAGS.DOMAIN_HASHED) ? web3.utils.sha3(domain.current) : domain.current;
         if (contractAddress.current && domain.current && expiry.current) {
             claim.current = formatClaim({
                 contractAddress: contractAddress.current,
