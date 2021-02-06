@@ -1,3 +1,6 @@
+import web3 from 'web3';
+import { isValidContractAddress } from './tesc';
+
 const arrayTooltip = "The array values separated by commas. Using spaces is only possible for string arrays. No entered value corresponds to an empty array []." 
 const uintTooltip = "Enter a number >= 0. Do not enter values that exceed the maximum value of the type. This input is required."
 const intTooltip = "Enter a number. Do not enter values that exceed the maximum value of the type. This input is required."
@@ -16,17 +19,14 @@ export const getTooltipForType = (type) => {
         return intTooltip;
     }else if(type.startsWith("byte")){
         return byteTooltip;
-    }
-    
-    switch(type){   
-        case "address": 
-            return addressTooltip;
-        case "bool":
-            return boolTooltip;
-        case "string":
-            return stringTooltip;
-        default:
-            return defaultTooltip;
+    }else if(type === "address"){
+        return addressTooltip;
+    }else if(type === "bool"){
+        return boolTooltip;
+    }else if(type === "string"){
+        return stringTooltip;
+    }else{
+        return defaultTooltip;
     }
 }
 
@@ -35,4 +35,38 @@ export const isEmptyValidInputForType = (type) => {
     // these are the types are not supposed to be empty
     return !type.startsWith("uint") && !type.startsWith("int") && !type.startsWith("byte")
         && type !== "address" && type !== "bool";
+}
+
+export const validateConstructorParameterInput = (parameters, values) => {
+    let result = true;
+    values.forEach((value, index) => {
+        const type = parameters[index].type;
+        if(validateSingleInput(type, value) === false){
+            result = false;
+            return;
+        }
+    });        
+    return result;
+}
+
+const validateSingleInput = (type, value) => {
+    if(type.endsWith("[]")){
+    }else if(type.startsWith("uint")){
+        if(isNaN(value)) return false; 
+        if(parseInt(value) < 0) return false;
+    }else if(type.startsWith("int")){
+        if(isNaN(value)) return false;
+    }else if(type.startsWith("byte")){
+        if(!web3.utils.isHexStrict(value)) return false;
+    }else if(type === "address"){
+        if(!isValidContractAddress(value)) return false;
+    }else if(type === "bool"){
+        if(value !== "true" && value !== "false") return false;
+    }
+    
+    if(value === "" || value === []){
+        return isEmptyValidInputForType(type);
+    }else{
+        return true;
+    }
 }

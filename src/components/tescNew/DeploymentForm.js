@@ -35,12 +35,12 @@ import {
     storeTesc,
     estimateDeploymentCost,
     formatClaim,
-    isValidContractAddress,
     FLAGS,
 } from '../../utils/tesc';
 import {
     getTooltipForType,
-    isEmptyValidInputForType
+    isEmptyValidInputForType,
+    validateConstructorParameterInput
 } from '../../utils/constructorInput';
 
 import { extractAxiosErrorMessage } from '../../utils/formatError';
@@ -427,77 +427,18 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     }
 
     const handleTextChange = (value, index, type) => {
+        const updatedValues = constructorParameterValues;
         if(type.endsWith("[]")){
-            const updatedValues = constructorParameterValues;
             if(value === ""){
                 updatedValues[index] = [];
             }else{
                 updatedValues[index] = value.split(',');
             }
-            setConstructorParameterValues(updatedValues);
-            setAllParamsEntered(validateConstructorParameterInput());
-            return;
-        }else if(type.startsWith("uint")){
-            if(isNaN(value)){
-                setConstructorParameterInvalid(index);
-                return;
-            } 
-            if(parseInt(value) < 0){
-                setConstructorParameterInvalid(index);
-                return;
-            } 
-        }else if(type.startsWith("int")){
-            if(isNaN(value)){
-                setConstructorParameterInvalid(index);
-                return;
-            }
-        }else if(type.startsWith("byte")){
-            if(!web3.utils.isHexStrict(value)){
-                setConstructorParameterInvalid(index);
-                return;
-            }
+        }else{
+            updatedValues[index] = value;
         }
-        
-        switch(type){   
-            case "address": 
-                if(isValidContractAddress(value)){
-                    break;
-                }
-                setConstructorParameterInvalid(index);
-                return;
-            case "bool":
-                if(value === "true" || value === "false"){
-                    break;
-                }
-                setConstructorParameterInvalid(index);
-                return;
-        }
-        
-        const updatedValues = constructorParameterValues;
-        updatedValues[index] = value;
         setConstructorParameterValues(updatedValues);
-        setAllParamsEntered(validateConstructorParameterInput());
-    }
-
-    const setConstructorParameterInvalid = (index) => {
-        const updatedValues = constructorParameterValues;
-        updatedValues[index] = "";
-        setConstructorParameterValues(updatedValues);
-        setAllParamsEntered(false);
-    }
-
-    const validateConstructorParameterInput = () => {
-        let result = true;
-        constructorParameterValues.forEach((value, index) => {
-            if(value === "" || value === []){
-                const type = constructorParameters[index].type;
-                if(!isEmptyValidInputForType(type)){
-                    result = false;
-                    return;
-                }
-            }
-        });
-        return result;
+        setAllParamsEntered(validateConstructorParameterInput(constructorParameters, constructorParameterValues));
     }
 
     const handleEnterOriginalDomain = (originalDomain) => {
