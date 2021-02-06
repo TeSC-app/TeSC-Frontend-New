@@ -76,11 +76,11 @@ const ScrollReveal = React.forwardRef((props, ref) => {
   }, [viewportHeight]);
 
   return (
-    <body className="has-animations">
+    // <body className="has-animations">
       <div className="body-wrap">
         {props.children()}
       </div>
-    </body>
+    // </body>
   );
 });
 

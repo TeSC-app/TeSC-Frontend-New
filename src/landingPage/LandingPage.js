@@ -23,12 +23,6 @@ const LandingPage = () => {
   const Layout = (LayoutDefault === undefined) ? props => (<>{props.children}</>) : LayoutDefault;
 
 
-  // useEffect(() => {
-  //   (async () => {
-  //     await import('../landingPage/assets/scss/landing-page.scoped.scss');
-  //     setIsLoaded(true);
-  //   })();
-  // }, []);
 
   useEffect(() => {
     document.body.classList.add('is-loaded');

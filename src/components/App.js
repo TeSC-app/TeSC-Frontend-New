@@ -5,6 +5,7 @@ import 'semantic-ui-css/semantic.min.css';
 
 import AppContext from '../appContext';
 import Sidebar from './Sidebar';
+import Navbar from './Navbar';
 import LandingPage from '../landingPage/LandingPage';
 import Dashboard from '../pages/Dashboard';
 import TeSCNew from '../pages/TescNew';
@@ -121,14 +122,17 @@ const App = ({ web3 }) => {
             registryContract
         }}
         >
-            {/* <Navbar hasWalletAddress={hasWalletAddress} selectedAccount={account} handleCollapseSidebar={handleCollapseSidebar} /> */}
             {location.pathname === '/' ?
                 <Route path='/' exact component={LandingPage} />
                 :
                 <div className='layout'>
                     <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} handleCollapseSidebar={handleCollapseSidebar} />
-                    <Container className="page">
-                        <Segment className='main-segment' raised>
+                    <div style={{width: '100vw', height: '100vh'}}>
+                        <Navbar hasWalletAddress={hasWalletAddress} selectedAccount={account} handleCollapseSidebar={handleCollapseSidebar} sidebarCollapsed={collapsed} />
+
+                        <div className="page">
+                            {/* <Segment className='main-segment' raised> */}
+
                             <Route
                                 path="/dashboard"
                                 exact
@@ -147,8 +151,9 @@ const App = ({ web3 }) => {
                                     contractRegistry={registryContract} />;
                             }} />
                             <Route path="/registry/analytics" component={RegistryAnalytics} exact />
-                        </Segment>
-                    </Container>
+                            {/* </Segment> */}
+                        </div>
+                    </div>
                 </div>
             }
             <Dimmer active={screenBlocked} style={{ zIndex: '9999' }}>

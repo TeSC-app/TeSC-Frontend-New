@@ -28,7 +28,7 @@ const FeaturesSplit = ({
   imageFill,
   ...props
 }) => {
-  const [images, setImages] = useState([]) 
+  const [images, setImages] = useState([]);
 
   const outerClasses = classNames(
     'features-split section',
@@ -58,16 +58,16 @@ const FeaturesSplit = ({
   };
 
   useEffect(() => {
-     (async () => {
-      const imgs = []
+    (async () => {
+      const imgs = [];
       for (let i = 0; i < 3; i++) {
-        imgs[i] = (await import(`./../../assets/images/features-split-image-0${i+1}.png`)).default;
-        console.log(i, imgs[i])
-      } 
-      setImages(imgs)
-      console.log('images loaded')
+        imgs[i] = (await import(`./../../assets/images/features-split-image-0${i + 1}.png`)).default;
+        console.log(i, imgs[i]);
+      }
+      setImages(imgs);
+      console.log('images loaded');
     })();
-  }, [])
+  }, []);
 
 
   return (
@@ -80,15 +80,19 @@ const FeaturesSplit = ({
           <SectionHeader data={sectionHeader} className="center-content" />
           <div className={splitClasses}>
 
-            <div className="split-item">
+            <div className="split-item" style={{alignItems: 'normal'}}>
               <div className="split-item-content center-content-mobile reveal-from-left" data-reveal-container=".split-item">
                 <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
-                  Lightning fast workflow
-                  </div>
+                  Overview
+                </div>
                 <h3 className="mt-0 mb-12">
-                  Data-driven insights
-                  </h3>
+                  How TeSC works
+                </h3>
                 <p className="m-0">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
                   Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
                   </p>
               </div>

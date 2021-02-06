@@ -48,8 +48,8 @@ const FeaturesTiles = ({
   );
 
   const sectionHeader = {
-    title: 'Build up the whole picture',
-    paragraph: 'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum — semper quis lectus nulla at volutpat diam ut venenatis.'
+    title: 'Main features',
+    paragraph: 'TeSC aims to fill the gap between websites and smart contracts on the Ethereum network by utilizing the Transport Layer Security (TLS) certificates.' //it is guaranteed that the owner of a Smart Contract conforming to the TeSC interface and the owner of a target website are the same entity.'
   };
 
   useEffect(() => {

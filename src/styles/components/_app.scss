@@ -8,12 +8,6 @@ $navbar-height: 48.563px;
   height: 100vh;
 }
 
-.navbar {
-  margin-bottom: 0;
-  border-radius: 0px;
-  height: $navbar-height;
-}
-
 .layout {
   // height: calc(100vh - 48.563px);
   height: 100vh;
@@ -31,7 +25,9 @@ $navbar-height: 48.563px;
     flex-direction: column;
     overflow-y: auto;
     overflow-x: auto;
-    height: 100%;
+    // height: 100%;
+    height: calc(100vh - 48.563px);
+    background: $page-bg-color;
   }
 
   .main-segment {
@@ -41,6 +37,7 @@ $navbar-height: 48.563px;
     display: table; // must be here
     min-height: 100%;
     min-width: fit-content;
+    background: $page-bg-color;
   }
 }
 
@@ -58,23 +55,23 @@ $navbar-height: 48.563px;
   background-color: white !important;
 }
 
-.metamaskLabel {
-  background-color: rgba(0, 0, 0, 0) !important;
-  color: white !important;
-  display: flex !important;
-  align-items: center;
-}
+// .metamaskLabel {
+//   background-color: rgba(0, 0, 0, 0) !important;
+//   // color: white !important;
+//   display: flex !important;
+//   align-items: center;
+// }
 
-.connectMetaMask {
-  color: inherit !important;
-  transition: 0.1s opacity ease !important;
-  background-color: rgba(0, 0, 0, 0) !important;
-  padding: 0 !important;
-  font-weight: normal !important;
-  font-size: small;
-}
+// .connectMetaMask {
+//   color: inherit !important;
+//   transition: 0.1s opacity ease !important;
+//   // background-color: rgba(0, 0, 0, 0) !important;
+//   padding: 0 !important;
+//   font-weight: normal !important;
+//   font-size: small;
+// }
 
-.connectMetaMask:hover {
-  color: rgba(216, 213, 213, 0.3) !important;
-}
+// .connectMetaMask:hover {
+//   color: rgba(216, 213, 213, 0.3) !important;
+// }
 
