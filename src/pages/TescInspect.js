@@ -41,11 +41,11 @@ const TeSCInspect = ({ location }) => {
     const [loading, setLoading] = useState(false);
 
 
-    useEffect(() => {
-        if (!!flags.get(FLAGS.DOMAIN_HASHED) && typedInDomain && web3.utils.sha3(typedInDomain) === domainFromChain && !curVerifResult) {
-            setIsPlainDomainSubmitted(true);
-        }
-    }, [typedInDomain, domainFromChain, flags, curVerifResult, web3.utils]);
+    // useEffect(() => {
+    //     if (!!flags.get(FLAGS.DOMAIN_HASHED) && typedInDomain && web3.utils.sha3(typedInDomain) === domainFromChain && !curVerifResult) {
+    //         setIsPlainDomainSubmitted(true);
+    //     }
+    // }, [typedInDomain, domainFromChain, flags, curVerifResult, web3.utils]);
 
     const fetchTescData = useCallback(async (address) => {
         showMessage(null);
@@ -132,15 +132,14 @@ const TeSCInspect = ({ location }) => {
                     timeout: 10000
                 });
 
-                if (response.data.message.includes('Domain in TeSC is hashed')) {
-                    setIsDomainHashed(true);
-                }
                 
                 console.log('>>> VERIF_RESULT', response);
                 result = response.data;
+                
+                if (!response.data.message.includes('Domain in TeSC is hashed')) {
+                    setCurVerifResult({ target: address, ...result });
+                }
 
-
-                setCurVerifResult({ target: address, ...result });
 
                 if (result.endorsers && result.endorsers.length > 0) {
                     setEndorsers(result.endorsers);
@@ -384,11 +383,14 @@ const TeSCInspect = ({ location }) => {
                     </Grid>
                 }
                 {endorsers && !loading &&
-                    <TableOverview
-                        cols={new Set([COL.VERIF, COL.FAV])}
-                        // rowData={endorsers.current.map(e => e.contract)}
-                        rowData={endorsers}
-                    />
+                    <>
+                        <p>The contract <b>{contractAddress}</b> is not a TLS-endorsed Smart Contract (TeSC) but is subendorsed by <b className='main-color'>{endorsers.length}</b> TeSCs</p>
+       
+                        <TableOverview
+                            cols={new Set([COL.VERIF, COL.FAV])}
+                            rowData={endorsers}
+                        />
+                    </>
                 }
                 {loading &&
                     <Segment basic>
