@@ -4,6 +4,8 @@ import BitSet from 'bitset';
 import moment from 'moment'
 import web3Utils from 'web3-utils'
 
+window.web3Utils = web3Utils;
+
 export const FLAGS = {
     DOMAIN_HASHED: 0,
     ALLOW_SUBENDORSEMENT: 1,
@@ -45,8 +47,9 @@ export const generateSignature = async ({ address, domain, expiry, flagsHex }, p
 
 export const flagsToBytes24Hex = (flagsBitVector) => {
     const flagsBitVectorWithSANITY = new BitSet(flagsBitVector.toString() + '1');
-    let hex = flagsBitVectorWithSANITY.slice(0, Object.keys(FLAGS).length - 1).toString(16);
-    return web3Utils.padLeft(hex, 24);
+    let hex = '0x' + flagsBitVectorWithSANITY.slice(0, Object.keys(FLAGS).length - 1).toString(16);
+    console.log('hex', hex)
+    return web3Utils.padLeft(hex, 48);
 };
 
 export const padToBytesX = (hexNumber, x) => {

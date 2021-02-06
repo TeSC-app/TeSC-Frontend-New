@@ -31,9 +31,11 @@ const App = ({ web3 }) => {
 
     const loadStorage = () => {
         const walletAddress = web3.currentProvider.selectedAddress;
-        console.log('loadStorage of ', walletAddress)
-        const storage = JSON.parse(walletAddress? localStorage.getItem(web3.utils.toChecksumAddress(walletAddress)) : '');
-        return storage ? storage : [];
+        if (walletAddress === null) {
+            return [];
+        }
+        console.log('loadStorage of ', walletAddress);
+        return JSON.parse(localStorage.getItem(web3.utils.toChecksumAddress(walletAddress)));
     };
 
     useEffect(() => {

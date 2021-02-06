@@ -41,41 +41,6 @@ const TeSCInspect = ({ location }) => {
     const [loading, setLoading] = useState(false);
 
 
-    // useEffect(() => {
-    //     if (!!flags.get(FLAGS.DOMAIN_HASHED) && typedInDomain && web3.utils.sha3(typedInDomain) === domainFromChain && !curVerifResult) {
-    //         setIsPlainDomainSubmitted(true);
-    //     }
-    // }, [typedInDomain, domainFromChain, flags, curVerifResult, web3.utils]);
-
-    const fetchTescData = useCallback(async (address) => {
-        showMessage(null);
-        try {
-            const contract = new web3.eth.Contract(TeSC.abi, address);
-
-            const flagsHex = await contract.methods.getFlags().call();
-            console.log("Flaghex", flagsHex);
-            setIsDomainHashed(!!(new BitSet(flagsHex)).get(FLAGS.DOMAIN_HASHED + 1));
-            setFlags(hexStringToBitSet(flagsHex));
-
-            setDomainFromChain(await contract.methods.getDomain().call());
-            setExpiry(await contract.methods.getExpiry().call());
-            setSignature(await contract.methods.getSignature().call());
-            setFingerprint(await contract.methods.getFingerprint().call());
-
-            const owner = await contract.methods.owner().call();
-            setContractOwner(owner);
-            if (owner.toLowerCase() === account.toLowerCase()) {
-                localTescs.current[address].own = true;
-            }
-
-        } catch (err) {
-            showMessage(buildNegativeMsg({
-                header: 'Unable to read data from smart contract',
-                msg: err.message
-            }));
-        };
-    }, [showMessage, account, web3.eth.Contract]);
-
     const toggleFavourite = () => {
         let found = localTescs.current[contractAddress] && Object.keys(localTescs.current[contractAddress]).length > 0;
         if (found) {
@@ -219,7 +184,6 @@ const TeSCInspect = ({ location }) => {
         try {
             console.log('submit with ', contractAddress);
             isValidContractAddress(contractAddress, true);
-            // await fetchTescData(contractAddress);
             await verifyTesc(contractAddress);
         } catch (err) {
             showMessage(buildNegativeMsg({
@@ -238,7 +202,6 @@ const TeSCInspect = ({ location }) => {
 
     const handleCloseTescUpdate = async (e) => {
         showMessage(null);
-        // await fetchTescData(contractAddress);
         await verifyTesc(contractAddress);
     };
 
@@ -400,9 +363,6 @@ const TeSCInspect = ({ location }) => {
 
                         <Image src='https://react.semantic-ui.com/images/wireframe/paragraph.png' />
                     </Segment>
-                    /*{ <Dimmer active inverted>
-                        <Loader size='large'>Loading</Loader>
-                    </Dimmer> }*/
                 }
             </div>
         </div>
