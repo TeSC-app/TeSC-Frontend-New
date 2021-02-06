@@ -22,7 +22,7 @@ function RegistryInspect() {
                 return { isFavourite: tesc.isFavourite, createdAt: tesc.createdAt }
             }
         }
-        if (!isIdentical) return { isFavourite: false, createdAt: moment().format('DD/MM/YYYY HH:mm') }
+        if (!isIdentical) return { isFavourite: false, createdAt: moment().unix() }
     }, [loadStorage])
 
     useEffect(() => {
@@ -33,7 +33,7 @@ function RegistryInspect() {
                 //for each object key that is an array get the values associated to that key and out of these values build an array of objects
                 const registryEntries = Object.keys(response.data['registryEntries'])
                     .map(domain => Object.values(response.data['registryEntries'][domain])
-                        .map(({ contract, verified }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, createdAt: moment().format('DD/MM/YYYY HH:mm'), verified: verified })))
+                        .map(({ contract, verified }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, createdAt: moment().unix(), verified: verified })))
                     .flat()
                 if (response.status === 200) {
                     //console.log(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })))

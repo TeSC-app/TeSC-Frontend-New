@@ -206,7 +206,7 @@ function TableEntry(props) {
     };
 
     const renderCreatedAt = () => {
-        return typeof createdAt === 'undefined' ? moment().format('DD/MM/YYYY HH:mm') : createdAt
+        return typeof createdAt === 'undefined' ? moment.format('DD/MM/YYYY HH:mm') : moment.unix(parseInt(createdAt)).format('DD/MM/YYYY HH:mm')
     }
 
     const exploreDomain = () => {

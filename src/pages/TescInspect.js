@@ -91,6 +91,8 @@ const TeSCInspect = ({ location }) => {
             try {
             const contract = new web3.eth.Contract(TeSC.abi, address);
             const tescOwner = await contract.methods.owner.call().call()
+            console.log(tescOwner)
+            console.log(account)
                 tescOwner ? addEntryToStorage(tescsNew, address, tescOwner.toLowerCase() === account) : addEntryToStorage(tescsNew, address, false)
             } catch {
                 addEntryToStorage(tescsNew, address, false)
@@ -99,7 +101,7 @@ const TeSCInspect = ({ location }) => {
     };
 
     const addEntryToStorage = (tescsNew, address, own) => {
-        tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: own, createdAt: moment().format('DD/MM/YYYY HH:mm') });
+        tescsNew.push({ contractAddress: address, domain: domainFromChain, expiry, isFavourite: true, own: own, createdAt: moment().unix() });
         localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
         setTescsIsInFavourites(true);
     }
