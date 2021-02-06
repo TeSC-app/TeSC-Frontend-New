@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Table, Dropdown, Pagination, Icon, Button, Popup, Input, Form } from 'semantic-ui-react';
+import { Table, Dropdown, Pagination, Icon, Button, Popup, Input, Form, Checkbox } from 'semantic-ui-react';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { formatDate, parseDate } from 'react-day-picker/moment';
@@ -105,7 +105,7 @@ function TableOverview(props) {
             }
             setTescs(updatedTescs.sort((tescA, tescB) => tescB.expiry - tescA.expiry))
         } else {
-            setTescs(updatedTescs.sort((tescA, tescB) => tescA.createdAt.localeCompare(tescB.createdAt)));
+            setTescs(updatedTescs.sort((tescA, tescB) => tescA.createdAt.toString().localeCompare(tescB.createdAt)));
             localStorage.setItem(account.toLowerCase(), JSON.stringify(updatedTescs));
         }
     };
@@ -335,12 +335,14 @@ function TableOverview(props) {
                     setDisplayedEntries([])
     }
 
-    const handleIsVerifiedFilter = (e) => {
-        setIsVerifiedFilter(e.target.value)
+    const handleIsVerifiedFilter = () => {
+        if (isVerifiedFilter) setIsVerifiedFilter(false)
+        else setIsVerifiedFilter(true)
     }
 
-    const handleIsNotVerifiedFilter = (e) => {
-        setIsNotVerifiedFilter(e.target.value)
+    const handleIsNotVerifiedFilter = () => {
+        if (isNotVerifiedFilter) setIsNotVerifiedFilter(false)
+        else setIsNotVerifiedFilter(true)
     }
 
     const filterByIsInRegistry = (isInRegistryFilter, isNotInRegistryFilter) => {
@@ -354,11 +356,13 @@ function TableOverview(props) {
     }
 
     const handleIsInRegistryFilter = e => {
-        setIsInRegistryFilter(e.target.value)
+        if (isInRegistryFilter) setIsInRegistryFilter(false)
+        else setIsInRegistryFilter(true)
     }
 
     const handleIsNotInRegistryFilter = e => {
-        setIsNotInRegistryFilter(e.target.value)
+        if (isNotInRegistryFilter) setIsInRegistryFilter(false)
+        else setIsNotInRegistryFilter(true)
     }
 
     const filterByIsFavourite = (isFavouriteFilter, isNotFavouriteFilter) => {
@@ -372,15 +376,17 @@ function TableOverview(props) {
     }
 
     const handleIsFavouriteFilter = e => {
-        setIsFavouriteFilter(e.target.value)
+        if (isFavouriteFilter) setIsFavouriteFilter(false)
+        else setIsFavouriteFilter(true)
     }
 
     const handleIsNotFavouriteFilter = e => {
-        setIsNotFavouriteFilter(e.target.value)
+        if (isNotFavouriteFilter) setIsNotFavouriteFilter(false)
+        else setIsNotFavouriteFilter(true)
     }
 
     const filterByCreatedAt = (createdAtFromFilter, createdAtToFilter) => {
-        console.log('FROM FILTER',createdAtFromFilter)
+        console.log('FROM FILTER', createdAtFromFilter)
         console.log('TO FILTER', createdAtToFilter)
         createdAtFromFilter !== '' && createdAtToFilter !== '' ?
             setDisplayedEntries(tescs.filter(tesc => tesc.createdAt >= createdAtFromFilter && tesc.createdAt <= createdAtToFilter).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
@@ -405,6 +411,26 @@ function TableOverview(props) {
         return mDate.unix()
     }
 
+    const renderSortingAndFilteringDropdownForCheckboxes = (title, isSortingAsc, sortByType, isTypeFilter, handleIsTypeFilter, isNotTypeFilter, handleIsNotTypeFilter, filterByType) => {
+        const checkboxLabelOne = title === 'Verified' ? 'Valid' : title === 'Registry' ? 'In Registry' : title === 'Favourites' ? 'Favourite' : ''
+        const checkboxLabelTwo = title === 'Verified' ? 'Invalid' : title === 'Registry' ? 'Not In Registry' : title === 'Favourites' ? 'Not Favourite' : ''
+        return (
+            <Dropdown
+                text={title}
+                icon={isSortingAsc ? 'angle down' : 'angle up'}
+                simple
+                className='icon dropdown-favourites'>
+                <Dropdown.Menu>
+                    <Dropdown.Item icon={isSortingAsc ? 'arrow down' : 'arrow up'} text={isSortingAsc ? 'Sort asc' : 'Sort desc'} onClick={sortByType} />
+                    <Form>
+                        <Form.Field><Checkbox label={checkboxLabelOne} checked={isTypeFilter} onChange={handleIsTypeFilter} /></Form.Field>
+                        <Form.Field><Checkbox label={checkboxLabelTwo} checked={isNotTypeFilter} onChange={handleIsNotTypeFilter} /></Form.Field>
+                        <Button basic onClick={() => filterByType(isTypeFilter, isNotTypeFilter)}>Filter</Button>
+                    </Form>
+                </Dropdown.Menu>
+            </Dropdown>)
+    }
+
     const renderSortingAndFilteringDropdownForDayPickers = (title, isSortingAsc, sortByType, dateFrom, handleDateFrom, dateTo, handleDateTo, filterByType) => {
         return (
             <Dropdown
@@ -415,7 +441,7 @@ function TableOverview(props) {
                 <Dropdown.Menu>
                     <Dropdown.Item icon={isSortingAsc ? 'arrow down' : 'arrow up'} text={isSortingAsc ? 'Sort asc' : 'Sort desc'} onClick={sortByType} />
                     <Form>
-                        <><Form.Field><DayPickerInput
+                        <Form.Field><DayPickerInput
                             value={dateFrom ? formatDate(new Date(dateFrom * 1000), 'DD/MM/YYYY') : null}
                             onDayChange={handleDateFrom}
                             format="DD/MM/YYYY"
@@ -425,25 +451,25 @@ function TableOverview(props) {
                             inputProps={{ readOnly: true }}
                             component={props => <Input icon='calendar alternate outline' {...props} />}
                         /></Form.Field>
-                            <Form.Field>
-                                <DayPickerInput
-                                    value={dateTo ? formatDate(new Date(dateTo * 1000), 'DD/MM/YYYY') : null}
-                                    onDayChange={handleDateTo}
-                                    format="DD/MM/YYYY"
-                                    formatDate={formatDate}
-                                    parseDate={parseDate}
-                                    placeholder='dd/mm/yyyy'
-                                    inputProps={{ readOnly: true }}
-                                    component={props => <Input icon='calendar alternate outline' {...props} />}
-                                /></Form.Field>
-                            <Button basic onClick={() => filterByType(dateFrom, dateTo)}>Filter</Button></>
+                        <Form.Field>
+                            <DayPickerInput
+                                value={dateTo ? formatDate(new Date(dateTo * 1000), 'DD/MM/YYYY') : null}
+                                onDayChange={handleDateTo}
+                                format="DD/MM/YYYY"
+                                formatDate={formatDate}
+                                parseDate={parseDate}
+                                placeholder='dd/mm/yyyy'
+                                inputProps={{ readOnly: true }}
+                                component={props => <Input icon='calendar alternate outline' {...props} />}
+                            /></Form.Field>
+                        <Button basic onClick={() => filterByType(dateFrom, dateTo)}>Filter</Button>
                     </Form>
                 </Dropdown.Menu>
             </Dropdown>)
 
     }
 
-    const renderSortingAndFilteringDropdown = (isSortingAsc, sortByType, title, filterByType, filterStateOne, handleChangeOne, filterStateTwo, handleChangeTwo) => {
+    const renderSortingAndFilteringDropdown = (isSortingAsc, sortByType, title, filterByType, filterStateOne, handleChangeOne) => {
         const placeholder = title === 'Domain' ? 'gaulug.de' : 'Address' ? '0xdF0d...' : ''
         return (
             <Dropdown
@@ -471,12 +497,12 @@ function TableOverview(props) {
                         <Table.HeaderCell>{renderSortingAndFilteringDropdown(isSortingByDomainAsc, sortByDomain, "Domain", filterByDomain, domainFilter, handleDomainFilter)}</Table.HeaderCell>
                         {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>{renderSortingAndFilteringDropdownForDayPickers("Expiry", isSortingByExpiryAsc, sortByExpiry, expiryFromFilter, handleExpiryFromFilter, expiryToFilter, handleExpiryToFilter, filterByExpiry)}</Table.HeaderCell>}
                         {(isRegistryInspect && !isExploringDomain) && <Table.HeaderCell textAlign="center">{renderSortingAndFilteringDropdown(isSortingByTotalSmartContractsAsc, sortByTotalSmartContracts, "Total Smart Contracts")}</Table.HeaderCell>}
-                        <Table.HeaderCell textAlign="center">{renderSortingAndFilteringDropdown(isSortingByVerifiedAsc, sortByVerified, "Verified")}</Table.HeaderCell>
+                        <Table.HeaderCell textAlign="center">{!isExploringDomain ? "Verified" : renderSortingAndFilteringDropdownForCheckboxes("Verified", isSortingByVerifiedAsc, sortByVerified, isVerifiedFilter, handleIsVerifiedFilter, isNotVerifiedFilter, handleIsNotVerifiedFilter, filterByVerified)}</Table.HeaderCell>
                         {isDashboard &&
-                            <Table.HeaderCell textAlign="center">{renderSortingAndFilteringDropdown(isSortingByIsInRegistryAsc, sortByIsInRegistry, "Registry")}</Table.HeaderCell>
+                            <Table.HeaderCell textAlign="center">{renderSortingAndFilteringDropdownForCheckboxes("Registry", isSortingByIsInRegistryAsc, sortByIsInRegistry, isInRegistryFilter, handleIsInRegistryFilter, isNotInRegistryFilter, handleIsNotInRegistryFilter, filterByIsInRegistry)}</Table.HeaderCell>
                         }
                         {(isDashboard || (isRegistryInspect && isExploringDomain)) &&
-                            <Table.HeaderCell textAlign="center">{renderSortingAndFilteringDropdown(isSortingByFavouriteAsc, sortByFavourite, "Favourites")}
+                            <Table.HeaderCell textAlign="center">{renderSortingAndFilteringDropdownForCheckboxes("Favourites", isSortingByFavouriteAsc, sortByFavourite, isFavouriteFilter, handleIsFavouriteFilter, isNotFavouriteFilter, handleIsNotFavouriteFilter, filterByIsFavourite)}
                                 {/*<Dropdown
                                     icon='filter'
                                     floating
