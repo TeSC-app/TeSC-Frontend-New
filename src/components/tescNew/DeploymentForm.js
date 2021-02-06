@@ -38,6 +38,11 @@ import {
     isValidContractAddress,
     FLAGS,
 } from '../../utils/tesc';
+import {
+    getTooltipForType,
+    isEmptyValidInputForType
+} from '../../utils/constructorInput';
+
 import { extractAxiosErrorMessage } from '../../utils/formatError';
 import axios from 'axios';
 
@@ -404,24 +409,24 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
     const renderConstructorParameterInputFields = () => {
         return constructorParameters.map((constructorParameter, i) => 
-            <p>
-                <Form.Input 
-                    label={constructorParameter.type + " " + constructorParameter.name + ":"}
-                    required={true}
-                    key={"constructor-input-field-" + i}
+            <Form.Field>
+                <label>
+                    {constructorParameter.type} {constructorParameter.name}: 
+                    {!isEmptyValidInputForType(constructorParameter.type) && <span style={{ color: 'red' }}>*</span>} 
+                    <Popup
+                        inverted
+                        content={getTooltipForType(constructorParameter.type)}
+                        trigger={<Icon name='question circle' />}
+                    />
+                </label>
+                <Input
                     onChange={e => handleTextChange(e.target.value, i, constructorParameter.type)}
                 />
-            </p>
+            </Form.Field>
         )
     }
 
     const handleTextChange = (value, index, type) => {
-        // the empty string is a valid input
-        if(value === "" && !(type === "string" || type.endsWith("[]"))){
-            setConstructorParameterInvalid(index);
-            return;
-        }
-
         if(type.endsWith("[]")){
             const updatedValues = constructorParameterValues;
             if(value === ""){
@@ -443,6 +448,11 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             } 
         }else if(type.startsWith("int")){
             if(isNaN(value)){
+                setConstructorParameterInvalid(index);
+                return;
+            }
+        }else if(type.startsWith("byte")){
+            if(!web3.utils.isHexStrict(value)){
                 setConstructorParameterInvalid(index);
                 return;
             }
@@ -481,8 +491,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         constructorParameterValues.forEach((value, index) => {
             if(value === "" || value === []){
                 const type = constructorParameters[index].type;
-                // empty input is only allowed for string and arrays
-                if(type !== "string" && !type.endsWith("[]")){
+                if(!isEmptyValidInputForType(type)){
                     result = false;
                     return;
                 }
@@ -590,10 +599,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                             {endorsedSolidityCode}
                                         </Highlight>
                                     )}
-                                    {constructorParameters !== [] && 
-                                        <Form>
-                                            {renderConstructorParameterInputFields()}
-                                        </Form>}         
+                                    {constructorParameters !== [] && renderConstructorParameterInputFields()}       
                                 </div>
                             )}
 
