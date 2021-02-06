@@ -213,7 +213,7 @@ function TableOverview(props) {
             setIsSortingByDomainAsc(false)
         } else {
             if (isExploringDomain) setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
-            else setTescsWithOccurancesNew(tescs.sort((tescA, tescB) => tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) 
+            else setTescsWithOccurancesNew(tescs.sort((tescA, tescB) => tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
             setIsSortingByDomainAsc(true)
         }
     }
@@ -290,13 +290,17 @@ function TableOverview(props) {
     //filtering logic starts from here
     const filterByDomain = (domain, tescs) => {
         if (isExploringDomain) {
-        domain !== '' ?
-            setDisplayedEntries(tescs.filter(tesc => tesc.domain === domain).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-            setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            if (domain !== '') {
+                setDisplayedEntries(tescs.filter(tesc => tesc.domain === domain).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+                setTescs(tescs.filter(tesc => tesc.domain === domain))
+            } else {
+                setDisplayedEntries(rowData.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+                setTescs(rowData)
+            }
         } else {
             domain !== '' ?
                 setTescsWithOccurancesNew(tescs.filter(tesc => tesc.domain === domain).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-                setTescsWithOccurancesNew(tescsWithOccurances.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+                setTescsWithOccurancesNew(tescsWithOccurances)
         }
     }
 
@@ -305,9 +309,13 @@ function TableOverview(props) {
     }
 
     const filterByContractAddress = (contractAddress) => {
-        contractAddress !== '' ?
-            setDisplayedEntries(tescs.filter(tesc => tesc.contractAddress === contractAddress).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-            setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+        if (contractAddress !== '') {
+            setDisplayedEntries(tescs.filter(tesc => tesc.contractAddress === contractAddress).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.contractAddress === contractAddress))
+        } else {
+            setDisplayedEntries(rowData.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(rowData)
+        }
     }
 
     const handleContractAddressFilter = (e) => {
@@ -315,13 +323,19 @@ function TableOverview(props) {
     }
 
     const filterByExpiry = (expiryFromFilter, expiryToFilter) => {
-        expiryFromFilter !== '' && expiryToFilter !== '' ?
-            setDisplayedEntries(tescs.filter(tesc => tesc.expiry >= expiryFromFilter && tesc.expiry <= expiryToFilter).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-            expiryFromFilter === '' && expiryToFilter !== '' ?
-                setDisplayedEntries(tescs.filter(tesc => tesc.expiry <= expiryToFilter).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-                expiryFromFilter !== '' && expiryToFilter === '' ?
-                    setDisplayedEntries(tescs.filter(tesc => tesc.expiry >= expiryFromFilter).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-                    setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+        if (expiryFromFilter !== '' && expiryToFilter !== '') {
+            setDisplayedEntries(tescs.filter(tesc => tesc.expiry >= expiryFromFilter && tesc.expiry <= expiryToFilter).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.expiry >= expiryFromFilter && tesc.expiry <= expiryToFilter))
+        } else if (expiryFromFilter === '' && expiryToFilter !== '') {
+            setDisplayedEntries(tescs.filter(tesc => tesc.expiry <= expiryToFilter).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.expiry <= expiryToFilter))
+        } else if (expiryFromFilter !== '' && expiryToFilter === '') {
+            setDisplayedEntries(tescs.filter(tesc => tesc.expiry >= expiryFromFilter).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.expiry >= expiryFromFilter))
+        } else {
+            setDisplayedEntries(rowData.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(rowData)
+        }
     }
 
     const handleExpiryFromFilter = (date) => {
@@ -333,13 +347,18 @@ function TableOverview(props) {
     }
 
     const filterByVerified = (isVerifiedFilter, isNotVerifiedFilter) => {
-        isVerifiedFilter === true && isNotVerifiedFilter === true ?
-            setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-            isVerifiedFilter === true && isNotVerifiedFilter === false ?
-                setDisplayedEntries(tescs.filter(tesc => tesc.verified === true).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-                isVerifiedFilter === false && isNotVerifiedFilter === true ?
-                    setDisplayedEntries(tescs.filter(tesc => tesc.verified === false).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-                    setDisplayedEntries([])
+        if (isVerifiedFilter === true && isNotVerifiedFilter === true) {
+            setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+        } else if (isVerifiedFilter === true && isNotVerifiedFilter === false) {
+            setDisplayedEntries(tescs.filter(tesc => tesc.verified === true).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.verified === true))
+        } else if (isVerifiedFilter === false && isNotVerifiedFilter === true) {
+            setDisplayedEntries(tescs.filter(tesc => tesc.verified === false).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.verified === false))
+        } else {
+            setDisplayedEntries([])
+            setTescs([])
+        }
     }
 
     const handleIsVerifiedFilter = () => {
@@ -353,13 +372,18 @@ function TableOverview(props) {
     }
 
     const filterByIsInRegistry = (isInRegistryFilter, isNotInRegistryFilter) => {
-        isInRegistryFilter === true && isNotInRegistryFilter === true ?
-            setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-            isInRegistryFilter === true && isNotInRegistryFilter === false ?
-                setDisplayedEntries(tescs.filter(tesc => tesc.isInRegistry === true).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-                isInRegistryFilter === false && isNotInRegistryFilter === true ?
-                    setDisplayedEntries(tescs.filter(tesc => tesc.isInRegistry === false).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-                    setDisplayedEntries([])
+        if (isInRegistryFilter === true && isNotInRegistryFilter === true) {
+            setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+        } else if (isInRegistryFilter === true && isNotInRegistryFilter === false) {
+            setDisplayedEntries(tescs.filter(tesc => tesc.isInRegistry === true).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.isInRegistry === true))
+        } else if (isInRegistryFilter === false && isNotInRegistryFilter === true) {
+            setDisplayedEntries(tescs.filter(tesc => tesc.isInRegistry === false).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.isInRegistry === false))
+        } else {
+            setDisplayedEntries([])
+            setTescs([])
+        }
     }
 
     const handleIsInRegistryFilter = e => {
@@ -373,13 +397,18 @@ function TableOverview(props) {
     }
 
     const filterByIsFavourite = (isFavouriteFilter, isNotFavouriteFilter) => {
-        isFavouriteFilter === true && isNotFavouriteFilter === true ?
-            setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-            isFavouriteFilter === true && isNotFavouriteFilter === false ?
-                setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === true).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-                isFavouriteFilter === false && isNotFavouriteFilter === true ?
-                    setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === false).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-                    setDisplayedEntries([])
+        if (isFavouriteFilter === true && isNotFavouriteFilter === true) {
+            setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+        } else if (isFavouriteFilter === true && isNotFavouriteFilter === false) {
+            setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === true).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.isFavourite === true))
+        } else if (isFavouriteFilter === false && isNotFavouriteFilter === true) {
+            setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === false).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.isFavourite === false))
+        } else {
+            setDisplayedEntries([])
+            setTescs([])
+        }
     }
 
     const handleIsFavouriteFilter = e => {
@@ -393,13 +422,19 @@ function TableOverview(props) {
     }
 
     const filterByCreatedAt = (createdAtFromFilter, createdAtToFilter) => {
-        createdAtFromFilter !== '' && createdAtToFilter !== '' ?
-            setDisplayedEntries(tescs.filter(tesc => tesc.createdAt >= createdAtFromFilter && tesc.createdAt <= createdAtToFilter).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-            createdAtFromFilter === '' && createdAtToFilter !== '' ?
-                setDisplayedEntries(tescs.filter(tesc => tesc.createdAt <= createdAtToFilter).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-                createdAtFromFilter !== '' && createdAtToFilter === '' ?
-                    setDisplayedEntries(tescs.filter(tesc => tesc.createdAt >= createdAtFromFilter).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
-                    setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+        if (createdAtFromFilter !== '' && createdAtToFilter !== '') {
+            setDisplayedEntries(tescs.filter(tesc => tesc.createdAt >= createdAtFromFilter && tesc.createdAt <= createdAtToFilter).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.createdAt >= createdAtFromFilter && tesc.createdAt <= createdAtToFilter))
+        } else if (createdAtFromFilter === '' && createdAtToFilter !== '') {
+            setDisplayedEntries(tescs.filter(tesc => tesc.createdAt <= createdAtToFilter).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.createdAt <= createdAtToFilter))
+        } else if (createdAtFromFilter !== '' && createdAtToFilter === '') {
+            setDisplayedEntries(tescs.filter(tesc => tesc.createdAt >= createdAtFromFilter).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.createdAt >= createdAtFromFilter))
+        } else {
+            setDisplayedEntries(rowData.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescs(rowData)
+        }
     }
 
     const handleCreatedAtFromFilter = date => {
