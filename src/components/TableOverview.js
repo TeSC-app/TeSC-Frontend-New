@@ -462,7 +462,7 @@ function TableOverview(props) {
                 icon={isSortingAsc ? 'angle down' : 'angle up'}
                 simple
                 className='icon dropdown-favourites'>
-                <Dropdown.Menu>
+                <Dropdown.Menu className='dropdown__menu-filters'>
                     <Dropdown.Item icon={isSortingAsc ? 'arrow down' : 'arrow up'} text={isSortingAsc ? 'Sort asc' : 'Sort desc'} onClick={sortByType} />
                     <Form>
                         <Form.Field><Checkbox label={checkboxLabelOne} checked={isTypeFilter} onChange={handleIsTypeFilter} /></Form.Field>
@@ -480,7 +480,7 @@ function TableOverview(props) {
                 icon={isSortingAsc ? 'angle down' : 'angle up'}
                 simple
                 className='icon dropdown-favourites'>
-                <Dropdown.Menu>
+                <Dropdown.Menu className='dropdown__menu-filters'>
                     <Dropdown.Item icon={isSortingAsc ? 'arrow down' : 'arrow up'} text={isSortingAsc ? 'Sort asc' : 'Sort desc'} onClick={sortByType} />
                     <Form>
                         <Form.Field><DayPickerInput
@@ -519,7 +519,7 @@ function TableOverview(props) {
                 icon={isSortingAsc ? 'angle down' : 'angle up'}
                 simple
                 className='icon dropdown-favourites'>
-                <Dropdown.Menu>
+                <Dropdown.Menu className='dropdown__menu-filters'>
                     {isExploringDomain ?
                         <Dropdown.Item icon={isSortingAsc ? 'arrow down' : 'arrow up'} text={isSortingAsc ? 'Sort asc' : 'Sort desc'} onClick={() => sortByType(tescs)} /> :
                         <Dropdown.Item icon={isSortingAsc ? 'arrow down' : 'arrow up'} text={isSortingAsc ? 'Sort asc' : 'Sort desc'} onClick={() => sortByType(tescsWithOccurancesNew)} />}
