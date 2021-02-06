@@ -1,7 +1,8 @@
 import React, { Fragment, useContext } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useHistory, useLocation, NavLink } from 'react-router-dom';
 import { ProSidebar, Menu, MenuItem, SubMenu, SidebarHeader, SidebarContent, SidebarFooter } from 'react-pro-sidebar';
 import { Icon, Label, Image, Button, Grid, Popup } from 'semantic-ui-react';
+
 
 import 'react-pro-sidebar/dist/css/styles.css';
 
@@ -52,16 +53,17 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
             onToggle={handleToggleSidebar}
             className='sidebar'
         >
-            <SidebarHeader onClick={handleCollapseSidebar}>
+            <SidebarHeader>
                 {/* <div onClick={handleCollapseSidebar} style={{ width: "60px" }}>
                     <Icon name='bars' size='large' />
                 </div> */}
-                <div>
-                    {collapsed ?
-                        <Image src='../images/tesc-logo-notext.png'  style={{ margin: '20px auto', padding: '0 5px' }} />
+                <NavLink to='/'>
+                    <Image src={collapsed ? '../images/tesc-logo-notext.png' : '../images/tesc-logo.png'} size='small' style={{ margin: '20px auto', padding: `${collapsed ? '0 5px' : '0'}` }} />
+                    {/* {collapsed ?
+                        <Image src='../images/tesc-logo-notext.png' size='small' style={{ margin: '20px auto', padding: '0 5px' }} />
                         : <Image src='../images/tesc-logo.png' size='small' style={{ margin: '20px auto' }} />
-                    }
-                </div>
+                    } */}
+                </NavLink>
             </SidebarHeader>
             <SidebarContent>
                 <Menu iconShape="circle">
