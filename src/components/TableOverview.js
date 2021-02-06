@@ -14,7 +14,7 @@ const ENTRY_PER_PAGE = 5
 function TableOverview(props) {
     const {
         rowData,
-        entriesWithOccurances,
+        tescsWithOccurances,
         isDashboard,
         isRegistryInspect,
         handleLoading,
@@ -24,8 +24,9 @@ function TableOverview(props) {
     const { web3, account, loadStorage } = useContext(AppContext);
 
     const [tescs, setTescs] = useState(rowData);
+    const [tescsWithOccurancesNew, setTescsWithOccurancesNew] = useState(tescsWithOccurances)
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(!isExploringDomainDefault ? Math.ceil(entriesWithOccurances.length / ENTRY_PER_PAGE) : tescs ? Math.ceil(tescs.length / ENTRY_PER_PAGE) : 0);
+    const [totalPages, setTotalPages] = useState(!isExploringDomainDefault ? Math.ceil(tescsWithOccurancesNew.length / ENTRY_PER_PAGE) : tescs ? Math.ceil(tescs.length / ENTRY_PER_PAGE) : 0);
     const [filterOption, setFilterOption] = useState(0);
     const [displayedEntries, setDisplayedEntries] = useState([]);
     const [isExploringDomain, setIsExploringDomain] = useState(isExploringDomainDefault)
@@ -62,7 +63,7 @@ function TableOverview(props) {
             try {
                 // setTescs(account ? (isDashboard? loadStorage() : []) : []);
                 setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRY_PER_PAGE) : []);
-                setTotalPages(!isExploringDomain ? Math.ceil(entriesWithOccurances.length / ENTRY_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRY_PER_PAGE : 0));
+                setTotalPages(!isExploringDomain ? Math.ceil(tescsWithOccurancesNew.length / ENTRY_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRY_PER_PAGE : 0));
                 if (isDashboard) {
                     window.ethereum.on('accountsChanged', (accounts) => {
                         setTescs(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
@@ -79,7 +80,7 @@ function TableOverview(props) {
             }
         };
         init();
-    }, [tescs, account, web3.eth, web3.eth.Contract, web3.eth.net, entriesWithOccurances, isExploringDomain, isDashboard]);
+    }, [tescs, account, web3.eth, web3.eth.Contract, web3.eth.net, tescsWithOccurancesNew, isExploringDomain, isDashboard]);
 
 
     const handleChangeTescs = (tesc) => {
@@ -139,14 +140,14 @@ function TableOverview(props) {
             setDisplayedEntries(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc)
                 .slice((activePage - 1) * ENTRY_PER_PAGE, activePage * ENTRY_PER_PAGE));
         } else {
-            setDisplayedEntries(entriesWithOccurances.slice((activePage - 1) * ENTRY_PER_PAGE, activePage * ENTRY_PER_PAGE))
+            setDisplayedEntries(tescsWithOccurancesNew.slice((activePage - 1) * ENTRY_PER_PAGE, activePage * ENTRY_PER_PAGE))
         }
     };
 
 
     const renderRows = () => {
         if (displayedEntries && isExploringDomain) {
-            return displayedEntries.map((tesc, index) => (
+            return displayedEntries.map((tesc) => (
                 <TableEntry key={tesc.contractAddress}
                     tesc={tesc}
                     onTescsChange={handleChangeTescs}
@@ -156,7 +157,7 @@ function TableOverview(props) {
                 />
             ))
         } else if (displayedEntries && !isExploringDomain) {
-            return entriesWithOccurances.map((entry) => (
+            return tescsWithOccurancesNew.map((entry) => (
                 <TableEntry key={entry.domain}
                     tesc={entry}
                     isExploringDomain={isExploringDomain}
@@ -175,7 +176,7 @@ function TableOverview(props) {
         handleLoading(true)
         if (domain === '') {
             setIsExploringDomain(false)
-            setTescs(entriesWithOccurances)
+            setTescs(tescsWithOccurancesNew)
         } else {
             setIsExploringDomain(true)
             setTescs(rowData.filter(entry => entry.domain === domain).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
@@ -205,12 +206,14 @@ function TableOverview(props) {
         }
     }
 
-    const sortByDomain = () => {
+    const sortByDomain = (tescs) => {
         if (isSortingByDomainAsc) {
-            setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.domain.localeCompare(tescB.domain)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            if (isExploringDomain) setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.domain.localeCompare(tescB.domain)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            else setTescsWithOccurancesNew(tescs.sort((tescA, tescB) => tescA.domain.localeCompare(tescB.domain)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
             setIsSortingByDomainAsc(false)
         } else {
-            setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            if (isExploringDomain) setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            else setTescsWithOccurancesNew(tescs.sort((tescA, tescB) => tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) 
             setIsSortingByDomainAsc(true)
         }
     }
@@ -239,11 +242,10 @@ function TableOverview(props) {
 
     const sortByTotalSmartContracts = () => {
         if (isSortingByTotalSmartContractsAsc) {
-            console.log(tescs)
-            setDisplayedEntries(entriesWithOccurances.sort((tescA, tescB) => tescA.contractCount.toString().localeCompare(tescB.contractCount)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescsWithOccurancesNew(tescsWithOccurancesNew.sort((tescA, tescB) => tescA.contractCount.toString().localeCompare(tescB.contractCount)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
             setIsSortingByTotalSmartContractsAsc(false)
         } else {
-            setDisplayedEntries(entriesWithOccurances.sort((tescA, tescB) => tescB.contractCount.toString().localeCompare(tescA.contractCount)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+            setTescsWithOccurancesNew(tescsWithOccurancesNew.sort((tescA, tescB) => tescB.contractCount.toString().localeCompare(tescA.contractCount)).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
             setIsSortingByTotalSmartContractsAsc(true)
         }
     }
@@ -286,11 +288,16 @@ function TableOverview(props) {
     }
 
     //filtering logic starts from here
-
-    const filterByDomain = (domain) => {
+    const filterByDomain = (domain, tescs) => {
+        if (isExploringDomain) {
         domain !== '' ?
             setDisplayedEntries(tescs.filter(tesc => tesc.domain === domain).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
             setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+        } else {
+            domain !== '' ?
+                setTescsWithOccurancesNew(tescs.filter(tesc => tesc.domain === domain).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
+                setTescsWithOccurancesNew(tescsWithOccurances.slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE))
+        }
     }
 
     const handleDomainFilter = (e) => {
@@ -386,8 +393,6 @@ function TableOverview(props) {
     }
 
     const filterByCreatedAt = (createdAtFromFilter, createdAtToFilter) => {
-        console.log('FROM FILTER', createdAtFromFilter)
-        console.log('TO FILTER', createdAtToFilter)
         createdAtFromFilter !== '' && createdAtToFilter !== '' ?
             setDisplayedEntries(tescs.filter(tesc => tesc.createdAt >= createdAtFromFilter && tesc.createdAt <= createdAtToFilter).slice((currentPage - 1) * ENTRY_PER_PAGE, currentPage * ENTRY_PER_PAGE)) :
             createdAtFromFilter === '' && createdAtToFilter !== '' ?
@@ -410,6 +415,8 @@ function TableOverview(props) {
         mDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
         return mDate.unix()
     }
+
+    //end of filtering logic
 
     const renderSortingAndFilteringDropdownForCheckboxes = (title, isSortingAsc, sortByType, isTypeFilter, handleIsTypeFilter, isNotTypeFilter, handleIsNotTypeFilter, filterByType) => {
         const checkboxLabelOne = title === 'Verified' ? 'Valid' : title === 'Registry' ? 'In Registry' : title === 'Favourites' ? 'Favourite' : ''
@@ -469,7 +476,7 @@ function TableOverview(props) {
 
     }
 
-    const renderSortingAndFilteringDropdown = (isSortingAsc, sortByType, title, filterByType, filterStateOne, handleChangeOne) => {
+    const renderSortingAndFilteringDropdownGeneral = (title, isSortingAsc, sortByType, filterByType, filterStateOne, handleChangeOne) => {
         const placeholder = title === 'Domain' ? 'gaulug.de' : 'Address' ? '0xdF0d...' : ''
         return (
             <Dropdown
@@ -478,10 +485,16 @@ function TableOverview(props) {
                 simple
                 className='icon dropdown-favourites'>
                 <Dropdown.Menu>
-                    <Dropdown.Item icon={isSortingAsc ? 'arrow down' : 'arrow up'} text={isSortingAsc ? 'Sort asc' : 'Sort desc'} onClick={sortByType} />
-                    <Form onSubmit={() => filterByType(filterStateOne)}>
-                        {title === 'Domain' || title === 'Address' ? <Form.Input label={`Filter By ${title}`} placeholder={placeholder} onChange={handleChangeOne} /> : null}
-                    </Form>
+                    {isExploringDomain ?
+                        <Dropdown.Item icon={isSortingAsc ? 'arrow down' : 'arrow up'} text={isSortingAsc ? 'Sort asc' : 'Sort desc'} onClick={() => sortByType(tescs)} /> :
+                        <Dropdown.Item icon={isSortingAsc ? 'arrow down' : 'arrow up'} text={isSortingAsc ? 'Sort asc' : 'Sort desc'} onClick={() => sortByType(tescsWithOccurancesNew)} />}
+                    {isExploringDomain ?
+                        <Form onSubmit={() => filterByType(filterStateOne, tescs)}>
+                            {title === 'Domain' || title === 'Address' ? <Form.Input label={`Filter By ${title}`} placeholder={placeholder} onChange={handleChangeOne} /> : null}
+                        </Form> :
+                        <Form onSubmit={() => filterByType(filterStateOne, tescsWithOccurancesNew)}>
+                            {title === 'Domain' || title === 'Address' ? <Form.Input label={`Filter By ${title}`} placeholder={placeholder} onChange={handleChangeOne} /> : null}
+                        </Form>}
                 </Dropdown.Menu>
             </Dropdown>)
     }
@@ -493,10 +506,10 @@ function TableOverview(props) {
             <Table color='purple'>
                 <Table.Header active='true' style={{ backgroundColor: 'purple' }}>
                     <Table.Row>
-                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>{renderSortingAndFilteringDropdown(isSortingByAddressAsc, sortByContractAddress, "Address", filterByContractAddress, contractAddressFilter, handleContractAddressFilter)}</Table.HeaderCell>}
-                        <Table.HeaderCell>{renderSortingAndFilteringDropdown(isSortingByDomainAsc, sortByDomain, "Domain", filterByDomain, domainFilter, handleDomainFilter)}</Table.HeaderCell>
+                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>{renderSortingAndFilteringDropdownGeneral("Address", isSortingByAddressAsc, sortByContractAddress, filterByContractAddress, contractAddressFilter, handleContractAddressFilter)}</Table.HeaderCell>}
+                        <Table.HeaderCell>{renderSortingAndFilteringDropdownGeneral("Domain", isSortingByDomainAsc, sortByDomain, filterByDomain, domainFilter, handleDomainFilter)}</Table.HeaderCell>
                         {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>{renderSortingAndFilteringDropdownForDayPickers("Expiry", isSortingByExpiryAsc, sortByExpiry, expiryFromFilter, handleExpiryFromFilter, expiryToFilter, handleExpiryToFilter, filterByExpiry)}</Table.HeaderCell>}
-                        {(isRegistryInspect && !isExploringDomain) && <Table.HeaderCell textAlign="center">{renderSortingAndFilteringDropdown(isSortingByTotalSmartContractsAsc, sortByTotalSmartContracts, "Total Smart Contracts")}</Table.HeaderCell>}
+                        {(isRegistryInspect && !isExploringDomain) && <Table.HeaderCell textAlign="center">{renderSortingAndFilteringDropdownGeneral("Total Smart Contracts", isSortingByTotalSmartContractsAsc, sortByTotalSmartContracts)}</Table.HeaderCell>}
                         <Table.HeaderCell textAlign="center">{!isExploringDomain ? "Verified" : renderSortingAndFilteringDropdownForCheckboxes("Verified", isSortingByVerifiedAsc, sortByVerified, isVerifiedFilter, handleIsVerifiedFilter, isNotVerifiedFilter, handleIsNotVerifiedFilter, filterByVerified)}</Table.HeaderCell>
                         {isDashboard &&
                             <Table.HeaderCell textAlign="center">{renderSortingAndFilteringDropdownForCheckboxes("Registry", isSortingByIsInRegistryAsc, sortByIsInRegistry, isInRegistryFilter, handleIsInRegistryFilter, isNotInRegistryFilter, handleIsNotInRegistryFilter, filterByIsInRegistry)}</Table.HeaderCell>

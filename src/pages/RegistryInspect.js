@@ -9,7 +9,7 @@ import moment from 'moment'
 function RegistryInspect() {
     const { loadStorage } = useContext(AppContext);
     const [entriesRaw, setEntriesRaw] = useState([])
-    const [entriesWithOccurances, setEntriesWithOccurances] = useState([])
+    const [tescsWithOccurances, setTescsWithOccurances] = useState([])
     const [loading, setLoading] = useState(false)
 
     //add createdAt and isFavourite prop to objects retrieved from the backend - compares with localStorage values
@@ -38,19 +38,19 @@ function RegistryInspect() {
                 if (response.status === 200) {
                     //console.log(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })))
                     const entriesRaw = registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry)
-                    const entriesWithOccurances = entriesRaw.map(entry => ({
+                    const tescsWithOccurances = entriesRaw.map(entry => ({
                         domain: entry.domain, contractAddresses: entriesRaw.filter((entry_) => entry_.domain === entry.domain).map(({contractAddress}) => contractAddress), contractCount: entriesRaw.reduce((counter, entry_) =>
                                 entry_.domain === entry.domain ? counter += 1 : counter, 0),
                         verifiedCount: entriesRaw.reduce((counter, entry_) =>
                             entry_.verified === true && entry_.domain === entry.domain ? counter += 1 : counter, 0)
                     }))
-                    let distinctEntriesWithOccurances = []
+                    let distinctTescsWithOccurances = []
                     const map = new Map(); 
                     //array of contract addresses used for the smart contract images in the exploration page
-                    for (const entry of entriesWithOccurances) {
+                    for (const entry of tescsWithOccurances) {
                         if (!map.has(entry.domain)) {
                             map.set(entry.domain, true);    // set any value to Map
-                            distinctEntriesWithOccurances.push({
+                            distinctTescsWithOccurances.push({
                                 domain: entry.domain,
                                 contractAddresses: entry.contractAddresses,
                                 contractCount: entry.contractCount,
@@ -59,7 +59,7 @@ function RegistryInspect() {
                         }
                     }
                     setEntriesRaw(entriesRaw)
-                    setEntriesWithOccurances(distinctEntriesWithOccurances)
+                    setTescsWithOccurances(distinctTescsWithOccurances)
                 } else {
                     setEntriesRaw([])
                 }
@@ -76,7 +76,7 @@ function RegistryInspect() {
                 <div style={{ justifyContent: 'center' }}>
                     <TableOverview
                         rowData={entriesRaw}
-                        entriesWithOccurances={entriesWithOccurances}
+                        tescsWithOccurances={tescsWithOccurances}
                         isRegistryInspect={true}
                         handleLoading={handleLoading}
                         isExploringDomainDefault={false} />

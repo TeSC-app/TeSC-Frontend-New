@@ -40,25 +40,25 @@ function RegistryAnalytics() {
     const dataPie = [{ 'id': 'Valid', 'value': feedData(true) }, { 'id': 'Invalid', 'value': feedData(false) }]  
     const colorsBar = ['#E8C1A0', '#F47560', '#F1E15B', '#E8A838', '#61CDBB']
     const mode = (entries) => {
-        const entriesWithOccurances = entries.map(entry => ({
+        const tescsWithOccurances = entries.map(entry => ({
             domain: (entry.domain.length === 64 && entry.domain.split('.').length === 1)
                 ? `0x${entry.domain.substring(0,2)}...${entry.domain.substring(entry.domain.length-2, entry.domain.length)}` : entry.domain, count: entries.reduce((counter, entry_) =>
                     entry_.domain === entry.domain ? counter += 1 : counter, 0)
         }))
-        const distinctEntriesWithOccurances = [];
+        const distinctTescsWithOccurances = [];
         const map = new Map();
         let index = 0;
-        for (const entry of entriesWithOccurances) {
+        for (const entry of tescsWithOccurances) {
             if (!map.has(entry.domain)) {
                 map.set(entry.domain, true);    // set any value to Map
-                distinctEntriesWithOccurances.push({
+                distinctTescsWithOccurances.push({
                     domain: entry.domain,
                     count: entry.count,
                     color: colorsBar[index++]
                 });
             }
         }
-        return distinctEntriesWithOccurances.slice(0, 5)
+        return distinctTescsWithOccurances.slice(0, 5)
     }
 
     const countFlags = (entries) => {
