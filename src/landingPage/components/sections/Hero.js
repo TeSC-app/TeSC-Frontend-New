@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { NavLink } from 'react-router-dom';
+
+
 import classNames from 'classnames';
 import { SectionProps } from '../../utils/SectionProps';
 import ButtonGroup from '../elements/ButtonGroup';
@@ -12,11 +15,11 @@ import videoPlaceholder from './../../assets/images/video-placeholder.jpg';
 
 const propTypes = {
   ...SectionProps.types
-}
+};
 
 const defaultProps = {
   ...SectionProps.defaults
-}
+};
 
 const Hero = ({
   className,
@@ -34,12 +37,12 @@ const Hero = ({
   const openModal = (e) => {
     e.preventDefault();
     setVideomodalactive(true);
-  }
+  };
 
   const closeModal = (e) => {
     e.preventDefault();
     setVideomodalactive(false);
-  }   
+  };
 
   const outerClasses = classNames(
     'hero section center-content',
@@ -65,7 +68,7 @@ const Hero = ({
         <div className={innerClasses}>
           <div className="hero-content">
             <h1 className="mt-0 mb-16 reveal-from-bottom" data-reveal-delay="200">
-              Landing template for <span className="text-color-primary">startups</span>
+              TLS-endorsed Smart Contract (<span className="text-color-primary">TeSC</span>)
             </h1>
             <div className="container-xs">
               <p className="m-0 mb-32 reveal-from-bottom" data-reveal-delay="400">
@@ -73,10 +76,12 @@ const Hero = ({
                 </p>
               <div className="reveal-from-bottom" data-reveal-delay="600">
                 <ButtonGroup>
-                  <Button tag="a" color="primary" wideMobile href="https://cruip.com/">
-                    Get started
+                  <NavLink to="/dashboard">
+                    <Button tag="a" color="primary" wideMobile>
+                      Get started
                     </Button>
-                  <Button tag="a" color="dark" wideMobile href="https://github.com/cruip/open-react-template/">
+                  </NavLink>
+                  <Button tag="a" color="dark" wideMobile href="https://github.com/TeSC-app">
                     View on Github
                     </Button>
                 </ButtonGroup>
@@ -102,13 +107,13 @@ const Hero = ({
             id="video-modal"
             show={videoModalActive}
             handleClose={closeModal}
-            video="https://player.vimeo.com/video/174002812"
+            video="slides-TA.html"
             videoTag="iframe" />
         </div>
       </div>
     </section>
   );
-}
+};
 
 Hero.propTypes = propTypes;
 Hero.defaultProps = defaultProps;
