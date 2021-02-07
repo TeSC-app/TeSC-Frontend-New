@@ -1,18 +1,15 @@
 import React, { useContext, useEffect, useState, useCallback } from 'react'
 import { Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
-import ERCXXX from '../ethereum/build/contracts/ERCXXX.json';
-import SearchBox from '../components/SearchBox';
 import PageHeader from '../components/PageHeader';
 import TableOverview from '../components/TableOverview';
 import axios from 'axios'
 import moment from 'moment'
 
 function RegistryInspect(props) {
-    const { contractRegistry } = props
-    const { web3, loadStorage } = useContext(AppContext);
-    const [domain, setDomain] = useState('')
-    const [entries, setEntries] = useState(null)
+    const { loadStorage } = useContext(AppContext);
+    const [entriesRaw, setEntriesRaw] = useState([])
+    const [entriesWithOccurances, setEntriesWithOccurances] = useState([])
     const [loading, setLoading] = useState(false)
 
     //add createdAt and isFavourite prop to objects retrieved from the backend - compares with localStorage values
@@ -36,13 +33,34 @@ function RegistryInspect(props) {
                 //for each object key that is an array get the values associated to that key and out of these values build an array of objects
                 const registryEntries = Object.keys(response.data['registryEntries'])
                     .map(domain => Object.values(response.data['registryEntries'][domain])
-                        .map(({ contract }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, createdAt: moment().format('DD/MM/YYYY HH:mm') })))
+                        .map(({ contract, verified }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, createdAt: moment().format('DD/MM/YYYY HH:mm'), verified: verified })))
                     .flat()
-                if(response.status === 200) {
+                if (response.status === 200) {
                     //console.log(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })))
-                    setEntries(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry))
+                    const entriesRaw = registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry)
+                    const entriesWithOccurances = entriesRaw.map(entry => ({
+                        domain: (entry.domain.length === 64 && entry.domain.split('.').length === 1)
+                            ? 'hashed domain' : entry.domain, contractCount: entriesRaw.reduce((counter, entry_) =>
+                                entry_.domain === entry.domain ? counter += 1 : counter, 0),
+                        verifiedCount: entriesRaw.reduce((counter, entry_) =>
+                            entry_.verified === entry.verified && entry_.domain === entry.domain ? counter += 1 : counter, 0)
+                    }))
+                    let distinctEntriesWithOccurances = []
+                    const map = new Map();
+                    for (const entry of entriesWithOccurances) {
+                        if (!map.has(entry.domain)) {
+                            map.set(entry.domain, true);    // set any value to Map
+                            distinctEntriesWithOccurances.push({
+                                domain: entry.domain,
+                                contractCount: entry.contractCount,
+                                verifiedCount: entry.verifiedCount
+                            });
+                        }
+                    }
+                    setEntriesRaw(entriesRaw)
+                    setEntriesWithOccurances(distinctEntriesWithOccurances)
                 } else {
-                    setEntries([])
+                    setEntriesRaw([])
                 }
                 setLoading(false)
             } catch (error) {
@@ -51,43 +69,14 @@ function RegistryInspect(props) {
         })();
     }, [updateCreatedAtAndFavouritesForRegistryInspectEntries])
 
-
-    const handleInput = domain => {
-        setDomain(domain);
-    }
-
-    const handleSubmit = async () => {
-        setLoading(true)
-        setEntries(null);
-        try {
-            const contractAddresses = await contractRegistry.methods.getContractsFromDomain(domain).call();
-            const contractInstances = [];
-            //generate contracts out of the ERCXXX interface using the contract addresses so that the getExpiry method can be used
-            for (let i = 0; i < contractAddresses.length; i++) {
-                const contractInstance = new web3.eth.Contract(
-                    ERCXXX.abi,
-                    contractAddresses[i],
-                )
-                const expiry = await contractInstance.methods.getExpiry().call()
-                //push the result from the promise to an array of objects which takes the values we need (namely the address and the expiry of the contract's endorsement)
-                contractInstances.push({ contractAddress: contractAddresses[i], domain, expiry })
-            }
-            setEntries(contractInstances);
-            setLoading(false)
-        } catch (err) {
-            setLoading(false)
-        }
-    }
-
-
     const renderTable = () => {
-        if (entries && entries.length > 0 && !loading) {
+        if (entriesRaw && entriesRaw.length > 0 && !loading) {
             return (
-                <div style={{justifyContent: 'center'}}>
-                    <TableOverview rowData={entries} isRegistryInspect={true} />
+                <div style={{ justifyContent: 'center' }}>
+                    <TableOverview rowData={entriesRaw} entriesWithOccurances={entriesWithOccurances} isRegistryInspect={true} handleLoading={handleLoading} />
                 </div>
             )
-        } else if (entries && entries.length === 0 && !loading) {
+        } else if (entriesRaw && entriesRaw.length === 0 && !loading) {
             return (
                 <div className="ui placeholder segment">
                     <div className="ui icon header">
@@ -108,18 +97,14 @@ function RegistryInspect(props) {
         }
     }
 
+    const handleLoading = loading => {
+        setLoading(loading)
+    }
+
     return (
         <div>
             <PageHeader title='Explore TeSC Registry' />
             {/* Smart Contracts associated with Domain */}
-            <SearchBox
-                onChange={handleInput}
-                onSubmit={handleSubmit}
-                value={domain}
-                placeholder='www.mysite.com'
-                label='Domain'
-                icon='search'
-                validInput={true} />
             {renderTable()}
         </div>
     )
