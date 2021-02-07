@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { Icon } from 'semantic-ui-react';
 
 
 import classNames from 'classnames';
 import { SectionProps } from '../../utils/SectionProps';
 import ButtonGroup from '../elements/ButtonGroup';
 import Button from '../elements/Button';
-import Image from '../elements/Image';
 import Modal from '../elements/Modal';
 
 import '../../assets/scss/landingPage.scoped.scss';
-import videoPlaceholder from './../../assets/images/video-placeholder.jpg';
 
 
 const propTypes = {
@@ -59,6 +58,15 @@ const Hero = ({
     bottomDivider && 'has-bottom-divider'
   );
 
+  const slideFrame = (<iframe
+    title="media"
+    src={`slides-TA.html#/`}
+    frameBorder="0"
+    allowFullScreen
+    width={896}
+    height={504}
+  />);
+
   return (
     <section
       {...props}
@@ -89,26 +97,31 @@ const Hero = ({
             </div>
           </div>
           <div className="hero-figure reveal-from-bottom illustration-element-01" data-reveal-value="20px" data-reveal-delay="800">
-            <a
-              data-video="https://player.vimeo.com/video/174002812"
-              href="#0"
+            {slideFrame}
+            <div
               aria-controls="video-modal"
               onClick={openModal}
+              style={{
+                opacity: '0.1',
+                position: 'relative',
+                float: 'right',
+                right: '15px',
+                bottom: '490px',
+                transition: '0.5s',
+                width: 'max-content',
+                height: 'max-content',
+              }}
             >
-              <Image
-                className="has-shadow"
-                src={videoPlaceholder}
-                alt="Hero"
-                width={896}
-                height={504} />
-            </a>
+              <Icon name='expand' size='big' link style={{ color: '#123456', fontStyle: 'normal' }} />
+            </div>
           </div>
           <Modal
             id="video-modal"
             show={videoModalActive}
             handleClose={closeModal}
             video="slides-TA.html"
-            videoTag="iframe" />
+            videoTag="iframe"
+          />
         </div>
       </div>
     </section>
