@@ -6,12 +6,13 @@ $palette: (
 		1: #ECEDED,
 		2: #9CA9B3,
 		3: #717D86,
-		4: #FFFCFA
+		4: #FFFCFA,
 	),
 	dark: (
 		1: #151719,
 		2: #25282C,
-		3: #33363A
+		3: #33363A,
+		4: #1B2428,
 	),
 	primary: (
 		1: #6163FF,
@@ -79,11 +80,12 @@ $bg--color: (
 	body: 			get-color(light, 4),
 	body-shadow:	0 20px 48px rgba(get-color(dark, 1), .8),	// body shadow when a boxed layout is used (set to null if don't want a shadow)
 	body-outer:		lighten(get-color(dark, 1), 2%),			// outer bg color when a boxed layout is used
-	bg-color: 		lighten(get-color(light, 4), 9%),			// .has-bg-color helper class
+	bg-color: 		lighten(get-color(dark, 4), 9%),			// .has-bg-color helper class
 	shadow: 		0 24px 64px rgba(get-color(dark, 1), .64),	// .has-shadow helper class
 	code: 			darken(get-color(dark, 1), 3%),
 	code-inverse:	darken(get-color(dark, 1), 3%),
 	check-checked-inverse:	darken(get-color(dark, 1), 3%),
+	site-header:	get-color(dark, 4),
 );
 
 
