@@ -85,17 +85,19 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const [flags, setFlags] = useState(initInputs ? initInputs.flags : new BitSet('0x00'));
     const [currentDomain, setCurrentDomain] = useState(initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : domain);
     const [fingerprint, setFingerprint] = useState(defaultFingerprint);
-    const [deploymentJson, setDeploymentJson] = useState({abi: TeSC.abi, bytecode: TeSC.bytecode});
-    const [constructorParameters, setConstructorParameters] = useState([]);
+    const [deploymentJson, setDeploymentJson] = useState(null);
+    const [constructorParameters, setConstructorParameters] = useState(null);
     const [constructorParameterValues, setConstructorParameterValues] = useState([]);
-    const [allParamsEntered, setAllParamsEntered] = useState(false);
+    const [allParamsCorrectlyEntered, setAllParamsCorrectlyEntered] = useState(null);
+    const [contractsInFile, setContractsInFile] = useState(null);
+    const [selectedContract, setSelectedContract] = useState(null);
 
     const [privateKeyPEM, setPrivateKeyPEM] = useState('');
     const [privateKeyFileName, setPrivateKeyFileName] = useState('');
 
-    const [solidityCode, setSolidityCode] = useState('');
-    const [endorsedSolidityCode, setEndorsedSolidityCode] = useState('');
-    const [solidityFileName, setSolidityFileName] = useState('');
+    const [solidityCode, setSolidityCode] = useState(null);
+    const [endorsedSolidityCode, setEndorsedSolidityCode] = useState(null);
+    const [solidityFileName, setSolidityFileName] = useState(null);
 
     const [costEstimated, setCostEstimated] = useState(null);
     const [costPaid, setCostPaid] = useState(null);
@@ -105,8 +107,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
 
     const [sigInputType, setSigInputType] = useState(null);
-    const [showContractSelectionDropdown, setShowContractSelectionDropdown] = useState(null); 
-    const [contractDropdownOptions, setContractDropdownOptions] = useState([]);
+    const [deploymentType, setDeploymentType] = useState(null);
 
     const prevExpiry = useRef(expiry);
     const prevFlags = useRef(flags.toString());
@@ -184,75 +185,36 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     };
 
     const handlePickSolidityFile = async (filename, content) => {
-        const compileRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/compile`, {
-            params: {
-                solidityCode: content
-            }
-        });
-        const compileError = compileRes.data.compileError;
-        
-        if(!compileError){
-            setSolidityCode(content);
-            const contractsRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/contracts`, {
+        setSelectedContract(null);
+        try{
+            await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/compile`, {
                 params: {
                     solidityCode: content
                 }
             });
-            const contractsInFile = contractsRes.data.contractNames;
-            setContractDropdownOptions(buildContractDropdownOptions(contractsInFile));
-            setShowContractSelectionDropdown(true);
-        }else{
-            // TODO show compile error messages (you picked an invalid sol file)
-            console.log(compileError);
+        }catch(error){
+            showMessage(buildNegativeMsg({
+                header: 'Unable to compile your file',
+                msg: "Please make sure to upload a valid file"
+            }));
+            return;
         }
-  
+        
+        setSolidityFileName(filename);
+        setSolidityCode(content);
+
+        const contractsRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/contracts`, {
+            params: {
+                solidityCode: content
+            }
+        });
+        const contractsInFile = contractsRes.data.contractNames;
+        setContractsInFile(contractsInFile);
+
+        if(contractsInFile.length === 1){
+            handleContractSelected(contractsInFile[0], content);
+        } 
     };
-
-    const handleContractSelected = async (e, { name, value } ) => {
-        const constructorParametersRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/constructorParameters`, {
-            params: {
-                solidityCode: solidityCode,
-                selectedContract: value
-            }
-        });
-        const constructorParameters = constructorParametersRes.data.constructorParameters;
-
-        const addInterfaceRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/addInterface`, {
-            params: {
-                solidityCode: solidityCode,
-                selectedContract: value
-            }
-        });
-        const solidityCodeWithInterface = addInterfaceRes.data.solidityCodeWithInterface;
-
-        const compileRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/compileAndGetJson`, {
-            params: {
-                solidityCode: solidityCodeWithInterface,
-                selectedContract: value
-            }
-        });
-        const json = compileRes.data.json;
-
-        if(json){
-            setConstructorParameters(constructorParameters);
-            // setting the initial constructor parameter values
-            const initialConstructorParameterValues = [];
-            constructorParameters.forEach((parameter) => {
-                if(parameter.type.endsWith("[]")){
-                    initialConstructorParameterValues.push([]);
-                }else{
-                    initialConstructorParameterValues.push("");
-                } 
-            });
-            setConstructorParameterValues(initialConstructorParameterValues);
-            setEndorsedSolidityCode(solidityCodeWithInterface);
-            setDeploymentJson(json);
-        }else{
-            // TODO handle compile error that occured after endorsement (sorry, there was a problem)
-            const compileError = compileRes.data.compileError;
-            console.log(compileError);
-        }
-    }
 
     const buildContractDropdownOptions = (contractNames) => {
         const options = [];
@@ -308,8 +270,15 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     console.log(5)
                     const tx = !initInputs ? await makeDeploymentTx(currentDomain, deploymentJson, constructorParameterValues) : await makeUpdateTx(currentDomain);
                     if (!initInputs || contractAddress) {
-                        const estCost = await estimateDeploymentCost(web3, tx);
-                        setCostEstimated(estCost);
+                        try{
+                            const estCost = await estimateDeploymentCost(web3, tx);
+                            setCostEstimated(estCost);
+                        }catch(error){
+                            showMessage(buildNegativeMsg({
+                                header: 'Unable to estimate transaction cost',
+                                msg: "You probably entered invalid constructor parameters in the first step"
+                            }));
+                        }           
                     }
                 }
 
@@ -409,9 +378,9 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
     const renderConstructorParameterInputFields = () => {
         return constructorParameters.map((constructorParameter, i) => 
-            <Form.Field>
+            <Form.Group inline>
                 <label>
-                    {constructorParameter.type} {constructorParameter.name}: 
+                    {constructorParameter.type} {constructorParameter.name} 
                     {!isEmptyValidInputForType(constructorParameter.type) && <span style={{ color: 'red' }}>*</span>} 
                     <Popup
                         inverted
@@ -420,9 +389,11 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     />
                 </label>
                 <Input
+                    // TODO how does interaction between value and onChange work?
+                    //value={constructorParameterValues[i].toString()}
                     onChange={e => handleTextChange(e.target.value, i, constructorParameter.type)}
                 />
-            </Form.Field>
+            </Form.Group>
         )
     }
 
@@ -438,7 +409,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             updatedValues[index] = value;
         }
         setConstructorParameterValues(updatedValues);
-        setAllParamsEntered(validateConstructorParameterInput(constructorParameters, constructorParameterValues));
+        setAllParamsCorrectlyEntered(validateConstructorParameterInput(constructorParameters, constructorParameterValues));
     }
 
     const handleEnterOriginalDomain = (originalDomain) => {
@@ -456,6 +427,67 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             setPrivateKeyFileName('')
         }
     };
+
+    const handleSwitchDeploymentType = (val) => {
+        setDeploymentType(val);
+        if(val === 'reference'){
+            setDeploymentJson({abi: TeSC.abi, bytecode: TeSC.bytecode});
+            // make everything related to the other deployment type disappear
+            setContractsInFile(null);
+            setSelectedContract(null);
+            setConstructorParameters(null);
+            setConstructorParameterValues([]);
+            setAllParamsCorrectlyEntered(null);
+        }
+    }
+
+    const handleContractSelectedFromDropdown = (e, {name, value}) => {
+        handleContractSelected(value, solidityCode);
+    }
+
+    const handleContractSelected = async (value, code) => {
+        setSelectedContract(value);
+
+        // constructor parameters
+        const constructorParametersRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/constructorParameters`, {
+            params: {
+                solidityCode: code,
+                selectedContract: value
+            }
+        });
+        const constructorParamsFromRes = constructorParametersRes.data.constructorParameters;
+        setConstructorParameters(constructorParamsFromRes);
+
+        // constructor parameters initial values
+        const initialConstructorParameterValues = [];
+        constructorParamsFromRes.forEach((parameter) => {
+            if(parameter.type.endsWith("[]")){
+                initialConstructorParameterValues.push([]);
+            }else{
+                initialConstructorParameterValues.push("");
+            } 
+        });
+        setConstructorParameterValues(initialConstructorParameterValues);
+        
+        // endorsed solidity code
+        const addInterfaceRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/addInterface`, {
+            params: {
+                solidityCode: code,
+                selectedContract: value
+            }
+        });
+        const solidityCodeWithInterface = addInterfaceRes.data.solidityCodeWithInterface;
+        setEndorsedSolidityCode(solidityCodeWithInterface);
+
+        // json for deployment
+        const compileRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/compileAndGetJson`, {
+            params: {
+                solidityCode: solidityCodeWithInterface,
+                selectedContract: value
+            }
+        });
+        setDeploymentJson(compileRes.data.json);
+    }
 
     const handleTextCopy = (e) => {
         e.preventDefault();
@@ -475,7 +507,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             'Receipt'
         ];
         if(!initInputs){
-            steps.unshift(`Select Solidity File`);
+            steps.unshift(`Select Smart Contract`);
         }
         return steps;
     }
@@ -510,43 +542,104 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     }
 
     const getStepContent = (step) => {
-        switch (step) {
+        let actualStep = step;
+        if(initInputs){
+            actualStep ++;
+        }
+        switch (actualStep) {
             case 0:
                 return {
                     component: (
                         <Fragment>
-                            <Header as='h3' content='Select Solidity File' style={{marginBottom: '30px'}} color='purple'/>
+                            <Header as='h3' content={getSteps()[step]} style={{marginBottom: '30px'}} color='purple'/>
 
-                            <FilePicker
-                                label='Choose solidity file'
-                                onPickFile={handlePickSolidityFile}
-                                input={{fileName:solidityFileName, content: solidityCode}}
-                            />
+                            <Form.Field>
+                                <Radio
+                                    label="Deploy reference implementation"
+                                    name='deploymentTypeRadioGroup'
+                                    value='reference'
+                                    checked={deploymentType === 'reference'}
+                                    onChange={(e, { value }) => handleSwitchDeploymentType(value)}
+                                />
+                            </Form.Field>
+                            <Form.Field>
+                                <Radio
+                                    label='Endorse and deploy your own Smart Contract'
+                                    name='deploymentTypeRadioGroup'
+                                    value='custom'
+                                    checked={deploymentType === 'custom'}
+                                    onChange={(e, { value }) => handleSwitchDeploymentType(value)}
+                                />
+                            </Form.Field>
 
-                            {showContractSelectionDropdown === true && (
-                                <div>
-                                    <div>Please select the contract that you would like to endorse:</div>
-                                    
+                            {deploymentType === "custom" && (
+                                <div style={{ paddingTop: '15px' }}>
+                                    <FilePicker
+                                        label='Choose solidity file'
+                                        onPickFile={handlePickSolidityFile}
+                                        input={{fileName:solidityFileName, content: solidityCode}}
+                                    />
+                                    <div><em>Pick the solidity file with the Smart Contract that you want to endorse and deploy</em></div>
+                                </div>     
+                            )}
+
+                            {(contractsInFile && contractsInFile.length > 1) && (
+                                <div style={{ paddingTop: '20px' }}>
+                                <Form.Field>
+                                    <label>
+                                        Smart Contract <span style={{ color: 'red' }}>*</span> 
+                                        <Popup
+                                            inverted
+                                            content='Your file contains multiple Smart Contracts. Select the one that you want to endorse and deploy.'
+                                            trigger={<Icon name='question circle' />}
+                                        />
+                                    </label>
                                     <Dropdown 
-                                        placeholder='Select contract'
+                                        placeholder='Select Smart Contract'
                                         fluid
                                         selection
-                                        onChange={handleContractSelected}
-                                        options={contractDropdownOptions}>
+                                        onChange={handleContractSelectedFromDropdown}
+                                        options={buildContractDropdownOptions(contractsInFile)}>
                                     </Dropdown>
-
-                                    {endorsedSolidityCode !== '' && (
-                                        <Highlight language='solidity'>
-                                            {endorsedSolidityCode}
-                                        </Highlight>
-                                    )}
-                                    {constructorParameters !== [] && renderConstructorParameterInputFields()}       
+                                </Form.Field>
                                 </div>
                             )}
 
+                            {selectedContract && (
+                                <div style={{ paddingTop: '25px' }}>
+                                <Form.Field>              
+                                    <label>
+                                        File with endorsed Smart Contract 
+                                        <Popup
+                                            inverted
+                                            content={solidityFileName + ' with endorsed ' + selectedContract}
+                                            trigger={<Icon name='question circle' />}
+                                        />
+                                    </label>
+                                    <Highlight language='solidity'>
+                                        {endorsedSolidityCode}
+                                    </Highlight>
+                                </Form.Field>      
+                                </div>   
+                            )}
+
+                            {(constructorParameters && constructorParameters.length > 0) && (
+                               <div style={{ paddingTop: '20px' }}>
+                                    <label>
+                                        <b>Values for constructor parameters</b> <span style={{ color: 'red' }}>*</span>
+                                        <Popup
+                                            inverted
+                                            content={'The constructor of ' + selectedContract + ' has additional parameters. Please enter values for them.'}
+                                            trigger={<Icon name='question circle' />}
+                                        />
+                                    </label>
+                                    {renderConstructorParameterInputFields()}
+                               </div>      
+                            )}
                         </Fragment>
                     ),
-                    completed: constructorParameters.length === 0 ? true : allParamsEntered
+                    completed: deploymentType === "reference" || (selectedContract && constructorParameters && (constructorParameters.length === 0 || allParamsCorrectlyEntered && allParamsCorrectlyEntered === true)),
+                    reachable: true
                 }
             case 1:
                 return {
