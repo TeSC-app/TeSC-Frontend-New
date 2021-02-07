@@ -4,7 +4,7 @@
 	.body-wrap {
 		max-width: $container--width-boxed;
 	    margin: 0 auto;
-	    box-shadow: color-bg(body-shadow);
+		box-shadow: color-bg(body-shadow);
 
 		&::before {
 			content: '';
@@ -25,7 +25,7 @@
     // Sticky footer
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+	min-height: 100vh;
 }
 
 .site-content {

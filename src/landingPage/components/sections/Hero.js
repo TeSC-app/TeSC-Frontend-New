@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Icon, Button as Btn } from 'semantic-ui-react';
+import BrowserFrame from "react-browser-frame";
 
 
 import classNames from 'classnames';
@@ -10,6 +11,7 @@ import Button from '../elements/Button';
 import Modal from '../elements/Modal';
 
 import '../../assets/scss/landingPage.scoped.scss';
+
 
 
 const propTypes = {
@@ -33,7 +35,7 @@ const Hero = ({
 
   const [videoModalActive, setVideomodalactive] = useState(false);
   const [curSlide, setCurSlide] = useState(0);
-  const slideFrameRef = useRef(null) 
+  const slideFrameRef = useRef(null);
 
   const openModal = (e) => {
     e.preventDefault();
@@ -43,7 +45,7 @@ const Hero = ({
   const closeModal = (e, slideNumber) => {
     e.preventDefault();
     setVideomodalactive(false);
-    setCurSlide(slideNumber)
+    setCurSlide(slideNumber);
   };
 
   const outerClasses = classNames(
@@ -61,15 +63,19 @@ const Hero = ({
     bottomDivider && 'has-bottom-divider'
   );
 
-  const slideFrame = (<iframe
-    title="media"
-    src={`slides-TA.html#/${curSlide}`}
-    frameBorder="0"
-    allowFullScreen
-    width={896}
-    height={504}
-    ref={slideFrameRef} 
-  />);
+  const slideFrame = (
+    <BrowserFrame>
+      <iframe
+        title="media"
+        src={`slides-TA.html#/${curSlide}`}
+        frameBorder="0"
+        allowFullScreen
+        width={890}
+        height={504}
+        ref={slideFrameRef}
+      />
+    </BrowserFrame>
+  );
 
   return (
     <section

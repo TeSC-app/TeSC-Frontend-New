@@ -80,6 +80,7 @@ const Header = ({
     <header
       {...props}
       className={classes}
+      // style={{background: '#1B2428'}}
     >
       <div className="container">
         <div className={

@@ -77,7 +77,7 @@ const ScrollReveal = React.forwardRef((props, ref) => {
 
   return (
     // <body className="has-animations">
-      <div className="body-wrap">
+      <div className="body-wrap has-body-bg-color">
         {props.children()}
       </div>
     // </body>

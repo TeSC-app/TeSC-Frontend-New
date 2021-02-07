@@ -123,6 +123,12 @@
 	z-index: 0;
 }
 
+.has-body-bg-color {
+	position: relative;
+	background-color: color-bg(body);
+	z-index: 0;
+}
+
 // Helper class for box shadow
 .has-shadow {
 	box-shadow: color-bg(shadow);

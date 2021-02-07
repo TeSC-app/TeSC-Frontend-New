@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import Image from '../../elements/Image';
 
 import '../../../assets/scss/landingPage.scoped.scss';
-import logo from '../../../assets/images/logo.svg'
+// import logo from '../../../assets/images/logo.svg'
+import logo from '../../../../static/images/tesc-logo.png'
 
 const Logo = ({
   className,
@@ -22,12 +23,13 @@ const Logo = ({
       className={classes}
     >
       <h1 className="m-0">
-        <Link to="/">
+        <Link to="/dashboard">
           <Image
             src={logo}
             alt="Open"
-            width={32}
-            height={32} />
+            width={150}
+            height={120} 
+          />
         </Link>
       </h1>
     </div>

@@ -6,7 +6,6 @@
 	background: color-bg(header);
 
 	+ .site-content {
-
 		.section:first-of-type {
 			padding-top: $header-height__mobile;
 		}
@@ -139,6 +138,7 @@
 	.site-header {
 
 		+ .site-content {
+			
 
 			.section:first-of-type {
 				padding-top: $header-height__desktop;

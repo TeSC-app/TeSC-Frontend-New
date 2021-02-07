@@ -8,6 +8,7 @@ import 'react-pro-sidebar/dist/css/styles.css';
 
 import { FaScroll, FaChartBar, FaAddressBook, FaWallet } from 'react-icons/fa';
 import AppContext from '../appContext';
+import sidebarBg from '../static/images/bg1.jpg';
 
 
 
@@ -47,6 +48,7 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
 
     return (
         <ProSidebar
+            image={sidebarBg}
             collapsed={collapsed}
             toggled={toggled}
             breakPoint="md"
