@@ -15,10 +15,8 @@ const Dashboard = () => {
             <PageHeader title='Dashboard' />
             {rowData &&
                 <TableOverview
-                    isDashboard={true}
-                    cols={new Set([COL.VERIF, COL.REG, COL.FAV, COL.CA])}
+                    cols={new Set([COL.ADDRESS, COL.DOMAIN, COL.EXPIRY, COL.VERIF, COL.REG, COL.FAV, COL.CA])}
                     rowData={rowData.current}
-                    isExploringDomainDefault={true}
                 />
             }
         </React.Fragment>

@@ -10,24 +10,26 @@ const ENTRIES_PER_PAGE = 5;
 
 export const COL = {
     DOMAIN: 'Domain',
+    ADDRESS: 'Address',
     VERIF: 'Verification',
     REG: 'Registry',
     FAV: 'Favorites',
     CA: 'Created At',
+    TSC: 'Total Smart Contracts',
+    EXPIRY: 'Expiry'
 };
 
 export const hasAllColumns = (cols) => {
-    return cols.has(COL.VERIF) && cols.has(COL.REG) && cols.has(COL.FAV) && cols.has(COL.CA);
+    return cols.has(COL.DOMAIN) && cols.has(COL.ADDRESS) && cols.has(COL.EXPIRY) && cols.has(COL.VERIF) &&
+        cols.has(COL.REG) && cols.has(COL.FAV) && cols.has(COL.CA);
 };
 
 function TableOverview(props) {
     const {
         rowData,
         entriesWithOccurances,
-        isDashboard,
-        isRegistryInspect,
         handleLoading,
-        isExploringDomainDefault,
+        handleIsExploringDomain,
         cols
     } = props;
 
@@ -35,23 +37,22 @@ function TableOverview(props) {
 
     const [tescs, setTescs] = useState(rowData);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(!isExploringDomainDefault ? Math.ceil(entriesWithOccurances.length / ENTRIES_PER_PAGE) : tescs ? Math.ceil(tescs.length / ENTRIES_PER_PAGE) : 0);
+    const [totalPages, setTotalPages] = useState(cols.has(COL.TSC) ? Math.ceil(entriesWithOccurances.length / ENTRIES_PER_PAGE) : tescs ? Math.ceil(tescs.length / ENTRIES_PER_PAGE) : 0);
     const [filterOption, setFilterOption] = useState(0);
     const [displayedEntries, setDisplayedEntries] = useState([]);
-    const [isExploringDomain, setIsExploringDomain] = useState(isExploringDomainDefault);
 
     //for search input
     const [domain, setDomain] = useState('');
 
 
     useEffect(() => {
-        //console.log(tescs)
-        //console.log(entriesWithOccurances)
+        console.log(tescs)
+        console.log(entriesWithOccurances)
         const init = async () => {
             try {
                 // setTescs(account ? (isDashboard? loadStorage() : []) : []);
                 setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRIES_PER_PAGE) : []);
-                setTotalPages(!isExploringDomain ? Math.ceil(entriesWithOccurances.length / ENTRIES_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRIES_PER_PAGE : 0));
+                setTotalPages(cols.has(COL.TSC) ? Math.ceil(entriesWithOccurances.length / ENTRIES_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRIES_PER_PAGE : 0));
                 window.ethereum.on('accountsChanged', (accounts) => {
                     const account = web3.utils.toChecksumAddress(accounts[0]);
                     setTescs(accounts[0] && localStorage.getItem(account) ?
@@ -65,12 +66,12 @@ function TableOverview(props) {
             }
         };
         init();
-    }, [tescs, account, web3, entriesWithOccurances, isExploringDomain]);
+    }, [tescs, account, web3, entriesWithOccurances, cols]);
 
 
     const handleChangeTescs = (tesc) => {
         const updatedTescs = [...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), tesc];
-        if (isRegistryInspect) {
+        if (!cols.has(COL.REG)) {
             let tescsNew = loadStorage() ? loadStorage() : [];
             let found = false;
             for (const tescNew of tescsNew) {
@@ -121,7 +122,7 @@ function TableOverview(props) {
     const changePage = (event, { activePage }) => {
         //check if there are filters applied
         setCurrentPage(activePage);
-        if (isExploringDomain) {
+        if (!cols.has(COL.TSC)) {
             setTotalPages(Math.ceil(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc).length / ENTRIES_PER_PAGE));
             setDisplayedEntries(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc)
                 .slice((activePage - 1) * ENTRIES_PER_PAGE, activePage * ENTRIES_PER_PAGE));
@@ -132,23 +133,21 @@ function TableOverview(props) {
 
 
     const renderRows = () => {
-        if (displayedEntries && isExploringDomain) {
+        if (displayedEntries && !cols.has(COL.TSC)) {
             return displayedEntries.map((tesc) => (
                 <TableEntry key={tesc.contractAddress}
                     tesc={tesc}
                     onTescsChange={handleChangeTescs}
-                    isDashboard={isDashboard}
-                    isExploringDomain={isExploringDomain}
+                    cols={cols}
                 />
             ));
-        } else if (displayedEntries && !isExploringDomain) {
+        } else if (displayedEntries && cols.has(COL.TSC)) {
             return entriesWithOccurances.map((entry) => (
                 <TableEntry key={entry.domain}
                     tesc={entry}
-                    isExploringDomain={isExploringDomain}
-                    isDashboard={isDashboard}
                     handleSearchInput={handleSearchInput}
                     handleSearchSubmit={handleSearchSubmit}
+                    cols={cols}
                 />));
         }
     };
@@ -160,17 +159,17 @@ function TableOverview(props) {
     const handleSearchSubmit = (domain) => {
         handleLoading(true);
         if (domain === '') {
-            setIsExploringDomain(false);
+            handleIsExploringDomain(false);
             setTescs(entriesWithOccurances);
         } else {
-            setIsExploringDomain(true);
+            handleIsExploringDomain(true);
             setTescs(loadStorage().filter(entry => entry.domain === domain).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
         }
         handleLoading(false);
     };
 
     const renderSearchBox = () => {
-        return isRegistryInspect ? (<SearchBox
+        return !cols.has(COL.REG) ? (<SearchBox
             onChange={handleSearchInput}
             onSubmit={handleSearchSubmit}
             value={domain}
@@ -178,7 +177,6 @@ function TableOverview(props) {
             label='Domain'
             icon='search'
             validInput={true}
-            // isRegistryInspect={isRegistryInspect}
         />) : null;
     };
 
@@ -188,15 +186,15 @@ function TableOverview(props) {
             <Table color='purple'>
                 <Table.Header active='true' style={{ backgroundColor: 'purple' }}>
                     <Table.Row>
-                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Address</Table.HeaderCell>}
+                        {!cols.has(COL.TSC) && <Table.HeaderCell>Address</Table.HeaderCell>}
                         <Table.HeaderCell>Domain</Table.HeaderCell>
-                        {(cols.has(COL.VERIF) || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Expiry</Table.HeaderCell>}
-                        {(isRegistryInspect && !isExploringDomain) && <Table.HeaderCell textAlign="center">Total Smart Contracts</Table.HeaderCell>}
+                        {!cols.has(COL.TSC) && <Table.HeaderCell>Expiry</Table.HeaderCell>}
+                        {cols.has(COL.TSC) && <Table.HeaderCell textAlign="center">Total Smart Contracts</Table.HeaderCell>}
                         <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
                         {cols.has(COL.REG) &&
                             <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
                         }
-                        {(cols.has(COL.VERIF) || (isRegistryInspect && isExploringDomain)) &&
+                        {!cols.has(COL.TSC) &&
                             <Table.HeaderCell textAlign="center">Favourites
                             <Dropdown
                                     icon='filter'
@@ -204,8 +202,8 @@ function TableOverview(props) {
                                     button
                                     className='icon dropdown-favourites'>
                                     <Dropdown.Menu>
-                                        <Dropdown.Item icon='redo' text={isRegistryInspect && domain.length > 0 ? 'All (by domain)' : 'All'} onClick={() => showAllTescs(tescs)} />
-                                        {isRegistryInspect && <Dropdown.Item icon='redo' text='All (reset)' onClick={() => setIsExploringDomain(false)} />}
+                                        <Dropdown.Item icon='redo' text={!cols.has(COL.REG) && domain.length > 0 ? 'All (by domain)' : 'All'} onClick={() => showAllTescs(tescs)} />
+                                        {!cols.has(COL.REG) && <Dropdown.Item icon='redo' text='All (reset)' onClick={() => handleIsExploringDomain(false)} />}
                                         <Dropdown.Item icon='heart' text='By favourite' onClick={showFavouriteTescs} />
                                         <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
                                     </Dropdown.Menu>

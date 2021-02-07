@@ -11,6 +11,7 @@ function RegistryInspect(props) {
     const [entriesRaw, setEntriesRaw] = useState([])
     const [entriesWithOccurances, setEntriesWithOccurances] = useState([])
     const [loading, setLoading] = useState(false);
+    const [isExploringDomain, setIsExploringDomain] = useState(false)
 
     //add createdAt and isFavourite prop to objects retrieved from the backend - compares with localStorage values
     const updateCreatedAtAndFavouritesForRegistryInspectEntries = useCallback((newTesc) => {
@@ -70,6 +71,10 @@ function RegistryInspect(props) {
         })();
     }, [updateCreatedAtAndFavouritesForRegistryInspectEntries]);
 
+    const handleIsExploringDomain = (isExploringDomain) => {
+        setIsExploringDomain(isExploringDomain)
+    }
+
     const renderTable = () => {
         if (entriesRaw && entriesRaw.length > 0 && !loading) {
             return (
@@ -77,10 +82,9 @@ function RegistryInspect(props) {
                     <TableOverview
                         rowData={entriesRaw}
                         entriesWithOccurances={entriesWithOccurances}
-                        isRegistryInspect={true}
                         handleLoading={handleLoading}
-                        isExploringDomainDefault={false} 
-                        cols={new Set([COL.VERIF, COL.FAV])}
+                        handleIsExploringDomain={handleIsExploringDomain}
+                        cols={isExploringDomain ? new Set([COL.ADDRESS, COL.DOMAIN, COL.EXPIRY, COL.VERIF, COL.FAV]) : new Set([COL.DOMAIN, COL.TSC, COL.VERIF])}
                     />
                 </div>
             )

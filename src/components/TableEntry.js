@@ -19,8 +19,6 @@ function TableEntry(props) {
         tesc,
         preverified,
         onTescsChange,
-        isDashboard,
-        isExploringDomain,
         handleSearchInput,
         handleSearchSubmit,
         cols
@@ -36,7 +34,7 @@ function TableEntry(props) {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        if (isExploringDomain) {
+        if (!cols.has(COL.TSC)) {
             const checkRegistry = async () => {
                 try {
                     const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call()
@@ -49,7 +47,7 @@ function TableEntry(props) {
             }
             checkRegistry()
         }
-    }, [contractAddress, registryContract, isExploringDomain])
+    }, [contractAddress, registryContract, cols])
 
     useEffect(() => {
         if (hasAllColumns(cols)) handleAccountChanged(false); //???
@@ -211,10 +209,10 @@ function TableEntry(props) {
     const renderDomainForRegistryInspect = () => {
         return (domain.length === 64 && domain.split('.').length === 1) ?
             <Popup content={`0x${domain}`} trigger={
-                !isExploringDomain ?
+                cols.has(COL.TSC) ?
                     <Button basic size='medium' onClick={exploreDomain}>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
                     <i>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
-            : !isExploringDomain ? <Button basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain
+            : cols.has(COL.TSC) ? <Button basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain
     }
 
     const renderPieChartForVerified = () => {
@@ -229,24 +227,24 @@ function TableEntry(props) {
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
-                {isExploringDomain ?
+                {!cols.has(COL.TSC) ?
                     <span className='contract-address-column'>
                         {
-                            own && isDashboard ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
+                            own && hasAllColumns(cols) ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
                         }
                         <LinkTescInspect contractAddress={contractAddress} />
                     </span> : renderDomainForRegistryInspect()
                 }
             </Table.Cell>
-            <Table.Cell textAlign='center'>{isDashboard && cols.has(COL.DOMAIN) ? renderDomain() : isExploringDomain ? renderDomainForRegistryInspect() : renderTescContractCount()}</Table.Cell>
-            <Table.Cell textAlign='center'>{isExploringDomain ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
-            {cols.has(COL.VERIF) && isExploringDomain && <TableCellVerification {...tableCellVerifProps} />}
+            <Table.Cell textAlign='center'>{hasAllColumns(cols) ? renderDomain() : !cols.has(COL.TSC) && !hasAllColumns(cols) ? renderDomainForRegistryInspect() : renderTescContractCount()}</Table.Cell>
+            <Table.Cell textAlign='center'>{!cols.has(COL.TSC)? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
+            {!cols.has(COL.TSC) && <TableCellVerification {...tableCellVerifProps} />}
             {cols.has(COL.REG) &&
                 <Table.Cell textAlign="center">
                     {renderRegistryButtons()}
                 </Table.Cell>
             }
-            {cols.has(COL.FAV) && isExploringDomain &&
+            {!cols.has(COL.TSC) &&
                 <Table.Cell textAlign="center">
                     {renderFavourites()}
                 </Table.Cell>

@@ -150,8 +150,8 @@ const TeSCInspect = ({ location }) => {
 
     useEffect(() => {
         if (Object.keys(localTescs.current).length === 0) {
-            const tescArray = loadStorage();
-            console.log('tescArray', tescArray);
+            const tescArray = loadStorage() ? loadStorage() : [];
+            //console.log('tescArray', tescArray);
             for (const tesc of tescArray) {
                 const { contractAddress, ...rest } = tesc;
                 localTescs.current[contractAddress] = rest;
