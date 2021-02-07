@@ -35,7 +35,7 @@ function TableEntry(props) {
 
     const updateLocalStorageWithIsInRegistry = useCallback((isInRegistry) => {
         if (account)
-            localStorage.setItem(account.toLowerCase(), JSON.stringify(loadStorage().map((tesc) => tesc.contractAddress === contractAddress ? ({ ...tesc, isInRegistry: isInRegistry }) : tesc)))
+            localStorage.setItem(account, JSON.stringify(loadStorage().map((tesc) => tesc.contractAddress === contractAddress ? ({ ...tesc, isInRegistry: isInRegistry }) : tesc)))
     }, [loadStorage, account, contractAddress])
 
     useEffect(() => {

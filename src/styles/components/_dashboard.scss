@@ -46,3 +46,25 @@
     background-color: transparent !important;
     font-size: 0.8rem !important;
 }
+
+.dropdown-filters {
+    background: rgb(239, 242, 245);
+    border-radius: 50vh;
+    padding: 8px 16px;
+    font-size: x-small;
+    font-weight: bold;
+    margin: 0px 5px;
+}
+
+.dropdown-filters-filtered {
+    background: rgb(128, 129, 131);
+    border-radius: 50vh;
+    padding: 8px 16px;
+    font-size: x-small;
+    font-weight: bold;
+    margin: 0px 5px;
+}
+
+.dropdown-filters__menu__button {
+    border-radius: 50vh !important;
+}

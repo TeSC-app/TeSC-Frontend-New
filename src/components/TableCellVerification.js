@@ -16,7 +16,7 @@ function TableCellVerification({ domain, contractAddress, verified, handleChange
 
     const updateLocalStorageWithVerified = useCallback((verified) => {
         if (account && loadStorage())
-            localStorage.setItem(account.toLowerCase(), JSON.stringify(loadStorage().map((tesc) => tesc.contractAddress === contractAddress ? ({ ...tesc, verified: verified }) : tesc)))
+            localStorage.setItem(account, JSON.stringify(loadStorage().map((tesc) => tesc.contractAddress === contractAddress ? ({ ...tesc, verified: verified }) : tesc)))
     }, [loadStorage, account, contractAddress])
 
     const renderVerifResult = () => {
