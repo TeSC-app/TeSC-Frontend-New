@@ -2,6 +2,9 @@ import RLP from 'rlp-browser';
 import { PrivateKey } from '@fidm/x509';
 import BitSet from 'bitset';
 import moment from 'moment'
+import web3Utils from 'web3-utils'
+
+window.web3Utils = web3Utils;
 
 export const FLAGS = {
     DOMAIN_HASHED: 0,
@@ -14,7 +17,7 @@ export const FLAGS = {
 };
 
 export const predictContractAddress = async (web3) => {
-    const senderAddress = web3.currentProvider.selectedAddress;
+    const senderAddress = web3.utils.toChecksumAddress(web3.currentProvider.selectedAddress);
     console.log("Sender address:", senderAddress);
 
     if (!senderAddress) {
@@ -26,7 +29,7 @@ export const predictContractAddress = async (web3) => {
     const futureAddress = "0x" + web3.utils.sha3(RLP.encode([senderAddress, nonce])).substring(26);
     console.log("Faddress:", futureAddress);
 
-    return futureAddress;
+    return  web3.utils.toChecksumAddress(futureAddress);
 };
 
 export const generateSignature = async ({ address, domain, expiry, flagsHex }, privateKeyPem) => {
@@ -44,8 +47,9 @@ export const generateSignature = async ({ address, domain, expiry, flagsHex }, p
 
 export const flagsToBytes24Hex = (flagsBitVector) => {
     const flagsBitVectorWithSANITY = new BitSet(flagsBitVector.toString() + '1');
-    let hex = flagsBitVectorWithSANITY.slice(0, Object.keys(FLAGS).length - 1).toString(16);
-    return padToBytesX(hex, 24);
+    let hex = '0x' + flagsBitVectorWithSANITY.slice(0, Object.keys(FLAGS).length - 1).toString(16);
+    console.log('hex', hex)
+    return web3Utils.padLeft(hex, 48);
 };
 
 export const padToBytesX = (hexNumber, x) => {
@@ -64,52 +68,55 @@ export const hexStringToBitSet = (hexStr) => {
 
 
 export const estimateDeploymentCost = async (web3, tx) => {
-    const gasEstimation = await tx.estimateGas({ from: web3.currentProvider.selectedAddress, gas: '2000000' });
+    const gasEstimation = await tx.estimateGas({ from: web3.utils.toChecksumAddress(web3.currentProvider.selectedAddress), gas: '3000000' });
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 };
 
 export const estimateRegistryAddCost = async (web3, selectedAccount, contractRegistry, contractTeSCAddress) => {
-    const gasEstimation = await contractRegistry.methods.add(contractTeSCAddress).estimateGas({ from: selectedAccount, gas: '2000000' });
+    const gasEstimation = await contractRegistry.methods.add(contractTeSCAddress).estimateGas({ from: selectedAccount, gas: '3000000' });
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 }
 
 export const estimateRegistryRemoveCost = async (web3, selectedAccount, contractRegistry, domain, contractTeSCAddress) => {
-    const gasEstimation = await contractRegistry.methods.remove(domain, contractTeSCAddress).estimateGas({ from: selectedAccount, gas: '2000000' });
+    const gasEstimation = await contractRegistry.methods.remove(domain, contractTeSCAddress).estimateGas({ from: selectedAccount, gas: '3000000' });
     console.log(`Gas estimation is ${gasEstimation}`)
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 }
 
 export const storeTesc = ({ account, claim }) => {
     const { contractAddress, domain, expiry } = claim;
-    let tescs = JSON.parse(localStorage.getItem(account.toLowerCase()));
+    let tescs = JSON.parse(localStorage.getItem(account));
     if (!tescs) {
         tescs = [];
     }
     tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, verified: false, createdAt: moment().unix() });
-    localStorage.setItem(account.toLowerCase(), JSON.stringify(tescs));
+    localStorage.setItem(account, JSON.stringify(tescs));
 };
 
 export const isValidContractAddress = (address, withReason = false) => {
     if (!withReason) {
         return (address.substring(0, 2) === '0x')
+            && Boolean(address.match(/^0x[0-9a-fA-F]*$/i))  // could've used web3Utils.isHex() or web3Utils.isAddress() instead
             && (address.length === 42)
-            && Boolean(address.match(/^0x[0-9a-fA-F]+$/i));
+            && web3Utils.checkAddressChecksum(address);
     }
 
     if (!address) {
         throw new Error('Contract address is empty');
     } else if (address.substring(0, 2) !== '0x') {
         throw new Error('Contract address must start with 0x');
+    } else if (!Boolean(address.match(/^0x[0-9a-fA-F]*$/i))) {
+        throw new Error('Contract address contains non-hexadecimal digits');
     } else if (address.length !== 42) {
         throw new Error('Contract address must be 42 characters long (prefix 0x and 40 hexadecimal digits)');
-    } else if (!Boolean(address.match(/^0x[0-9a-f]+$/i))) {
-        throw new Error('Contract address contains non-hexadecimal digits');
+    } else if (!web3Utils.checkAddressChecksum(address)) {
+        throw new Error('The capitalization checksum test for the contract address failed')
     }
     return true;
 };
 
-export const isSha3Hash = (str) => {
-    return str.length === 64 && Boolean(str.match(/^[0-9a-fA-F]+$/i))
+export const isSha3 = (str) => {
+    return str.length === 66 && web3Utils.isHex(str);
 }
 
 export const formatClaim = ({ contractAddress, domain, expiry, flags }) => {

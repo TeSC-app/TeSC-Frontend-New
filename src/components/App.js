@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Route } from 'react-router-dom';
+import { BrowserRouter, Route, useLocation } from 'react-router-dom';
 import { Container, Loader, Dimmer, Segment } from 'semantic-ui-react';
 import 'semantic-ui-css/semantic.min.css';
+
+import AppContext from '../appContext';
 import Sidebar from './Sidebar';
+import Navbar from './Navbar';
+import LandingPage from '../landingPage/LandingPage';
 import Dashboard from '../pages/Dashboard';
 import TeSCNew from '../pages/TescNew';
 import TeSCInspect from '../pages/TescInspect';
 import RegistryInspect from '../pages/RegistryInspect';
 import RegistryAdd from '../pages/RegistryAdd';
-import AppContext from '../appContext';
-import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
 import RegistryAnalytics from '../pages/RegistryAnalytics';
+
+
+import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
+// import LandingPage from '../landingPage/LandingPage';
 
 const App = ({ web3 }) => {
     const [collapsed, setCollapsed] = useState(false);
@@ -23,8 +29,15 @@ const App = ({ web3 }) => {
     const [registryContract, setRegistryContract] = useState(undefined);
     const [networkId, setNetworkId] = useState('')
 
+    const location = useLocation();
+
     const loadStorage = () => {
-        return JSON.parse(localStorage.getItem(web3.currentProvider.selectedAddress));
+        const walletAddress = web3.currentProvider.selectedAddress;
+        if (walletAddress === null) {
+            return [];
+        }
+        console.log('loadStorage of ', walletAddress);
+        return JSON.parse(localStorage.getItem(web3.utils.toChecksumAddress(walletAddress)));
     };
 
     useEffect(() => {
@@ -49,7 +62,8 @@ const App = ({ web3 }) => {
                 const networkId = await web3.eth.net.getId()
                 setNetworkId(networkId)
                 const [selectedAccount] = await web3.eth.getAccounts();
-                setAccount(selectedAccount ? selectedAccount.toLowerCase() : '');
+                // setAccount(selectedAccount ? selectedAccount.toLowerCase() : '');
+                setAccount(web3.utils.toChecksumAddress(selectedAccount));
                 window.ethereum.on('accountsChanged', function (accounts) {
                     setHasAccountChanged(true);
                     if (!accounts[0]) {
@@ -90,33 +104,39 @@ const App = ({ web3 }) => {
         setHasAccountChanged(newHasAccountChanged);
     };
 
+
     return (
-        <BrowserRouter>
-            <AppContext.Provider value={{
-                web3,
-                handleBlockScreen,
-                sysMsg,
-                showMessage,
-                handleDismissMessage,
-                account,
-                hasWalletAddress,
-                loadStorage,
-                hasAccountChanged,
-                handleAccountChanged,
-                registryContract,
-                networkId
-            }}
-            >
-                {/* <Navbar hasWalletAddress={hasWalletAddress} selectedAccount={account} handleCollapseSidebar={handleCollapseSidebar} /> */}
+        <AppContext.Provider value={{
+            web3,
+            handleBlockScreen,
+            sysMsg,
+            showMessage,
+            handleDismissMessage,
+            account,
+            hasWalletAddress,
+            loadStorage,
+            hasAccountChanged,
+            handleAccountChanged,
+            registryContract,
+            networkId
+        }}
+        >
+            {location.pathname === '/' ?
+                <Route path='/' exact component={LandingPage} />
+                :
                 <div className='layout'>
                     <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} handleCollapseSidebar={handleCollapseSidebar} />
-                    <Container className="page">
-                        <Segment className='main-segment' raised>
-                            <Route path="/" exact render={props => {
-                                return <Dashboard
-                                    {...props}
-                                />;
-                            }} />
+                    <div style={{width: '100vw', height: '100vh'}}>
+                        <Navbar hasWalletAddress={hasWalletAddress} selectedAccount={account} handleCollapseSidebar={handleCollapseSidebar} sidebarCollapsed={collapsed} />
+
+                        <div className="page">
+                            {/* <Segment className='main-segment' raised> */}
+
+                            <Route
+                                path="/dashboard"
+                                exact
+                                render={props => <Dashboard{...props} />}
+                            />
                             <Route path="/tesc/new" component={TeSCNew} exact />
                             <Route path="/tesc/inspect" component={TeSCInspect} exact />
                             <Route path="/registry/inspect" exact render={props => {
@@ -130,14 +150,15 @@ const App = ({ web3 }) => {
                                     contractRegistry={registryContract} />;
                             }} />
                             <Route path="/registry/analytics" component={RegistryAnalytics} exact />
-                        </Segment>
-                    </Container>
+                            {/* </Segment> */}
+                        </div>
+                    </div>
                 </div>
-                <Dimmer active={screenBlocked} style={{ zIndex: '9999' }}>
-                    <Loader indeterminate content='Waiting for transaction to finish...' />
-                </Dimmer>
-            </AppContext.Provider>
-        </BrowserRouter>
+            }
+            <Dimmer active={screenBlocked} style={{ zIndex: '9999' }}>
+                <Loader indeterminate content='Waiting for transaction to finish...' />
+            </Dimmer>
+        </AppContext.Provider>
     );
 };
 

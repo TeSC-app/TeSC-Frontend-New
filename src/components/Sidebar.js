@@ -1,12 +1,14 @@
 import React, { Fragment, useContext } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useHistory, useLocation, NavLink } from 'react-router-dom';
 import { ProSidebar, Menu, MenuItem, SubMenu, SidebarHeader, SidebarContent, SidebarFooter } from 'react-pro-sidebar';
 import { Icon, Label, Image, Button, Grid, Popup } from 'semantic-ui-react';
+
 
 import 'react-pro-sidebar/dist/css/styles.css';
 
 import { FaScroll, FaChartBar, FaAddressBook, FaWallet } from 'react-icons/fa';
 import AppContext from '../appContext';
+import sidebarBg from '../static/images/bg1.jpg';
 
 
 
@@ -49,58 +51,53 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
         let network = '';
         switch (networkId) {
             case 1:
-                network = 'Ethereum Main Net'
-                break
+                network = 'Ethereum Main Net';
+                break;
             case 2:
-                network = 'Deprecated Morden Test Net'
-                break
+                network = 'Deprecated Morden Test Net';
+                break;
             case 3:
-                network = 'Ropsten Test Net'
-                break
+                network = 'Ropsten Test Net';
+                break;
             case 4:
-                network = 'Rinkeby Test Net'
-                break
+                network = 'Rinkeby Test Net';
+                break;
             case 5:
-                network = 'Goerli Test Net'
-                break
+                network = 'Goerli Test Net';
+                break;
             case 42:
-                network = 'Kovan Test Net'
-                break
+                network = 'Kovan Test Net';
+                break;
             case 1608336296668:
-                network = 'TeSC Test Net'
-                break
+                network = 'TeSC Test Net';
+                break;
             default:
                 network = 'Unidentified Network'
         }
         if (window.ethereum) {
-            return network
+            return network;
         } else {
             return <Button className='connect-metamask' onClick={handleInstall}>Install MetaMask</Button>;
         }
-    }
+    };
 
     return (
         <ProSidebar
+            image={sidebarBg}
             collapsed={collapsed}
             toggled={toggled}
             breakPoint="md"
             onToggle={handleToggleSidebar}
             className='sidebar'
         >
-            <SidebarHeader onClick={handleCollapseSidebar}>
-                {/* <div onClick={handleCollapseSidebar} style={{ width: "60px" }}>
-                    <Icon name='bars' size='large' />
-                </div> */}
-                <div>
-                    {collapsed ?
-                        <Image src='../images/tesc-logo-notext.png' style={{ margin: '20px auto', padding: '0 5px' }} />
-                        : <Image src='../images/tesc-logo.png' size='small' style={{ margin: '20px auto' }} />
-                    }
-                </div>
+            <SidebarHeader>
+                <NavLink to='/'>
+                    <Image src={collapsed ? '../images/tesc-logo-notext.png' : '../images/tesc-logo.png'} size='small' style={{ margin: '20px auto', padding: `${collapsed ? '0 5px' : '0'}` }} />
+                </NavLink>
             </SidebarHeader>
             <SidebarContent>
                 <Menu iconShape="circle">
-                    <MenuItem onClick={(e) => handlePageNavigation(e, "/")} icon={<FaChartBar size='1.5em' />} >
+                    <MenuItem onClick={(e) => handlePageNavigation(e, "/dashboard")} icon={<FaChartBar size='1.5em' />} >
                         Dashboard
                     </MenuItem>
                     <SubMenu title="TLS-endorsed Contract" icon={<FaScroll size='1.5em' />} defaultOpen >

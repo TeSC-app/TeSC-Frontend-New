@@ -8,25 +8,27 @@ import LinkTescInspect from './InternalLink';
 import {
     estimateRegistryAddCost,
     estimateRegistryRemoveCost,
+    isSha3,
 } from '../utils/tesc';
 import TableCellVerification from './TableCellVerification';
 import PieChart from '../components/analytics/PieChart';
+import { COL, hasAllColumns } from './TableOverview';
 
 function TableEntry(props) {
     const {
         tesc,
+        preverified,
         onTescsChange,
-        isDashboard,
-        isExploringDomain,
         handleSearchInput,
-        handleSearchSubmit
+        handleSearchSubmit,
+        cols
     } = props;
     const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged, loadStorage } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
     const [costEstimatedRemove, setCostEstimatedRemove] = useState(0);
-    const [verified, setVerified] = useState(null);
+    const [verified, setVerified] = useState(typeof preverified === 'boolean' ? preverified : null);
     //registry buttons need this state to get rerendered
     const [isInRegistry, setIsInRegistry] = useState(false)
     const [loading, setLoading] = useState(true)
@@ -37,7 +39,7 @@ function TableEntry(props) {
     }, [loadStorage, account, contractAddress])
 
     useEffect(() => {
-        if (isExploringDomain) {
+        if (!cols.has(COL.TSC)) {
             const checkRegistry = async () => {
                 try {
                     if (contractAddress) {
@@ -53,12 +55,12 @@ function TableEntry(props) {
             }
             checkRegistry()
         }
-    }, [contractAddress, registryContract, isExploringDomain, updateLocalStorageWithIsInRegistry])
+    }, [contractAddress, registryContract, cols, updateLocalStorageWithIsInRegistry])
 
     useEffect(() => {
-        if (isDashboard) handleAccountChanged(false);
+        if (hasAllColumns(cols)) handleAccountChanged(false); //???
         isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false);
-    }, [isFavourite, setTescIsInFavourites, handleAccountChanged, isDashboard]);
+    }, [isFavourite, setTescIsInFavourites, handleAccountChanged, cols]);
 
     useEffect(() => {
         const runEffect = async () => {
@@ -73,7 +75,7 @@ function TableEntry(props) {
         runEffect();
     }, [web3, contractAddress, account, registryContract, domain, isInRegistry, own, hasAccountChanged, loading]);
 
-    const handleVerified = (verified) => {
+    const handleChangeVerified = (verified) => {
         setVerified(verified);
     };
 
@@ -185,7 +187,7 @@ function TableEntry(props) {
     };
 
     const renderDomain = () => {
-        if (domain.length === 66 && domain.split('.').length === 1) {
+        if (isSha3(domain)) {
             return (<Popup inverted content={domain} trigger={<i>{'< hashed >'}</i>} />);
         } else if (domain.length > 32) {
             return (<Popup inverted on="click" content={domain} trigger={<i className='cursor-pointer'>{`${domain.substring(0, 6)}...${domain.substring(domain.length - 4, domain.length)}`}</i>} />);
@@ -194,7 +196,7 @@ function TableEntry(props) {
         }
     };
 
-    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified, isDashboard: true, account, loadStorage };
+    const tableCellVerifProps = { domain, contractAddress, verified, handleChangeVerified, loadStorage };
 
     const renderFavourites = () => {
         return (
@@ -217,10 +219,10 @@ function TableEntry(props) {
     const renderDomainForRegistryInspect = () => {
         return (domain.length === 66 && domain.split('.').length === 1) ?
             <Popup content={`0x${domain}`} trigger={
-                !isExploringDomain ?
-                    <Button basic size='medium' onClick={exploreDomain}>{`${domain.substring(0, 4)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
-                    <i>{`${domain.substring(0, 4)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
-            : !isExploringDomain ? <Button basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain
+                cols.has(COL.TSC) ?
+                    <Button basic size='medium' onClick={exploreDomain}>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
+                    <i>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
+            : cols.has(COL.TSC) ? <Button basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain
     }
 
     const renderPieChartForVerified = () => {
@@ -233,7 +235,7 @@ function TableEntry(props) {
     }
 
     const renderOwnIcon = () => {
-        return (own && isDashboard ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null)
+        return (own && hasAllColumns(cols) ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null)
     }
 
     const renderContractAddress = () => {
@@ -243,30 +245,27 @@ function TableEntry(props) {
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
-                {isExploringDomain ?
+                {!cols.has(COL.TSC) ?
                     <span className='contract-address-column'>
                         {renderOwnIcon()}
                         {renderContractAddress()}
                     </span> : renderDomainForRegistryInspect()
                 }
             </Table.Cell>
-            <Table.Cell textAlign='center'>{isDashboard ? renderDomain() : isExploringDomain ? renderDomainForRegistryInspect() : renderTescContractCount()}</Table.Cell>
-            <Table.Cell textAlign='center'>{isExploringDomain ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
-            {isDashboard && <TableCellVerification {...tableCellVerifProps} />}
-            {isExploringDomain && !isDashboard && <Table.Cell textAlign="center">
-                {tesc.verified ? <Icon name="check" color="green" circular /> : <Icon name="delete" color="red" circular />}
-            </Table.Cell> }
-            {isDashboard &&
+            <Table.Cell textAlign='center'>{hasAllColumns(cols) ? renderDomain() : !cols.has(COL.TSC) && !hasAllColumns(cols) ? renderDomainForRegistryInspect() : renderTescContractCount()}</Table.Cell>
+            <Table.Cell textAlign='center'>{!cols.has(COL.TSC) ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
+            {!cols.has(COL.TSC) && <TableCellVerification {...tableCellVerifProps} />}
+            {cols.has(COL.REG) &&
                 <Table.Cell textAlign="center">
                     {renderRegistryButtons()}
                 </Table.Cell>
             }
-            { isExploringDomain &&
+            {!cols.has(COL.TSC) &&
                 <Table.Cell textAlign="center">
                     {renderFavourites()}
                 </Table.Cell>
             }
-            {isDashboard &&
+            {cols.has(COL.CA) &&
                 <Table.Cell>{renderCreatedAt()}</Table.Cell>
             }
 

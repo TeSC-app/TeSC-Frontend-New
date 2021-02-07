@@ -37,7 +37,7 @@ const FilePicker = ({ label, onPickFile, isDisabled = false, input }) => {
                 ref={fileInputRef}
                 type="file"
                 onChange={handlePickFile}
-                accept=".pem, .txt, .cer, .cert, .key"
+                accept=".pem, .txt, .cer, .cert, .key, .sol"
                 hidden
             />
             {!!fileName && <Label basic pointing='left'>{fileName}</Label>}

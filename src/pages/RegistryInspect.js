@@ -1,25 +1,26 @@
-import React, { useContext, useEffect, useState, useCallback } from 'react'
+import React, { useContext, useEffect, useState, useCallback } from 'react';
 import { Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import PageHeader from '../components/PageHeader';
-import TableOverview from '../components/TableOverview';
-import axios from 'axios'
-import moment from 'moment'
+import TableOverview, { COL } from '../components/TableOverview';
+import axios from 'axios';
+import moment from 'moment';
 
 function RegistryInspect() {
     const { loadStorage } = useContext(AppContext);
     const [entriesRaw, setEntriesRaw] = useState([])
     const [tescsWithOccurances, setTescsWithOccurances] = useState([])
     const [loading, setLoading] = useState(false)
+    const [isExploringDomain, setIsExploringDomain] = useState(false)
 
     //add createdAt and isFavourite prop to objects retrieved from the backend - compares with localStorage values
     const updateCreatedAtAndFavouritesForRegistryInspectEntries = useCallback((newTesc) => {
-        const tescsLocalStorage = loadStorage() ? loadStorage() : []
+        const tescsLocalStorage = loadStorage() ? loadStorage() : [];
         let isIdentical = false;
         for (const tesc of tescsLocalStorage) {
             if (tesc.contractAddress === newTesc.contractAddress) {
-                isIdentical = true
-                return { isFavourite: tesc.isFavourite, createdAt: tesc.createdAt }
+                isIdentical = true;
+                return { isFavourite: tesc.isFavourite, createdAt: tesc.createdAt };
             }
         }
         if (!isIdentical) return { isFavourite: false, createdAt: moment().unix() }
@@ -28,7 +29,7 @@ function RegistryInspect() {
     useEffect(() => {
         (async () => {
             try {
-                setLoading(true)
+                setLoading(true);
                 const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/registry`);
                 //for each object key that is an array get the values associated to that key and out of these values build an array of objects
                 const registryEntries = Object.keys(response.data['registryEntries'])
@@ -63,12 +64,16 @@ function RegistryInspect() {
                 } else {
                     setEntriesRaw([])
                 }
-                setLoading(false)
+                setLoading(false);
             } catch (error) {
                 console.log(error);
             }
         })();
-    }, [updateCreatedAtAndFavouritesForRegistryInspectEntries])
+    }, [updateCreatedAtAndFavouritesForRegistryInspectEntries]);
+
+    const handleIsExploringDomain = (isExploringDomain) => {
+        setIsExploringDomain(isExploringDomain)
+    }
 
     const renderTable = () => {
         if (entriesRaw && entriesRaw.length > 0 && !loading) {
@@ -77,9 +82,10 @@ function RegistryInspect() {
                     <TableOverview
                         rowData={entriesRaw}
                         tescsWithOccurances={tescsWithOccurances}
-                        isRegistryInspect={true}
                         handleLoading={handleLoading}
-                        isExploringDomainDefault={false} />
+                        handleIsExploringDomain={handleIsExploringDomain}
+                        cols={isExploringDomain ? new Set([COL.ADDRESS, COL.DOMAIN, COL.EXPIRY, COL.VERIF, COL.FAV]) : new Set([COL.DOMAIN, COL.TSC, COL.VERIF])}
+                    />
                 </div>
             )
         } else if (entriesRaw && entriesRaw.length === 0 && !loading) {
@@ -90,7 +96,7 @@ function RegistryInspect() {
                   We could not find a Smart Contract associated to this domain in the registry. Look for a different domain.
                 </div>
                 </div>
-            )
+            );
         } else if (loading) {
             return (
                 <Segment>
@@ -99,9 +105,9 @@ function RegistryInspect() {
                     </Dimmer>
                     <Image src='https://react.semantic-ui.com/images/wireframe/paragraph.png' />
                 </Segment>
-            )
+            );
         }
-    }
+    };
 
     const handleLoading = loading => {
         setLoading(loading)
@@ -113,7 +119,7 @@ function RegistryInspect() {
             {/* Smart Contracts associated with Domain */}
             {renderTable()}
         </div>
-    )
+    );
 }
 
-export default RegistryInspect
+export default RegistryInspect;
