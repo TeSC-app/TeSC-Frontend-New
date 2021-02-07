@@ -8,25 +8,29 @@ import LinkTescInspect from './InternalLink';
 import {
     estimateRegistryAddCost,
     estimateRegistryRemoveCost,
+    isSha3,
 } from '../utils/tesc';
 import TableCellVerification from './TableCellVerification';
 import PieChart from '../components/analytics/PieChart';
+import { COL, hasAllColumns } from './TableOverview';
 
 function TableEntry(props) {
     const {
         tesc,
+        preverified,
         onTescsChange,
         isDashboard,
         isExploringDomain,
         handleSearchInput,
-        handleSearchSubmit
+        handleSearchSubmit,
+        cols
     } = props;
     const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
     const [costEstimatedRemove, setCostEstimatedRemove] = useState(0);
-    const [verified, setVerified] = useState(null);
+    const [verified, setVerified] = useState(typeof preverified === 'boolean' ? preverified : null);
     //registry buttons need this state to get rerendered
     const [isInRegistry, setIsInRegistry] = useState(false)
     const [loading, setLoading] = useState(true)
@@ -48,9 +52,9 @@ function TableEntry(props) {
     }, [contractAddress, registryContract, isExploringDomain])
 
     useEffect(() => {
-        if (isDashboard) handleAccountChanged(false);
+        if (hasAllColumns(cols)) handleAccountChanged(false); //???
         isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false);
-    }, [isFavourite, setTescIsInFavourites, handleAccountChanged, isDashboard]);
+    }, [isFavourite, setTescIsInFavourites, handleAccountChanged, cols]);
 
     useEffect(() => {
         const runEffect = async () => {
@@ -65,7 +69,7 @@ function TableEntry(props) {
         runEffect();
     }, [web3, contractAddress, account, registryContract, domain, isInRegistry, own, hasAccountChanged, loading]);
 
-    const handleVerified = (verified) => {
+    const handleChangeVerified = (verified) => {
         setVerified(verified);
     };
 
@@ -175,7 +179,7 @@ function TableEntry(props) {
     };
 
     const renderDomain = () => {
-        if (domain.length === 64 && domain.split('.').length === 1) {
+        if (isSha3(domain)) {
             return (<Popup inverted content={domain} trigger={<i>{'< hashed >'}</i>} />);
         } else if (domain.length > 32) {
             return (<Popup inverted on="click" content={domain} trigger={<i className='cursor-pointer'>{`${domain.substring(0, 6)}...${domain.substring(domain.length - 4, domain.length)}`}</i>} />);
@@ -184,7 +188,7 @@ function TableEntry(props) {
         }
     };
 
-    const tableCellVerifProps = { domain, contractAddress, verified, handleVerified, isDashboard: true };
+    const tableCellVerifProps = { domain, contractAddress, verified, handleChangeVerified };
 
     const renderFavourites = () => {
         return (
@@ -234,20 +238,20 @@ function TableEntry(props) {
                     </span> : renderDomainForRegistryInspect()
                 }
             </Table.Cell>
-            <Table.Cell textAlign='center'>{isDashboard ? renderDomain() : isExploringDomain ? renderDomainForRegistryInspect() : renderTescContractCount()}</Table.Cell>
+            <Table.Cell textAlign='center'>{isDashboard && cols.has(COL.DOMAIN) ? renderDomain() : isExploringDomain ? renderDomainForRegistryInspect() : renderTescContractCount()}</Table.Cell>
             <Table.Cell textAlign='center'>{isExploringDomain ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
-            {isExploringDomain && <TableCellVerification {...tableCellVerifProps} />}
-            {isDashboard &&
+            {cols.has(COL.VERIF) && isExploringDomain && <TableCellVerification {...tableCellVerifProps} />}
+            {cols.has(COL.REG) &&
                 <Table.Cell textAlign="center">
                     {renderRegistryButtons()}
                 </Table.Cell>
             }
-            { isExploringDomain &&
+            {cols.has(COL.FAV) && isExploringDomain &&
                 <Table.Cell textAlign="center">
                     {renderFavourites()}
                 </Table.Cell>
             }
-            {isDashboard &&
+            {cols.has(COL.CA) &&
                 <Table.Cell>{renderCreatedAt()}</Table.Cell>
             }
 

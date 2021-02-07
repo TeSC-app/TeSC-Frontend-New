@@ -3,10 +3,22 @@ import { Table, Dropdown, Pagination, Icon } from 'semantic-ui-react';
 
 import AppContext from '../appContext';
 import TableEntry from './TableEntry';
-import moment from 'moment'
+import moment from 'moment';
 import SearchBox from './SearchBox';
 
-const ENTRY_PER_PAGE = 5
+const ENTRIES_PER_PAGE = 5;
+
+export const COL = {
+    DOMAIN: 'Domain',
+    VERIF: 'Verification',
+    REG: 'Registry',
+    FAV: 'Favorites',
+    CA: 'Created At',
+};
+
+export const hasAllColumns = (cols) => {
+    return cols.has(COL.VERIF) && cols.has(COL.REG) && cols.has(COL.FAV) && cols.has(COL.CA);
+};
 
 function TableOverview(props) {
     const {
@@ -15,20 +27,22 @@ function TableOverview(props) {
         isDashboard,
         isRegistryInspect,
         handleLoading,
-        isExploringDomainDefault
+        isExploringDomainDefault,
+        cols
     } = props;
 
     const { web3, account, loadStorage } = useContext(AppContext);
 
     const [tescs, setTescs] = useState(rowData);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(!isExploringDomainDefault ? Math.ceil(entriesWithOccurances.length / ENTRY_PER_PAGE) : tescs ? Math.ceil(tescs.length / ENTRY_PER_PAGE) : 0);
+    const [totalPages, setTotalPages] = useState(!isExploringDomainDefault ? Math.ceil(entriesWithOccurances.length / ENTRIES_PER_PAGE) : tescs ? Math.ceil(tescs.length / ENTRIES_PER_PAGE) : 0);
     const [filterOption, setFilterOption] = useState(0);
     const [displayedEntries, setDisplayedEntries] = useState([]);
-    const [isExploringDomain, setIsExploringDomain] = useState(isExploringDomainDefault)
+    const [isExploringDomain, setIsExploringDomain] = useState(isExploringDomainDefault);
 
     //for search input
-    const [domain, setDomain] = useState('')
+    const [domain, setDomain] = useState('');
+
 
     useEffect(() => {
         //console.log(tescs)
@@ -36,15 +50,14 @@ function TableOverview(props) {
         const init = async () => {
             try {
                 // setTescs(account ? (isDashboard? loadStorage() : []) : []);
-                setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRY_PER_PAGE) : []);
-                setTotalPages(!isExploringDomain ? Math.ceil(entriesWithOccurances.length / ENTRY_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRY_PER_PAGE : 0));
+                setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRIES_PER_PAGE) : []);
+                setTotalPages(!isExploringDomain ? Math.ceil(entriesWithOccurances.length / ENTRIES_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRIES_PER_PAGE : 0));
                 window.ethereum.on('accountsChanged', (accounts) => {
-                    setTescs(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
-                        JSON.parse(localStorage.getItem(accounts[0].toLowerCase())) :
-                        []);
-                    setDisplayedEntries(accounts[0] && localStorage.getItem(accounts[0].toLowerCase()) ?
-                        JSON.parse(localStorage.getItem(accounts[0].toLowerCase())).slice(0, ENTRY_PER_PAGE) :
-                        []);
+                    const account = web3.utils.toChecksumAddress(accounts[0]);
+                    setTescs(accounts[0] && localStorage.getItem(account) ?
+                        JSON.parse(localStorage.getItem(account)) : []);
+                    setDisplayedEntries(account && localStorage.getItem(account) ?
+                        JSON.parse(localStorage.getItem(account)).slice(0, ENTRIES_PER_PAGE) : []);
                 });
             }
             catch (error) {
@@ -52,14 +65,14 @@ function TableOverview(props) {
             }
         };
         init();
-    }, [tescs, account, web3.eth, web3.eth.Contract, web3.eth.net, entriesWithOccurances, isExploringDomain]);
+    }, [tescs, account, web3, entriesWithOccurances, isExploringDomain]);
 
 
     const handleChangeTescs = (tesc) => {
         const updatedTescs = [...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), tesc];
         if (isRegistryInspect) {
-            let tescsNew = loadStorage() ? loadStorage() : []
-            let found = false
+            let tescsNew = loadStorage() ? loadStorage() : [];
+            let found = false;
             for (const tescNew of tescsNew) {
                 if (tescNew.contractAddress === tesc.contractAddress) {
                     found = true;
@@ -68,51 +81,52 @@ function TableOverview(props) {
                     } else {
                         tescNew.isFavourite = true;
                     }
-                    localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+                    localStorage.setItem(account, JSON.stringify(tescsNew));
                     break;
                 }
             }
             if (!found) {
                 tescsNew.push({ contractAddress: tesc.contractAddress, domain: tesc.domain, expiry: tesc.expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') });
-                localStorage.setItem(web3.currentProvider.selectedAddress, JSON.stringify(tescsNew));
+                localStorage.setItem(account, JSON.stringify(tescsNew));
             }
-            setTescs(updatedTescs.sort((tescA, tescB) => tescB.expiry - tescA.expiry))
+
+            setTescs(updatedTescs.sort((tescA, tescB) => tescB.expiry - tescA.expiry));
         } else {
             setTescs(updatedTescs.sort((tescA, tescB) => tescA.createdAt.localeCompare(tescB.createdAt)));
-            localStorage.setItem(account.toLowerCase(), JSON.stringify(updatedTescs));
+            localStorage.setItem(account, JSON.stringify(updatedTescs));
         }
     };
 
     const showAllTescs = (tescs) => {
         setCurrentPage(1);
         setFilterOption(0);
-        setTotalPages(Math.ceil(tescs.length / ENTRY_PER_PAGE));
-        localStorage.getItem(account.toLowerCase()) ? setDisplayedEntries(tescs.slice(0, ENTRY_PER_PAGE)) : setTescs([]);
+        setTotalPages(Math.ceil(tescs.length / ENTRIES_PER_PAGE));
+        localStorage.getItem(account) ? setDisplayedEntries(tescs.slice(0, ENTRIES_PER_PAGE)) : setTescs([]);
     };
 
     const showFavouriteTescs = () => {
         setCurrentPage(1);
         setFilterOption(1);
-        setTotalPages(Math.ceil(tescs.filter(tesc => tesc.isFavourite === true).length / ENTRY_PER_PAGE));
-        localStorage.getItem(account.toLowerCase()) ? setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === true).slice(0, ENTRY_PER_PAGE)) : setTescs([]);
+        setTotalPages(Math.ceil(tescs.filter(tesc => tesc.isFavourite === true).length / ENTRIES_PER_PAGE));
+        localStorage.getItem(account) ? setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === true).slice(0, ENTRIES_PER_PAGE)) : setTescs([]);
     };
 
     const showOwnTescs = () => {
         setCurrentPage(1);
         setFilterOption(2);
-        setTotalPages(Math.ceil(tescs.filter(tesc => tesc.own === true).length / ENTRY_PER_PAGE));
-        localStorage.getItem(account.toLowerCase()) ? setDisplayedEntries(tescs.filter(tesc => tesc.own === true).slice(0, ENTRY_PER_PAGE)) : setTescs([]);
+        setTotalPages(Math.ceil(tescs.filter(tesc => tesc.own === true).length / ENTRIES_PER_PAGE));
+        localStorage.getItem(account) ? setDisplayedEntries(tescs.filter(tesc => tesc.own === true).slice(0, ENTRIES_PER_PAGE)) : setTescs([]);
     };
 
     const changePage = (event, { activePage }) => {
         //check if there are filters applied
         setCurrentPage(activePage);
-        if(isExploringDomain) {
-        setTotalPages(Math.ceil(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc).length / ENTRY_PER_PAGE));
-        setDisplayedEntries(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc)
-            .slice((activePage - 1) * ENTRY_PER_PAGE, activePage * ENTRY_PER_PAGE));
+        if (isExploringDomain) {
+            setTotalPages(Math.ceil(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc).length / ENTRIES_PER_PAGE));
+            setDisplayedEntries(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc)
+                .slice((activePage - 1) * ENTRIES_PER_PAGE, activePage * ENTRIES_PER_PAGE));
         } else {
-            setDisplayedEntries(entriesWithOccurances.slice((activePage - 1) * ENTRY_PER_PAGE, activePage * ENTRY_PER_PAGE))
+            setDisplayedEntries(entriesWithOccurances.slice((activePage - 1) * ENTRIES_PER_PAGE, activePage * ENTRIES_PER_PAGE));
         }
     };
 
@@ -120,13 +134,13 @@ function TableOverview(props) {
     const renderRows = () => {
         if (displayedEntries && isExploringDomain) {
             return displayedEntries.map((tesc) => (
-            <TableEntry key={tesc.contractAddress}
-                tesc={tesc}
-                onTescsChange={handleChangeTescs}
-                isDashboard={isDashboard}
-                isExploringDomain={isExploringDomain}
-            />
-        )) 
+                <TableEntry key={tesc.contractAddress}
+                    tesc={tesc}
+                    onTescsChange={handleChangeTescs}
+                    isDashboard={isDashboard}
+                    isExploringDomain={isExploringDomain}
+                />
+            ));
         } else if (displayedEntries && !isExploringDomain) {
             return entriesWithOccurances.map((entry) => (
                 <TableEntry key={entry.domain}
@@ -135,25 +149,25 @@ function TableOverview(props) {
                     isDashboard={isDashboard}
                     handleSearchInput={handleSearchInput}
                     handleSearchSubmit={handleSearchSubmit}
-                />))
+                />));
         }
     };
 
     const handleSearchInput = domain => {
         setDomain(domain);
-    }
+    };
 
     const handleSearchSubmit = (domain) => {
-        handleLoading(true)
+        handleLoading(true);
         if (domain === '') {
-            setIsExploringDomain(false)
-            setTescs(entriesWithOccurances)
+            setIsExploringDomain(false);
+            setTescs(entriesWithOccurances);
         } else {
-            setIsExploringDomain(true)
+            setIsExploringDomain(true);
             setTescs(loadStorage().filter(entry => entry.domain === domain).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
         }
-        handleLoading(false)
-    }
+        handleLoading(false);
+    };
 
     const renderSearchBox = () => {
         return isRegistryInspect ? (<SearchBox
@@ -164,8 +178,9 @@ function TableOverview(props) {
             label='Domain'
             icon='search'
             validInput={true}
-            isRegistryInspect={isRegistryInspect} />) : null
-    }
+            // isRegistryInspect={isRegistryInspect}
+        />) : null;
+    };
 
     return (
         <>
@@ -175,29 +190,29 @@ function TableOverview(props) {
                     <Table.Row>
                         {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Address</Table.HeaderCell>}
                         <Table.HeaderCell>Domain</Table.HeaderCell>
-                        {(isDashboard || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Expiry</Table.HeaderCell>}
+                        {(cols.has(COL.VERIF) || (isRegistryInspect && isExploringDomain)) && <Table.HeaderCell>Expiry</Table.HeaderCell>}
                         {(isRegistryInspect && !isExploringDomain) && <Table.HeaderCell textAlign="center">Total Smart Contracts</Table.HeaderCell>}
                         <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
-                        {isDashboard &&
+                        {cols.has(COL.REG) &&
                             <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
                         }
-                        {(isDashboard || (isRegistryInspect && isExploringDomain)) &&
-                        <Table.HeaderCell textAlign="center">Favourites
+                        {(cols.has(COL.VERIF) || (isRegistryInspect && isExploringDomain)) &&
+                            <Table.HeaderCell textAlign="center">Favourites
                             <Dropdown
-                                icon='filter'
-                                floating
-                                button
-                                className='icon dropdown-favourites'>
-                                <Dropdown.Menu>
-                                    <Dropdown.Item icon='redo' text={isRegistryInspect && domain.length > 0 ? 'All (by domain)' : 'All'} onClick={() => showAllTescs(tescs)} />
-                                    {isRegistryInspect && <Dropdown.Item icon='redo' text='All (reset)' onClick={() => setIsExploringDomain(false)} />}
-                                    <Dropdown.Item icon='heart' text='By favourite' onClick={showFavouriteTescs} />
-                                    <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
-                                </Dropdown.Menu>
-                            </Dropdown>
-                        </Table.HeaderCell>
+                                    icon='filter'
+                                    floating
+                                    button
+                                    className='icon dropdown-favourites'>
+                                    <Dropdown.Menu>
+                                        <Dropdown.Item icon='redo' text={isRegistryInspect && domain.length > 0 ? 'All (by domain)' : 'All'} onClick={() => showAllTescs(tescs)} />
+                                        {isRegistryInspect && <Dropdown.Item icon='redo' text='All (reset)' onClick={() => setIsExploringDomain(false)} />}
+                                        <Dropdown.Item icon='heart' text='By favourite' onClick={showFavouriteTescs} />
+                                        <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </Table.HeaderCell>
                         }
-                        {isDashboard &&
+                        {cols.has(COL.CA) &&
                             <Table.HeaderCell>Created At</Table.HeaderCell>
                         }
                     </Table.Row>
