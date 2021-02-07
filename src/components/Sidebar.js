@@ -11,7 +11,7 @@ import AppContext from '../appContext';
 
 
 const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollapseSidebar }) => {
-    const { hasWalletAddress, account } = useContext(AppContext);
+    const { hasWalletAddress, account, networkId } = useContext(AppContext);
 
     let history = useHistory();
     let location = useLocation();
@@ -44,6 +44,40 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
         }
     };
 
+    const renderNetworkLabel = () => {
+        let network = '';
+        switch (networkId) {
+            case 1:
+                network = 'Ethereum Main Net'
+                break
+            case 2:
+                network = 'Deprecated Morden Test Net'
+                break
+            case 3:
+                network = 'Ropsten Test Net'
+                break
+            case 4:
+                network = 'Rinkeby Test Net'
+                break
+            case 5:
+                network = 'Goerli Test Net'
+                break
+            case 42:
+                network = 'Kovan Test Net'
+                break
+            case 1608336296668:
+                network = 'TeSC Test Net'
+                break
+            default:
+                network = 'TeSC Test Net'
+        }
+        if (window.ethereum) {
+            return network
+        } else {
+            return <Button className='connect-metamask' onClick={handleInstall}>Install MetaMask</Button>;
+        }
+    }
+
     return (
         <ProSidebar
             collapsed={collapsed}
@@ -58,7 +92,7 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
                 </div> */}
                 <div>
                     {collapsed ?
-                        <Image src='../images/tesc-logo-notext.png'  style={{ margin: '20px auto', padding: '0 5px' }} />
+                        <Image src='../images/tesc-logo-notext.png' style={{ margin: '20px auto', padding: '0 5px' }} />
                         : <Image src='../images/tesc-logo.png' size='small' style={{ margin: '20px auto' }} />
                     }
                 </div>
@@ -84,11 +118,14 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
                         <MenuItem onClick={(e) => handlePageNavigation(e, '/registry/add')} >
                             Add entry
                         </MenuItem>
+                        <MenuItem onClick={(e) => handlePageNavigation(e, '/registry/analytics')} >
+                            Analytics
+                        </MenuItem>
                     </SubMenu>
                 </Menu>
             </SidebarContent>
             <SidebarFooter style={{ textAlign: 'center' }} >
-                <div className="sidebar-btn-wrapper" style={{ padding: '20px 24px' }}>
+                <div className="sidebar-btn-wrapper" style={{ padding: '20px' }}>
                     <Popup content={collapsed ? renderMetaMaskLabel() : 'Wallet address'} trigger={
                         <div className="sidebar-btn" rel="noopener noreferrer" style={{ padding: `${collapsed ? '0' : '20px'}`, minWidth: '2.8em', minHeight: '2.8em' }}>
                             <Image src='../images/ether-wallet.png' size='mini'
@@ -98,6 +135,22 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
                             {!collapsed && (
                                 <span style={{ wordBreak: 'break-all', color: '#dadada !important', fontSize: '0.8em', lineHeight: '1.5em', }}>
                                     <b>{renderMetaMaskLabel()}</b>
+                                </span>
+
+                            )}
+                        </div>
+                    } />
+                </div>
+                <div className="sidebar-btn-wrapper" style={{ padding: '20px', paddingTop: '0' }}>
+                    <Popup content={collapsed ? renderNetworkLabel() : 'Network'} trigger={
+                        <div className="sidebar-btn" rel="noopener noreferrer" style={{ padding: `${collapsed ? '0' : '20px'}`, minWidth: '2.8em', minHeight: '2.8em', width: '230px', justifyContent: 'left' }}>
+                            <Image src='../images/ethereum-logo.png' size='mini'
+                                style={{ marginRight: `${collapsed ? '0' : '5px'}`, display: `${collapsed ? 'inline-block' : 'block'}` }}
+                            />
+                            {/* <FaWallet /> */}
+                            {!collapsed && (
+                                <span style={{ wordBreak: 'break-all', color: '#dadada !important', fontSize: '0.8em', lineHeight: '1.5em', }}>
+                                    <b>{renderNetworkLabel()}</b>
                                 </span>
 
                             )}

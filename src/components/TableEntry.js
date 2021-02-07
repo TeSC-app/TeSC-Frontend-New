@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import moment from 'moment';
-import { Table, Icon, Popup, Button } from 'semantic-ui-react';
+import { Table, Icon, Popup, Button, Image } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
 import AppContext from '../appContext';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
@@ -10,12 +10,16 @@ import {
     estimateRegistryRemoveCost,
 } from '../utils/tesc';
 import TableCellVerification from './TableCellVerification';
+import PieChart from '../components/analytics/PieChart';
 
 function TableEntry(props) {
     const {
         tesc,
         onTescsChange,
         isDashboard,
+        isExploringDomain,
+        handleSearchInput,
+        handleSearchSubmit
     } = props;
     const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
@@ -28,18 +32,20 @@ function TableEntry(props) {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const checkRegistry = async () => {
-            try {
-            const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call()
-            setIsInRegistry(isInRegistry)
-            setLoading(false)
-            } catch (error) {
-                console.log(error)
-                setLoading(false)
+        if (isExploringDomain) {
+            const checkRegistry = async () => {
+                try {
+                    const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call()
+                    setIsInRegistry(isInRegistry)
+                    setLoading(false)
+                } catch (error) {
+                    console.log(error)
+                    setLoading(false)
+                }
             }
+            checkRegistry()
         }
-        checkRegistry()
-    }, [contractAddress, registryContract])
+    }, [contractAddress, registryContract, isExploringDomain])
 
     useEffect(() => {
         if (isDashboard) handleAccountChanged(false);
@@ -155,7 +161,7 @@ function TableEntry(props) {
                         trigger={<Button basic color='red' onClick={removeFromRegistry} content='Remove' icon='delete' className='button-remove' />} />
                     :
                     <Popup inverted content={`Add entry to the TeSC registry. This would cost around ${costEstimatedAdd.toFixed(5)} ETH.`}
-                        trigger={<Button basic disabled={!verified} color='blue' onClick={addToRegistry} content='Add' icon='plus' className='button-add' />}
+                        trigger={<Button basic disabled={!verified && !(domain.length === 64 && domain.split('.').length === 1)} color='blue' onClick={addToRegistry} content='Add' icon='plus' className='button-add' />}
                     />
             );
         } else {
@@ -193,29 +199,54 @@ function TableEntry(props) {
         return typeof createdAt === 'undefined' ? moment().format('DD/MM/YYYY HH:mm') : createdAt
     }
 
+    const exploreDomain = () => {
+        handleSearchInput(domain)
+        handleSearchSubmit(domain)
+    }
+
+    const renderDomainForRegistryInspect = () => {
+        return (domain.length === 64 && domain.split('.').length === 1) ?
+            <Popup content={`0x${domain}`} trigger={
+                !isExploringDomain ?
+                    <Button basic size='medium' onClick={exploreDomain}>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
+                    <i>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
+            : !isExploringDomain ? <Button basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain
+    }
+
+    const renderPieChartForVerified = () => {
+        const data = [{id: 'Valid', value: tesc.verifiedCount}, {id: 'Invalid', value: tesc.contractCount - tesc.verifiedCount}]
+        return <PieChart loading={false} data={data} isRegistryInspect={true} />
+    }
+
+    const renderTescContractCount = () => {
+        return (<div className='smart-contracts'>{tesc.contractAddresses.map((contractAddress) => (<Popup key={contractAddress} content={contractAddress} trigger={<Image src='../images/smart-contract-icon.png' className='smart-contracts__icon' alt='Smart Contract' size='mini' />} />))}</div>)
+    }
+
     return (
         <Table.Row key={contractAddress}>
             <Table.Cell>
-                <span className='contract-address-column'>
-                    {
-                        own && isDashboard ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
-                    }
-                    <LinkTescInspect contractAddress={contractAddress} />
-                </span>
+                {isExploringDomain ?
+                    <span className='contract-address-column'>
+                        {
+                            own && isDashboard ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
+                        }
+                        <LinkTescInspect contractAddress={contractAddress} />
+                    </span> : renderDomainForRegistryInspect()
+                }
             </Table.Cell>
-            <Table.Cell>{isDashboard ? renderDomain() : domain}</Table.Cell>
-            <Table.Cell>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
-            <TableCellVerification {...tableCellVerifProps} />
+            <Table.Cell textAlign='center'>{isDashboard ? renderDomain() : isExploringDomain ? renderDomainForRegistryInspect() : renderTescContractCount()}</Table.Cell>
+            <Table.Cell textAlign='center'>{isExploringDomain ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
+            {isExploringDomain && <TableCellVerification {...tableCellVerifProps} />}
             {isDashboard &&
                 <Table.Cell textAlign="center">
                     {renderRegistryButtons()}
                 </Table.Cell>
             }
-
-            <Table.Cell textAlign="center">
-                {renderFavourites()}
-            </Table.Cell>
-            
+            { isExploringDomain &&
+                <Table.Cell textAlign="center">
+                    {renderFavourites()}
+                </Table.Cell>
+            }
             {isDashboard &&
                 <Table.Cell>{renderCreatedAt()}</Table.Cell>
             }
