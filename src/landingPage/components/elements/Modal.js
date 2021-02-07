@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 
@@ -11,7 +11,7 @@ const propTypes = {
   closeHidden: PropTypes.bool,
   video: PropTypes.string,
   videoTag: PropTypes.oneOf(['iframe', 'video'])
-}
+};
 
 const defaultProps = {
   children: null,
@@ -19,7 +19,7 @@ const defaultProps = {
   closeHidden: false,
   video: '',
   videoTag: 'iframe'
-}
+};
 
 const Modal = ({
   className,
@@ -29,8 +29,11 @@ const Modal = ({
   closeHidden,
   video,
   videoTag,
+  onSlideChange,
   ...props
 }) => {
+
+  const slideFrameRef = useRef(null) 
 
   useEffect(() => {
     document.addEventListener('keydown', keyPress);
@@ -38,28 +41,28 @@ const Modal = ({
     return () => {
       document.removeEventListener('keydown', keyPress);
       document.removeEventListener('click', stopProgagation);
-    };    
+    };
   });
 
   useEffect(() => {
     handleBodyClass();
-  }, [props.show]); 
-  
+  }, [props.show]);
+
   const handleBodyClass = () => {
     if (document.querySelectorAll('.modal.is-active').length) {
       document.body.classList.add('modal-is-active');
     } else {
       document.body.classList.remove('modal-is-active');
     }
-  }
+  };
 
   const keyPress = (e) => {
     e.keyCode === 27 && handleClose(e);
-  }
+  };
 
   const stopProgagation = (e) => {
     e.stopPropagation();
-  }
+  };
 
   const classes = classNames(
     'modal',
@@ -68,24 +71,36 @@ const Modal = ({
     className
   );
 
+  const getSlideNumber = () => {
+    if (slideFrameRef.current && slideFrameRef.current.contentWindow.location.href.includes('#/')) {
+        return slideFrameRef.current.contentWindow.location.href.split('#/')[1]
+    }
+    return '0'
+  }
+
   return (
     <>
       {show &&
         <div
           {...props}
           className={classes}
-          onClick={handleClose}
+          onClick={e => handleClose(e, getSlideNumber())}
         >
           <div className="modal-inner" onClick={stopProgagation}>
             {video ?
               <div className="responsive-video">
                 {videoTag === 'iframe' ?
-                  <iframe
-                    title="video"
-                    src={video}
-                    frameBorder="0"
-                    allowFullScreen
-                  ></iframe> :
+                  <>
+                    <iframe
+                      title="media"
+                      src={video}
+                      frameBorder="0"
+                      allowFullScreen
+                      ref={slideFrameRef}
+                    />
+                    {console.log(">>>>>>>>>>>>>>>>>>>>>", video)}
+                  </>
+                  :
                   <video
                     v-else
                     controls
@@ -98,7 +113,7 @@ const Modal = ({
                   <button
                     className="modal-close"
                     aria-label="close"
-                    onClick={handleClose}
+                    onClick={e => handleClose(e, getSlideNumber())}
                   ></button>
                 }
                 <div className="modal-content">
@@ -110,8 +125,8 @@ const Modal = ({
         </div>
       }
     </>
-  )
-}
+  );
+};
 
 Modal.propTypes = propTypes;
 Modal.defaultProps = defaultProps;

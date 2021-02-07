@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Icon } from 'semantic-ui-react';
+import { Icon, Button as Btn } from 'semantic-ui-react';
 
 
 import classNames from 'classnames';
@@ -32,15 +32,18 @@ const Hero = ({
 }) => {
 
   const [videoModalActive, setVideomodalactive] = useState(false);
+  const [curSlide, setCurSlide] = useState(0);
+  const slideFrameRef = useRef(null) 
 
   const openModal = (e) => {
     e.preventDefault();
     setVideomodalactive(true);
   };
 
-  const closeModal = (e) => {
+  const closeModal = (e, slideNumber) => {
     e.preventDefault();
     setVideomodalactive(false);
+    setCurSlide(slideNumber)
   };
 
   const outerClasses = classNames(
@@ -60,11 +63,12 @@ const Hero = ({
 
   const slideFrame = (<iframe
     title="media"
-    src={`slides-TA.html#/`}
+    src={`slides-TA.html#/${curSlide}`}
     frameBorder="0"
     allowFullScreen
     width={896}
     height={504}
+    ref={slideFrameRef} 
   />);
 
   return (
@@ -99,6 +103,7 @@ const Hero = ({
           <div className="hero-figure reveal-from-bottom illustration-element-01" data-reveal-value="20px" data-reveal-delay="800">
             {slideFrame}
             <div
+              // icon={{name: 'expand', size: 'large'}}
               aria-controls="video-modal"
               onClick={openModal}
               style={{
@@ -119,8 +124,9 @@ const Hero = ({
             id="video-modal"
             show={videoModalActive}
             handleClose={closeModal}
-            video="slides-TA.html"
+            video={`slides-TA.html#/${slideFrameRef.current ? slideFrameRef.current.contentWindow.location.href.split('#/')[1] : '0'}`}
             videoTag="iframe"
+            onSlideChange={setCurSlide}
           />
         </div>
       </div>
