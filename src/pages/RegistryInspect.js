@@ -39,19 +39,20 @@ function RegistryInspect(props) {
                     //console.log(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })))
                     const entriesRaw = registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry)
                     const entriesWithOccurances = entriesRaw.map(entry => ({
-                        domain: (entry.domain.length === 64 && entry.domain.split('.').length === 1)
-                            ? 'hashed domain' : entry.domain, contractCount: entriesRaw.reduce((counter, entry_) =>
+                        domain: entry.domain, contractAddresses: entriesRaw.filter((entry_) => entry_.domain === entry.domain).map(({contractAddress}) => contractAddress), contractCount: entriesRaw.reduce((counter, entry_) =>
                                 entry_.domain === entry.domain ? counter += 1 : counter, 0),
                         verifiedCount: entriesRaw.reduce((counter, entry_) =>
-                            entry_.verified === entry.verified && entry_.domain === entry.domain ? counter += 1 : counter, 0)
+                            entry_.verified === true && entry_.domain === entry.domain ? counter += 1 : counter, 0)
                     }))
                     let distinctEntriesWithOccurances = []
-                    const map = new Map();
+                    const map = new Map(); 
+                    //array of contract addresses used for the smart contract images in the exploration page
                     for (const entry of entriesWithOccurances) {
                         if (!map.has(entry.domain)) {
                             map.set(entry.domain, true);    // set any value to Map
                             distinctEntriesWithOccurances.push({
                                 domain: entry.domain,
+                                contractAddresses: entry.contractAddresses,
                                 contractCount: entry.contractCount,
                                 verifiedCount: entry.verifiedCount
                             });
@@ -73,7 +74,12 @@ function RegistryInspect(props) {
         if (entriesRaw && entriesRaw.length > 0 && !loading) {
             return (
                 <div style={{ justifyContent: 'center' }}>
-                    <TableOverview rowData={entriesRaw} entriesWithOccurances={entriesWithOccurances} isRegistryInspect={true} handleLoading={handleLoading} />
+                    <TableOverview
+                        rowData={entriesRaw}
+                        entriesWithOccurances={entriesWithOccurances}
+                        isRegistryInspect={true}
+                        handleLoading={handleLoading}
+                        isExploringDomainDefault={false} />
                 </div>
             )
         } else if (entriesRaw && entriesRaw.length === 0 && !loading) {

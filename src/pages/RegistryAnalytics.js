@@ -42,7 +42,7 @@ function RegistryAnalytics() {
     const mode = (entries) => {
         const entriesWithOccurances = entries.map(entry => ({
             domain: (entry.domain.length === 64 && entry.domain.split('.').length === 1)
-                ? 'hashed domain' : entry.domain, count: entries.reduce((counter, entry_) =>
+                ? `0x${entry.domain.substring(0,2)}...${entry.domain.substring(entry.domain.length-2, entry.domain.length)}` : entry.domain, count: entries.reduce((counter, entry_) =>
                     entry_.domain === entry.domain ? counter += 1 : counter, 0)
         }))
         const distinctEntriesWithOccurances = [];

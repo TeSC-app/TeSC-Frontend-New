@@ -126,7 +126,7 @@ const App = ({ web3 }) => {
                             <Route path="/registry/add" exact render={props => {
                                 return <RegistryAdd {...props}
                                     handleBlockScreen={handleBlockScreen}
-                                    screenBlocked={screenBlocked}
+                                    selectedAccount={account}
                                     contractRegistry={registryContract} />;
                             }} />
                             <Route path="/registry/analytics" component={RegistryAnalytics} exact />

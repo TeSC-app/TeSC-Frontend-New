@@ -26,6 +26,7 @@ const Dashboard = () => {
                 <TableOverview
                     isDashboard={true}
                     rowData={rowData}
+                    isExploringDomainDefault={true}
                 />
             }
         </React.Fragment>

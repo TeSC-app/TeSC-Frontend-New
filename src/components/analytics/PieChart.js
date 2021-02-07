@@ -5,7 +5,7 @@ import PageHeader from '../../components/PageHeader'
 
 function PieChart(props) {
 
-    const { data, loading, isFlags } = props
+    const { data, loading, isFlags, isRegistryInspect } = props
 
     const renderPie = () => {
         return loading ? <Segment>
@@ -15,11 +15,11 @@ function PieChart(props) {
             <Image src='https://react.semantic-ui.com/images/wireframe/paragraph.png' />
         </Segment> : <ResponsivePie
                 data={data}
-                margin={{ top: 40, right: 80, bottom: 80, left: 0 }}
+                margin={{ top: isRegistryInspect ? 0 : 40, right: 80, bottom: isRegistryInspect ? 20 : 80, left: 0 }}
                 innerRadius={0.5}
                 padAngle={0.7}
                 cornerRadius={3}
-                colors={{ scheme: 'nivo' }}
+                colors={isFlags ? {scheme: 'nivo'} : ['#32CD32', '#DC143C']}
                 borderWidth={1}
                 borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
                 radialLabelsSkipAngle={10}
@@ -30,10 +30,10 @@ function PieChart(props) {
                 legends={[
                     {
                         anchor: 'bottom',
-                        direction: isFlags ? 'column' : 'row',
+                        direction: isFlags || isRegistryInspect ? 'column' : 'row',
                         justify: false,
-                        translateX: isFlags ? 180 : 0,
-                        translateY: isFlags ? 0 : 56,
+                        translateX: isFlags || isRegistryInspect ? 180 : 0,
+                        translateY: isFlags || isRegistryInspect ? 0 : 56,
                         itemsSpacing: 0,
                         itemWidth: 100,
                         itemHeight: isFlags ? 30 : 18,
@@ -56,11 +56,13 @@ function PieChart(props) {
     }
 
     return (
-        <div style={{ height: 300 }}>
+        <div style={{ height: isRegistryInspect ? 100 : 300 }}>
+            { !isRegistryInspect ? 
             <PageHeader title={isFlags ? 'Popular Flags' : 'Valid To Invalid Ratio'}
                 isRegistryAnalytics={true}
                 isPieValidInvalid={isFlags ? false : true}
-                isPieFlags={isFlags ? true : false} />
+                isPieFlags={isFlags ? true : false} /> : null
+            }
             {renderPie()}
         </div>
     )
