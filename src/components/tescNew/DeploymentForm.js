@@ -1,5 +1,8 @@
 import React, { Fragment, useState, useContext, useCallback, useEffect, useRef } from 'react';
-import { Input, Form, Label, Button as BtnSuir, Segment, Popup, Radio, Header, TextArea, Divider, Icon, Grid } from 'semantic-ui-react';
+import { Input, Form, Label, Button as BtnSuir, Segment, Popup, Radio, Header, TextArea, Divider, Icon, Grid, Dropdown } from 'semantic-ui-react';
+import Highlight from 'react-highlight.js';
+import hljs from 'highlight.js';
+import hljsSolidity from 'highlightjs-solidity';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { formatDate, parseDate } from 'react-day-picker/moment';
@@ -34,9 +37,17 @@ import {
     formatClaim,
     FLAGS,
 } from '../../utils/tesc';
+import {
+    getTooltipForType,
+    isEmptyValidInputForType,
+    validateConstructorParameterInput
+} from '../../utils/constructorInput';
+
 import { extractAxiosErrorMessage } from '../../utils/formatError';
 import axios from 'axios';
 
+hljsSolidity(hljs);
+hljs.initHighlightingOnLoad();
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -74,9 +85,19 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const [flags, setFlags] = useState(initInputs ? initInputs.flags : new BitSet('0x00'));
     const [currentDomain, setCurrentDomain] = useState(initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : domain);
     const [fingerprint, setFingerprint] = useState(defaultFingerprint);
+    const [deploymentJson, setDeploymentJson] = useState(null);
+    const [constructorParameters, setConstructorParameters] = useState(null);
+    const [constructorParameterValues, setConstructorParameterValues] = useState([]);
+    const [allParamsCorrectlyEntered, setAllParamsCorrectlyEntered] = useState(null);
+    const [contractsInFile, setContractsInFile] = useState(null);
+    const [selectedContract, setSelectedContract] = useState(null);
 
     const [privateKeyPEM, setPrivateKeyPEM] = useState('');
     const [privateKeyFileName, setPrivateKeyFileName] = useState('');
+
+    const [solidityCode, setSolidityCode] = useState(null);
+    const [endorsedSolidityCode, setEndorsedSolidityCode] = useState(null);
+    const [solidityFileName, setSolidityFileName] = useState(null);
 
     const [costEstimated, setCostEstimated] = useState(null);
     const [costPaid, setCostPaid] = useState(null);
@@ -86,6 +107,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
 
     const [sigInputType, setSigInputType] = useState(null);
+    const [deploymentType, setDeploymentType] = useState(null);
 
     const prevExpiry = useRef(expiry);
     const prevFlags = useRef(flags.toString());
@@ -128,10 +150,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         
     }
 
-    const makeDeploymentTx = useCallback(async (currentDomain) => {
-        return await new web3.eth.Contract(TeSC.abi).deploy({
-            data: TeSC.bytecode,
-            arguments: [currentDomain, prevExpiry.current, flagsToBytes24Hex(prevFlags.current), padToBytesX(prevFingerprint.current, 32), prevSignature.current]
+    const makeDeploymentTx = useCallback(async (currentDomain, json, constructorParameterValues) => {
+        return await new web3.eth.Contract(json.abi).deploy({
+            data: json.bytecode,
+            arguments: [currentDomain, prevExpiry.current, flagsToBytes24Hex(prevFlags.current), padToBytesX(prevFingerprint.current, 32), prevSignature.current].concat(constructorParameterValues)
         });
     }, [web3.eth.Contract]);
 
@@ -161,6 +183,50 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         setPrivateKeyFileName(filename);
         setPrivateKeyPEM(content);
     };
+
+    const handlePickSolidityFile = async (filename, content) => {
+        setSelectedContract(null);
+        try{
+            await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/compile`, {
+                params: {
+                    solidityCode: content
+                }
+            });
+        }catch(error){
+            showMessage(buildNegativeMsg({
+                header: 'Unable to compile your file',
+                msg: "Please make sure to upload a valid file"
+            }));
+            return;
+        }
+        
+        setSolidityFileName(filename);
+        setSolidityCode(content);
+
+        const contractsRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/contracts`, {
+            params: {
+                solidityCode: content
+            }
+        });
+        const contractsInFile = contractsRes.data.contractNames;
+        setContractsInFile(contractsInFile);
+
+        if(contractsInFile.length === 1){
+            handleContractSelected(contractsInFile[0], content);
+        } 
+    };
+
+    const buildContractDropdownOptions = (contractNames) => {
+        const options = [];
+        contractNames.forEach(contractName => {
+            options.push({
+                key: contractName,
+                text: contractName,
+                value: contractName,
+            });
+        });
+        return options;
+    }
 
     const handleGetFingerprint = (fp) => {
         setFingerprint(fp);
@@ -202,10 +268,17 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
                 if (signature) {
                     console.log(5)
-                    const tx = !initInputs ? await makeDeploymentTx(currentDomain) : await makeUpdateTx(currentDomain);
+                    const tx = !initInputs ? await makeDeploymentTx(currentDomain, deploymentJson, constructorParameterValues) : await makeUpdateTx(currentDomain);
                     if (!initInputs || contractAddress) {
-                        const estCost = await estimateDeploymentCost(web3, tx);
-                        setCostEstimated(estCost);
+                        try{
+                            const estCost = await estimateDeploymentCost(web3, tx);
+                            setCostEstimated(estCost);
+                        }catch(error){
+                            showMessage(buildNegativeMsg({
+                                header: 'Unable to estimate transaction cost',
+                                msg: "You probably entered invalid constructor parameters in the first step"
+                            }));
+                        }           
                     }
                 }
 
@@ -242,7 +315,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         if (currentDomain && expiry && signature) {
             try {
                 await validateEndorsement();
-                const tx = !initInputs ? await makeDeploymentTx(currentDomain) : await makeUpdateTx(currentDomain);
+                const tx = !initInputs ? await makeDeploymentTx(currentDomain, deploymentJson, constructorParameterValues) : await makeUpdateTx(currentDomain);
                 console.log("tx", tx)
                 await tx.send({ from: account, gas: '2000000' })
                     .on('receipt', async (txReceipt) => {
@@ -303,6 +376,42 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         );
     };
 
+    const renderConstructorParameterInputFields = () => {
+        return constructorParameters.map((constructorParameter, i) => 
+            <Form.Group inline>
+                <label>
+                    {constructorParameter.type} {constructorParameter.name} 
+                    {!isEmptyValidInputForType(constructorParameter.type) && <span style={{ color: 'red' }}>*</span>} 
+                    <Popup
+                        inverted
+                        content={getTooltipForType(constructorParameter.type)}
+                        trigger={<Icon name='question circle' />}
+                    />
+                </label>
+                <Input
+                    // TODO how does interaction between value and onChange work?
+                    //value={constructorParameterValues[i].toString()}
+                    onChange={e => handleTextChange(e.target.value, i, constructorParameter.type)}
+                />
+            </Form.Group>
+        )
+    }
+
+    const handleTextChange = (value, index, type) => {
+        const updatedValues = constructorParameterValues;
+        if(type.endsWith("[]")){
+            if(value === ""){
+                updatedValues[index] = [];
+            }else{
+                updatedValues[index] = value.split(',');
+            }
+        }else{
+            updatedValues[index] = value;
+        }
+        setConstructorParameterValues(updatedValues);
+        setAllParamsCorrectlyEntered(validateConstructorParameterInput(constructorParameters, constructorParameterValues));
+    }
+
     const handleEnterOriginalDomain = (originalDomain) => {
         setDomain(originalDomain);
         if (originalDomain && web3.utils.sha3(originalDomain).substring(2) === currentDomain) {
@@ -319,6 +428,67 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         }
     };
 
+    const handleSwitchDeploymentType = (val) => {
+        setDeploymentType(val);
+        if(val === 'reference'){
+            setDeploymentJson({abi: TeSC.abi, bytecode: TeSC.bytecode});
+            // make everything related to the other deployment type disappear
+            setContractsInFile(null);
+            setSelectedContract(null);
+            setConstructorParameters(null);
+            setConstructorParameterValues([]);
+            setAllParamsCorrectlyEntered(null);
+        }
+    }
+
+    const handleContractSelectedFromDropdown = (e, {name, value}) => {
+        handleContractSelected(value, solidityCode);
+    }
+
+    const handleContractSelected = async (value, code) => {
+        setSelectedContract(value);
+
+        // constructor parameters
+        const constructorParametersRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/constructorParameters`, {
+            params: {
+                solidityCode: code,
+                selectedContract: value
+            }
+        });
+        const constructorParamsFromRes = constructorParametersRes.data.constructorParameters;
+        setConstructorParameters(constructorParamsFromRes);
+
+        // constructor parameters initial values
+        const initialConstructorParameterValues = [];
+        constructorParamsFromRes.forEach((parameter) => {
+            if(parameter.type.endsWith("[]")){
+                initialConstructorParameterValues.push([]);
+            }else{
+                initialConstructorParameterValues.push("");
+            } 
+        });
+        setConstructorParameterValues(initialConstructorParameterValues);
+        
+        // endorsed solidity code
+        const addInterfaceRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/addInterface`, {
+            params: {
+                solidityCode: code,
+                selectedContract: value
+            }
+        });
+        const solidityCodeWithInterface = addInterfaceRes.data.solidityCodeWithInterface;
+        setEndorsedSolidityCode(solidityCodeWithInterface);
+
+        // json for deployment
+        const compileRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/compileAndGetJson`, {
+            params: {
+                solidityCode: solidityCodeWithInterface,
+                selectedContract: value
+            }
+        });
+        setDeploymentJson(compileRes.data.json);
+    }
+
     const handleTextCopy = (e) => {
         e.preventDefault();
         navigator.clipboard.writeText(`echo -n ${getClaimString()} | openssl dgst -RSA-SHA256 -sign <path_to_private_key_file> | openssl base64 | cat`);
@@ -329,13 +499,17 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     }
 
     const getSteps = () => {
-        return [
+        const steps = [
             `${initInputs ? 'Change' : 'Create'} Claim`, 
             `${initInputs ? 'Change' : 'Create'} Signature`, 
             `${initInputs ? 'Change' : 'Add'} Certificate Fingerprint`, 
             `Review and ${initInputs ? 'Update' : 'Deploy'}`, 
             'Receipt'
         ];
+        if(!initInputs){
+            steps.unshift(`Select Smart Contract`);
+        }
+        return steps;
     }
 
     const classes = useStyles();
@@ -368,8 +542,106 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     }
 
     const getStepContent = (step) => {
-        switch (step) {
+        let actualStep = step;
+        if(initInputs){
+            actualStep ++;
+        }
+        switch (actualStep) {
             case 0:
+                return {
+                    component: (
+                        <Fragment>
+                            <Header as='h3' content={getSteps()[step]} style={{marginBottom: '30px'}} color='purple'/>
+
+                            <Form.Field>
+                                <Radio
+                                    label="Deploy reference implementation"
+                                    name='deploymentTypeRadioGroup'
+                                    value='reference'
+                                    checked={deploymentType === 'reference'}
+                                    onChange={(e, { value }) => handleSwitchDeploymentType(value)}
+                                />
+                            </Form.Field>
+                            <Form.Field>
+                                <Radio
+                                    label='Endorse and deploy your own Smart Contract'
+                                    name='deploymentTypeRadioGroup'
+                                    value='custom'
+                                    checked={deploymentType === 'custom'}
+                                    onChange={(e, { value }) => handleSwitchDeploymentType(value)}
+                                />
+                            </Form.Field>
+
+                            {deploymentType === "custom" && (
+                                <div style={{ paddingTop: '15px' }}>
+                                    <FilePicker
+                                        label='Choose solidity file'
+                                        onPickFile={handlePickSolidityFile}
+                                        input={{fileName:solidityFileName, content: solidityCode}}
+                                    />
+                                    <div><em>Pick the solidity file with the Smart Contract that you want to endorse and deploy</em></div>
+                                </div>     
+                            )}
+
+                            {(contractsInFile && contractsInFile.length > 1) && (
+                                <div style={{ paddingTop: '20px' }}>
+                                <Form.Field>
+                                    <label>
+                                        Smart Contract <span style={{ color: 'red' }}>*</span> 
+                                        <Popup
+                                            inverted
+                                            content='Your file contains multiple Smart Contracts. Select the one that you want to endorse and deploy.'
+                                            trigger={<Icon name='question circle' />}
+                                        />
+                                    </label>
+                                    <Dropdown 
+                                        placeholder='Select Smart Contract'
+                                        fluid
+                                        selection
+                                        onChange={handleContractSelectedFromDropdown}
+                                        options={buildContractDropdownOptions(contractsInFile)}>
+                                    </Dropdown>
+                                </Form.Field>
+                                </div>
+                            )}
+
+                            {selectedContract && (
+                                <div style={{ paddingTop: '25px' }}>
+                                <Form.Field>              
+                                    <label>
+                                        File with endorsed Smart Contract 
+                                        <Popup
+                                            inverted
+                                            content={solidityFileName + ' with endorsed ' + selectedContract}
+                                            trigger={<Icon name='question circle' />}
+                                        />
+                                    </label>
+                                    <Highlight language='solidity'>
+                                        {endorsedSolidityCode}
+                                    </Highlight>
+                                </Form.Field>      
+                                </div>   
+                            )}
+
+                            {(constructorParameters && constructorParameters.length > 0) && (
+                               <div style={{ paddingTop: '20px' }}>
+                                    <label>
+                                        <b>Values for constructor parameters</b> <span style={{ color: 'red' }}>*</span>
+                                        <Popup
+                                            inverted
+                                            content={'The constructor of ' + selectedContract + ' has additional parameters. Please enter values for them.'}
+                                            trigger={<Icon name='question circle' />}
+                                        />
+                                    </label>
+                                    {renderConstructorParameterInputFields()}
+                               </div>      
+                            )}
+                        </Fragment>
+                    ),
+                    completed: deploymentType === "reference" || (selectedContract && constructorParameters && (constructorParameters.length === 0 || allParamsCorrectlyEntered && allParamsCorrectlyEntered === true)),
+                    reachable: true
+                }
+            case 1:
                 return {
                     component: (
                         <Fragment>
@@ -442,7 +714,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     completed: initInputs? (currentDomain !== initInputs.domain) || (expiry !== initInputs.expiry) : !!currentDomain && !!expiry ,
                     reachable: initInputs && currentDomain? isMatchedOriginalDomain: true
                 };
-            case 1:
+            case 2:
                 return {
                     component: (
                         <Fragment>
@@ -536,7 +808,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     completed: !!signature,
                     reachable: initInputs? getStepContent(step - 1).completed : !!signature || getStepContent(step - 1).completed 
                 };
-            case 2:
+            case 3:
                 return {
                     component: (
                         <Fragment>
@@ -550,7 +822,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     completed: getStepContent(step - 2).completed && getStepContent(step - 1).completed,
                     reachable: (getStepContent(step - 2).completed && getStepContent(step - 1).completed) || getStepContent(step - 1).reachable
                 };
-            case 3:
+            case 4:
                 return {
                     component: (
                         <Fragment>
@@ -571,7 +843,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     completed: !!costPaid,
                     reachable: getStepContent(step - 2).completed || !!costPaid  
                 };
-            case 4:
+            case 5:
                 return {
                     component: (
                         <Fragment>
@@ -595,7 +867,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     }
 
     const isStepOptional = (step) => {
-        return step === 2;
+        return step === 3;
     };
 
     const allStepsCompleted = () => {
@@ -698,7 +970,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                         Back
                                 </BtnSuir>
 
-                                    {((activeStep < 3 && !costPaid) || (activeStep <= 3 && costPaid)) && (
+                                    {((activeStep < 4 && !costPaid) || (activeStep <= 4 && costPaid)) && (
                                         <BtnSuir
                                             basic
                                             color="purple"
@@ -708,7 +980,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                             Next
                                         </BtnSuir>
                                     )}
-                                    {activeStep === 3 && !costPaid && (
+                                    {activeStep === 4 && !costPaid && (
                                         <BtnSuir
                                             icon='play circle'
                                             basic
