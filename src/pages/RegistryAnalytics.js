@@ -43,7 +43,7 @@ function RegistryAnalytics() {
     const mode = (entries) => {
         const tescsWithOccurances = entries.map(entry => ({
             domain: isSha3(entry.domain)
-                ? `0x${entry.domain.substring(0, 2)}...${entry.domain.substring(entry.domain.length - 2, entry.domain.length)}` : entry.domain, count: entries.reduce((counter, entry_) =>
+                ? `${entry.domain.substring(0, 4)}...${entry.domain.substring(entry.domain.length - 2, entry.domain.length)}` : entry.domain, count: entries.reduce((counter, entry_) =>
                     entry_.domain === entry.domain ? counter += 1 : counter, 0)
         }))
         const distinctTescsWithOccurances = [];
