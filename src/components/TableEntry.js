@@ -173,7 +173,7 @@ function TableEntry(props) {
                         trigger={<Button basic color='red' onClick={removeFromRegistry} content='Remove' icon='delete' className='button-remove' />} />
                     :
                     <Popup inverted content={`Add entry to the TeSC registry. This would cost around ${costEstimatedAdd.toFixed(5)} ETH.`}
-                        trigger={<Button basic disabled={!verified && !(domain.length === 64 && domain.split('.').length === 1)} color='blue' onClick={addToRegistry} content='Add' icon='plus' className='button-add' />}
+                        trigger={<Button basic disabled={!verified && !(isSha3(domain))} color='blue' onClick={addToRegistry} content='Add' icon='plus' className='button-add' />}
                     />
             );
         } else {
@@ -217,11 +217,11 @@ function TableEntry(props) {
     }
 
     const renderDomainForRegistryInspect = () => {
-        return (domain.length === 66 && domain.split('.').length === 1) ?
-            <Popup content={`0x${domain}`} trigger={
+        return (isSha3(domain)) ?
+            <Popup content={`${domain}`} trigger={
                 cols.has(COL.TSC) ?
-                    <Button basic size='medium' onClick={exploreDomain}>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
-                    <i>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
+                    <Button basic size='medium' onClick={exploreDomain}>{`${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
+                    <i>{`${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
             : cols.has(COL.TSC) ? <Button basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain
     }
 

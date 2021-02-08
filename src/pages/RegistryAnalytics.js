@@ -4,6 +4,7 @@ import { FLAGS } from '../utils/tesc'
 import BitSet from 'bitset';
 import PieChart from '../components/analytics/PieChart'
 import BarChart from '../components/analytics/BarChart';
+import { isSha3 } from '../utils/tesc';
 
 function RegistryAnalytics() {
     const [loading, setLoading] = useState(false)
@@ -37,12 +38,12 @@ function RegistryAnalytics() {
         return entries.reduce((count, entry) => count + (entry.verified === verified), 0)
     }
 
-    const dataPie = [{ 'id': 'Valid', 'value': feedData(true) }, { 'id': 'Invalid', 'value': feedData(false) }]  
+    const dataPie = [{ 'id': 'Valid', 'value': feedData(true) }, { 'id': 'Invalid', 'value': feedData(false) }]
     const colorsBar = ['#E8C1A0', '#F47560', '#F1E15B', '#E8A838', '#61CDBB']
     const mode = (entries) => {
         const tescsWithOccurances = entries.map(entry => ({
-            domain: (entry.domain.length === 64 && entry.domain.split('.').length === 1)
-                ? `0x${entry.domain.substring(0,2)}...${entry.domain.substring(entry.domain.length-2, entry.domain.length)}` : entry.domain, count: entries.reduce((counter, entry_) =>
+            domain: isSha3(entry.domain)
+                ? `0x${entry.domain.substring(0, 2)}...${entry.domain.substring(entry.domain.length - 2, entry.domain.length)}` : entry.domain, count: entries.reduce((counter, entry_) =>
                     entry_.domain === entry.domain ? counter += 1 : counter, 0)
         }))
         const distinctTescsWithOccurances = [];
@@ -88,7 +89,8 @@ function RegistryAnalytics() {
             gridTemplateColumns: '1fr 1fr',
             gridTemplateRows: 'auto auto',
             gridGap: '10px',
-            height: '300px'}}>
+            height: '300px'
+        }}>
             <PieChart data={dataPie} loading={loading} />
             <BarChart data={mode(entries)} loading={loading} />
             <PieChart data={countFlags(entries)} isFlags={true} loading={loading} />
