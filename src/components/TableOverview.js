@@ -42,25 +42,35 @@ function TableOverview(props) {
     const [tescsWithOccurancesNew, setTescsWithOccurancesNew] = useState(tescsWithOccurances)
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / ENTRIES_PER_PAGE) : tescs ? Math.ceil(tescs.length / ENTRIES_PER_PAGE) : 0);
-    const [filterOption, setFilterOption] = useState(0);
     const [displayedEntries, setDisplayedEntries] = useState([]);
 
     //for search input
     const [domain, setDomain] = useState('');
 
 
-    //for sorting
+    //for sorting - asc state and status state
     const [isSortingByAddressAsc, setIsSortingByAddressAsc] = useState(true)
+    const [isSortingByAddress, setIsSortingByAddress] = useState(false)
     const [isSortingByDomainAsc, setIsSortingByDomainAsc] = useState(true)
+    const [isSortingByDomain, setIsSortingByDomain] = useState(false)
     const [isSortingByExpiryAsc, setIsSortingByExpiryAsc] = useState(true)
+    const [isSortingByExpiry, setIsSortingByExpiry] = useState(false)
     const [isSortingByVerifiedAsc, setIsSortingByVerifiedAsc] = useState(true)
+    const [isSortingByVerified, setIsSortingByVerified] = useState(false)
     const [isSortingByTotalSmartContractsAsc, setIsSortingByTotalSmartContractsAsc] = useState(true)
+    const [isSortingByTotalSmartContracts, setIsSortingByTotalSmartContracts] = useState(false)
     const [isSortingByIsInRegistryAsc, setIsSortingByIsInRegistryAsc] = useState(true)
+    const [isSortingByIsInRegistry, setIsSortingByIsInRegistry] = useState(false)
     const [isSortingByFavouriteAsc, setIsSortingByFavouriteAsc] = useState(true)
+    const [isSortingByFavourite, setIsSortingByFavourite] = useState(false)
     const [isSortingByCreatedAtAsc, setIsSortingByCreatedAtAsc] = useState(true)
+    const [isSortingByCreatedAt, setIsSortingByCreatedAt] = useState(false)
 
     //for filtering - for input and for status
     const [isShowingFilters, setIsShowingFilters] = useState(false)
+    const [isOwnFilter, setIsOwnFilter] = useState(true)
+    const [isNotOwnFilter, setIsNotOwnFilter] = useState(true)
+    const [isOwnFiltered, setIsOwnFiltered] = useState(false)
     const [domainFilter, setDomainFilter] = useState('')
     const [domainFiltered, setDomainFiltered] = useState(false)
     const [contractAddressFilter, setContractAddressFilter] = useState('')
@@ -121,7 +131,7 @@ function TableOverview(props) {
                 }
             }
             if (!found) {
-                tescsNew.push({ contractAddress: tesc.contractAddress, domain: tesc.domain, expiry: tesc.expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm'), verified: tesc.verified });
+                tescsNew.push({ contractAddress: tesc.contractAddress, domain: tesc.domain, expiry: tesc.expiry, isFavourite: true, own: false, createdAt: moment().unix(), verified: tesc.verified });
                 localStorage.setItem(account, JSON.stringify(tescsNew));
             }
 
@@ -132,39 +142,16 @@ function TableOverview(props) {
         }
     };
 
-    const showAllTescs = (tescs) => {
-        setCurrentPage(1);
-        setFilterOption(0);
-        setTotalPages(Math.ceil(tescs.length / ENTRIES_PER_PAGE));
-        localStorage.getItem(account) ? setDisplayedEntries(tescs.slice(0, ENTRIES_PER_PAGE)) : setTescs([]);
-    };
-
-    const showFavouriteTescs = () => {
-        setCurrentPage(1);
-        setFilterOption(1);
-        setTotalPages(Math.ceil(tescs.filter(tesc => tesc.isFavourite === true).length / ENTRIES_PER_PAGE));
-        localStorage.getItem(account) ? setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === true).slice(0, ENTRIES_PER_PAGE)) : setTescs([]);
-    };
-
-    const showOwnTescs = () => {
-        setCurrentPage(1);
-        setFilterOption(2);
-        setTotalPages(Math.ceil(tescs.filter(tesc => tesc.own === true).length / ENTRIES_PER_PAGE));
-        localStorage.getItem(account) ? setDisplayedEntries(tescs.filter(tesc => tesc.own === true).slice(0, ENTRIES_PER_PAGE)) : setTescs([]);
-    };
-
     const changePage = (event, { activePage }) => {
         //check if there are filters applied
         setCurrentPage(activePage);
         if (!cols.has(COL.TSC)) {
-            setTotalPages(Math.ceil(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc).length / ENTRIES_PER_PAGE));
-            setDisplayedEntries(tescs.filter(tesc => filterOption === 1 ? tesc.isFavourite === true : filterOption === 2 ? tesc.own === true : tesc)
-                .slice((activePage - 1) * ENTRIES_PER_PAGE, activePage * ENTRIES_PER_PAGE));
+            setTotalPages(Math.ceil(tescs.length / ENTRIES_PER_PAGE));
+            setDisplayedEntries(tescs.slice((activePage - 1) * ENTRIES_PER_PAGE, activePage * ENTRIES_PER_PAGE));
         } else {
             setDisplayedEntries(tescsWithOccurancesNew.slice((activePage - 1) * ENTRIES_PER_PAGE, activePage * ENTRIES_PER_PAGE));
         }
     };
-
 
     const renderRows = () => {
         if (displayedEntries && !cols.has(COL.TSC)) {
@@ -215,6 +202,17 @@ function TableOverview(props) {
         />) : null;
     };
 
+    const clearSorting = () => {
+        setIsSortingByDomain(false)
+        setIsSortingByAddress(false)
+        setIsSortingByExpiry(false)
+        setIsSortingByVerified(false)
+        setIsSortingByTotalSmartContracts(false)
+        setIsSortingByIsInRegistry(false)
+        setIsSortingByFavourite(false)
+        setIsSortingByCreatedAt(false)
+    }
+
     const sortByContractAddress = () => {
         if (isSortingByAddressAsc) {
             setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.contractAddress - tescB.contractAddress).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
@@ -223,6 +221,8 @@ function TableOverview(props) {
             setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.contractAddress - tescA.contractAddress).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setIsSortingByAddressAsc(true)
         }
+        clearSorting()
+        setIsSortingByAddress(true)
     }
 
     const sortByDomain = (tescs) => {
@@ -235,6 +235,8 @@ function TableOverview(props) {
             else setTescsWithOccurancesNew(tescs.sort((tescA, tescB) => tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setIsSortingByDomainAsc(true)
         }
+        clearSorting()
+        setIsSortingByDomain(true)
     }
 
     const sortByExpiry = () => {
@@ -246,6 +248,8 @@ function TableOverview(props) {
             setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.expiry.toString().localeCompare(tescA.expiry)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setIsSortingByExpiryAsc(true)
         }
+        clearSorting()
+        setIsSortingByExpiry(true)
     }
 
     const sortByVerified = () => {
@@ -257,6 +261,8 @@ function TableOverview(props) {
             setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.verified.toString().localeCompare(tescA.verified)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setIsSortingByVerifiedAsc(true)
         }
+        clearSorting()
+        setIsSortingByVerified(true)
     }
 
     const sortByTotalSmartContracts = () => {
@@ -267,6 +273,8 @@ function TableOverview(props) {
             setTescsWithOccurancesNew(tescsWithOccurancesNew.sort((tescA, tescB) => tescB.contractCount.toString().localeCompare(tescA.contractCount)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setIsSortingByTotalSmartContractsAsc(true)
         }
+        clearSorting()
+        setIsSortingByTotalSmartContracts(true)
     }
 
     const sortByIsInRegistry = () => {
@@ -278,6 +286,8 @@ function TableOverview(props) {
             setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.isInRegistry.toString().localeCompare(tescA.isInRegistry)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setIsSortingByIsInRegistryAsc(true)
         }
+        clearSorting()
+        setIsSortingByIsInRegistry(true)
     }
 
     const sortByFavourite = () => {
@@ -289,6 +299,8 @@ function TableOverview(props) {
             setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.isFavourite.toString().localeCompare(tescA.isFavourite)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setIsSortingByFavouriteAsc(true)
         }
+        clearSorting()
+        setIsSortingByFavourite(true)
     }
 
     const sortByCreatedAt = () => {
@@ -300,6 +312,8 @@ function TableOverview(props) {
             setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.createdAt.toString().localeCompare(tescA.createdAt)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setIsSortingByCreatedAtAsc(true)
         }
+        clearSorting()
+        setIsSortingByCreatedAt(true)
     }
 
     const setVerificationInTescs = (tescsWithVerification) => {
@@ -307,10 +321,11 @@ function TableOverview(props) {
     }
 
     const clearFilters = () => {
+        setIsOwnFilter(true)
+        setIsNotOwnFilter(true)
+        setIsOwnFiltered(false)
         setDomainFiltered(false)
-        setDomainFilter('')
         setContractAddressFiltered(false)
-        setContractAddressFilter('')
         setExpiryFiltered(false)
         setExpiryFromFilter('')
         setExpiryToFilter('')
@@ -332,6 +347,33 @@ function TableOverview(props) {
     }
 
     //filtering logic starts from here
+
+    const filterByOwn = (isOwnFilter, isNotOwnFilter) => {
+        if (isOwnFilter === true && isNotOwnFilter === true) {
+            setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+        } else if (isOwnFilter === true && isNotOwnFilter === false) {
+            setDisplayedEntries(tescs.filter(tesc => tesc.own === true).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.own === true))
+        } else if (isOwnFilter === false && isNotOwnFilter === true) {
+            setDisplayedEntries(tescs.filter(tesc => tesc.own === false).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+            setTescs(tescs.filter(tesc => tesc.own === false))
+        } else {
+            setDisplayedEntries([])
+            setTescs([])
+        }
+        setIsOwnFiltered(true)
+    }
+
+    const handleIsOwnFilter = () => {
+        if (isOwnFilter) setIsOwnFilter(false)
+        else setIsOwnFilter(true)
+    }
+
+    const handleIsNotOwnFilter = () => {
+        if (isNotOwnFilter) setIsNotOwnFilter(false)
+        else setIsNotOwnFilter(true)
+    }
+
     const filterByDomain = (domain, tescs) => {
         if (!cols.has(COL.TSC)) {
             if (domain !== '') {
@@ -435,13 +477,13 @@ function TableOverview(props) {
         setIsInRegistryFiltered(true)
     }
 
-    const handleIsInRegistryFilter = e => {
+    const handleIsInRegistryFilter = () => {
         if (isInRegistryFilter) setIsInRegistryFilter(false)
         else setIsInRegistryFilter(true)
     }
 
-    const handleIsNotInRegistryFilter = e => {
-        if (isNotInRegistryFilter) setIsInRegistryFilter(false)
+    const handleIsNotInRegistryFilter = () => {
+        if (isNotInRegistryFilter) setIsNotInRegistryFilter(false)
         else setIsNotInRegistryFilter(true)
     }
 
@@ -461,12 +503,12 @@ function TableOverview(props) {
         setIsFavouriteFiltered(true)
     }
 
-    const handleIsFavouriteFilter = e => {
+    const handleIsFavouriteFilter = () => {
         if (isFavouriteFilter) setIsFavouriteFilter(false)
         else setIsFavouriteFilter(true)
     }
 
-    const handleIsNotFavouriteFilter = e => {
+    const handleIsNotFavouriteFilter = () => {
         if (isNotFavouriteFilter) setIsNotFavouriteFilter(false)
         else setIsNotFavouriteFilter(true)
     }
@@ -505,22 +547,22 @@ function TableOverview(props) {
     //end of filtering logic
 
     const renderFilteringDropdownForCheckboxes = (title, isTypeFilter, handleIsTypeFilter, isNotTypeFilter, handleIsNotTypeFilter, filterByType) => {
-        const checkboxLabelOne = title === 'Verified' ? 'Verified' : title === 'Registry' ? 'In Registry' : title === 'Favourites' ? 'Favourite' : ''
-        const checkboxLabelTwo = title === 'Verified' ? 'Not Verified' : title === 'Registry' ? 'Not In Registry' : title === 'Favourites' ? 'Not Favourite' : ''
-        const dropdownIcon = title === 'Verified' && verifiedFiltered ? 'remove' :
-            title === 'Verified' && !verifiedFiltered ? 'angle down' :
-                title === 'Registry' && isInRegistryFiltered ? 'remove' :
-                    title === 'Registry' && !isInRegistryFiltered ? 'angle down' : 'angle down'
-        const classDropdown = title === 'Verified' && verifiedFiltered ? 'icon dropdown-filters-filtered' :
+        const checkboxLabelOne = title === 'Verified' ? 'Verified' : title === 'Registry' ? 'In Registry' : title === 'Favourites' ? 'Favourite' : title === 'Own' ? 'Own' : ''
+        const checkboxLabelTwo = title === 'Verified' ? 'Not Verified' : title === 'Registry' ? 'Not In Registry' : title === 'Favourites' ? 'Not Favourite' : title === 'Own' ? 'Not Own' : ''
+        const classesDropdown = title === 'Verified' && verifiedFiltered ? 'icon dropdown-filters-filtered' :
             title === 'Verified' && !verifiedFiltered ? 'icon dropdown-filters' :
                 title === 'Registry' && isInRegistryFiltered ? 'icon dropdown-filters-filtered' :
-                    title === 'Registry' && !isInRegistryFiltered ? 'icon dropdown-filters' : 'icon dropdown-filters'
+                    title === 'Registry' && !isInRegistryFiltered ? 'icon dropdown-filters' :
+                        title === 'Favourites' && isFavouriteFiltered ? 'icon dropdown-filters-filtered' :
+                            title === 'Favourites' && !isFavouriteFiltered ? 'icon dropdown-filters' :
+                                title === 'Own' && isOwnFiltered ? 'icon dropdown-filters-filtered' :
+                                    title === 'Own' && !isOwnFiltered ? 'icon dropdown-filters' : 'icon dropdown-filters'
         return (
             <Dropdown
                 text={title}
-                icon={dropdownIcon}
+                icon='angle down'
                 simple
-                className={classDropdown}>
+                className={classesDropdown}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
                     <Form>
                         <Form.Field><Checkbox className='checkbox__label' label={checkboxLabelOne} checked={isTypeFilter} onChange={handleIsTypeFilter} /></Form.Field>
@@ -532,12 +574,16 @@ function TableOverview(props) {
     }
 
     const renderFilteringDropdownForDayPickers = (title, dateFrom, handleDateFrom, dateTo, handleDateTo, filterByType) => {
+        const classesDropdown = title === 'Expiry' && expiryFiltered ? 'icon dropdown-filters-filtered' :
+            title === 'Expiry' && !expiryFiltered ? 'icon dropdown-filters' :
+                title === 'Created At' && createdAtFiltered ? 'icon dropdown-filters-filtered' :
+                    title === 'Created At' && !createdAtFiltered ? 'icon dropdown-filters' : 'icon dropdown-filters'
         return (
             <Dropdown
                 text={title}
                 icon={'angle down'}
                 simple
-                className='icon dropdown-filters'>
+                className={classesDropdown}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
                     <Form>
                         <Form.Field><DayPickerInput
@@ -570,23 +616,21 @@ function TableOverview(props) {
 
     const renderFilteringDropdownGeneral = (title, filterByType, filterStateOne, handleChangeOne) => {
         const placeholder = title === 'Domain' ? 'gaulug.de' : 'Address' ? '0xdF0d...' : ''
+        const classesDropdown = title === 'Domain' && domainFiltered ? 'icon dropdown-filters-filtered' :
+            title === 'Domain' && !domainFiltered ? 'icon dropdown-filters' :
+                title === 'Address' && contractAddressFiltered ? 'icon dropdown-filters-filtered' :
+                    title === 'Address' && !contractAddressFiltered ? 'icon dropdown-filters' : 'icon dropdown-filters'
         return (
             <Dropdown
                 text={title}
                 icon={'angle down'}
                 simple
-                className='icon dropdown-filters'>
+                className={classesDropdown}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
-                    {/*!cols.has(COL.TSC) ?
-                        <Dropdown.Item icon={isSortingAsc ? 'arrow down' : 'arrow up'} text={isSortingAsc ? 'Sort asc' : 'Sort desc'} onClick={() => sortByType(tescs)} /> :
-                    <Dropdown.Item icon={isSortingAsc ? 'arrow down' : 'arrow up'} text={isSortingAsc ? 'Sort asc' : 'Sort desc'} onClick={() => sortByType(tescsWithOccurancesNew)} />*/}
-                    {!cols.has(COL.TSC) ?
-                        <Form onSubmit={() => filterByType(filterStateOne, tescs)}>
-                            {title === 'Domain' || title === 'Address' ? <Form.Input placeholder={placeholder} onChange={handleChangeOne} /> : null}
-                        </Form> :
-                        <Form onSubmit={() => filterByType(filterStateOne, tescsWithOccurancesNew)}>
-                            {title === 'Domain' || title === 'Address' ? <Form.Input placeholder={placeholder} onChange={handleChangeOne} /> : null}
-                        </Form>}
+                    <Form>
+                        <Form.Input placeholder={placeholder} onChange={handleChangeOne} />
+                        <Button basic className='dropdown-filters__menu__button' size='tiny' onClick={!cols.has(COL.TSC) ? () => filterByType(filterStateOne, tescs) : () => filterByType(filterStateOne, tescsWithOccurancesNew)}>Filter</Button>
+                    </Form>
                 </Dropdown.Menu>
             </Dropdown>)
     }
@@ -594,6 +638,7 @@ function TableOverview(props) {
     const renderFiltersGroup = () => {
         if (isShowingFilters) {
             return (<>
+                {hasAllColumns(cols) ? renderFilteringDropdownForCheckboxes("Own", isOwnFilter, handleIsOwnFilter, isNotOwnFilter, handleIsNotOwnFilter, filterByOwn) : null}
                 {cols.has(COL.ADDRESS) ? renderFilteringDropdownGeneral("Address", filterByContractAddress, contractAddressFilter, handleContractAddressFilter) : null}
                 {renderFilteringDropdownGeneral("Domain", filterByDomain, domainFilter, handleDomainFilter)}
                 {cols.has(COL.EXPIRY) ? renderFilteringDropdownForDayPickers("Expiry", expiryFromFilter, handleExpiryFromFilter, expiryToFilter, handleExpiryToFilter, filterByExpiry) : null}
@@ -607,7 +652,7 @@ function TableOverview(props) {
     }
 
     const renderClearFiltersButton = () => {
-        if(domainFiltered || contractAddressFiltered || expiryFiltered || isInRegistryFiltered || verifiedFiltered || isFavouriteFiltered || createdAtFiltered) return (<Button
+        if (domainFiltered || contractAddressFiltered || expiryFiltered || isInRegistryFiltered || verifiedFiltered || isFavouriteFiltered || createdAtFiltered || isOwnFiltered) return (<Button
             content='Clear filters'
             icon='remove circle'
             basic
@@ -633,17 +678,38 @@ function TableOverview(props) {
             <Table color='purple'>
                 <Table.Header active='true' style={{ backgroundColor: 'purple' }}>
                     <Table.Row>
-                        {!cols.has(COL.TSC) && <Table.HeaderCell>Address</Table.HeaderCell>}
-                        <Table.HeaderCell>Domain</Table.HeaderCell>
-                        {!cols.has(COL.TSC) && <Table.HeaderCell>Expiry</Table.HeaderCell>}
-                        {cols.has(COL.TSC) && <Table.HeaderCell textAlign="center">Total Smart Contracts</Table.HeaderCell>}
-                        <Table.HeaderCell textAlign="center">Verified</Table.HeaderCell>
+                        {!cols.has(COL.TSC) && <Table.HeaderCell>{
+                            <Button basic className='column-header' onClick={sortByContractAddress}>
+                                Address{isSortingByAddress ? <Icon className='column-header__sort' name={isSortingByAddressAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                        }</Table.HeaderCell>}
+                        <Table.HeaderCell>{
+                            <Button basic className='column-header' onClick={cols.has(COL.TSC) ? () => sortByDomain(tescsWithOccurances) : () => sortByDomain(tescs)}>
+                                Domain{isSortingByDomain ? <Icon className='column-header__sort' name={isSortingByDomainAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                        }</Table.HeaderCell>
+                        {!cols.has(COL.TSC) && <Table.HeaderCell>{
+                            <Button basic className='column-header' onClick={sortByExpiry}>
+                                Expiry{isSortingByExpiry ? <Icon className='column-header__sort' name={isSortingByExpiryAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                        }</Table.HeaderCell>}
+                        {cols.has(COL.TSC) && <Table.HeaderCell textAlign="center">{
+                            <Button basic className='column-header' onClick={sortByTotalSmartContracts}>
+                                Total Smart Contracts{isSortingByTotalSmartContracts ? <Icon className='column-header__sort' name={isSortingByTotalSmartContractsAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                        }</Table.HeaderCell>}
+                        <Table.HeaderCell textAlign="center">{
+                            <Button basic className='column-header' onClick={sortByVerified}>
+                                Verified{isSortingByVerified ? <Icon className='column-header__sort' name={isSortingByVerifiedAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                        }</Table.HeaderCell>
                         {cols.has(COL.REG) &&
-                            <Table.HeaderCell textAlign="center">Registry</Table.HeaderCell>
+                            <Table.HeaderCell textAlign="center">{
+                                <Button basic className='column-header' onClick={sortByIsInRegistry}>
+                                    Registry{isSortingByIsInRegistry ? <Icon className='column-header__sort' name={isSortingByIsInRegistryAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                            }</Table.HeaderCell>
                         }
                         {!cols.has(COL.TSC) &&
-                            <Table.HeaderCell textAlign="center">Favourites
-                            {/*<Dropdown
+                            <Table.HeaderCell textAlign="center">{
+                                <Button basic className='column-header' onClick={sortByFavourite}>
+                                    Favourites{isSortingByFavourite ? <Icon className='column-header__sort' name={isSortingByFavouriteAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                            }
+                                {/*<Dropdown
                                     icon='filter'
                                     floating
                                     button
@@ -658,7 +724,10 @@ function TableOverview(props) {
                             </Table.HeaderCell>
                         }
                         {cols.has(COL.CA) &&
-                            <Table.HeaderCell>Created At</Table.HeaderCell>
+                            <Table.HeaderCell>{
+                                <Button basic className='column-header' onClick={sortByCreatedAt}>
+                                    Created At{isSortingByCreatedAt ? <Icon className='column-header__sort' name={isSortingByCreatedAtAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                            }</Table.HeaderCell>
                         }
                     </Table.Row>
                 </Table.Header>

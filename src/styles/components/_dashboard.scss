@@ -68,3 +68,20 @@
 .dropdown-filters__menu__button {
     border-radius: 50vh !important;
 }
+
+.column-header {
+    font-weight: 700 !important;
+    box-shadow: none !important;
+}
+
+.column-header:hover {
+    box-shadow: none !important;
+}
+
+.column-header:focus {
+    box-shadow: none !important;
+}
+
+.column-header__sort {
+    margin-left: 5px !important;
+}
