@@ -869,7 +869,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                             <Header as='h3' content='Receipt' style={{marginBottom: '30px'}} color='purple'/>
                             {costPaid && 
                                 <Grid.Row style={{ minWidth: 'max-content', paddingTop: '2%' }}>
-                                    <DeploymentOutput contractAddress={contractAddress} costPaid={costPaid} />
+                                    <DeploymentOutput contractAddress={contractAddress} domain={domain} costPaid={costPaid} />
                                 </Grid.Row>
                             }
                             

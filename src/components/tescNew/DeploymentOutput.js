@@ -1,17 +1,20 @@
-import React from 'react';
-import { Label, Grid, Segment } from 'semantic-ui-react';
+import React, { useState } from 'react';
+import { Label, Grid } from 'semantic-ui-react';
 
 import LinkTescInspect from '../InternalLink';
+import ButtonRegistryAddRemove from '../ButtonRegistryAddRemove';
 
-const DeploymentOutput = ({ contractAddress, costPaid }) => {
+const DeploymentOutput = ({ contractAddress, domain, costPaid }) => {
+    const [isRegistered, setIsRegistered] = useState(false)
+
     return (
-        <Grid>
+        <Grid verticalAlign='middle'>
             <Grid.Row>
                 <Grid.Column width={3}>
-                    <b>Contract address:</b>
+                    <b>Contract deployed at:</b>
                 </Grid.Column>
                 <Grid.Column width={13}>
-                    <Label basic color='green' size='large' >
+                    <Label basic color='purple' size='large' >
                         <LinkTescInspect contractAddress={contractAddress} />
                     </Label>
                 </Grid.Column>
@@ -30,6 +33,19 @@ const DeploymentOutput = ({ contractAddress, costPaid }) => {
                     </Grid.Row>
                 )
             }
+            <Grid.Row>
+                <Grid.Column width={3}>
+                    <b>{`${isRegistered? 'Deregister from' : 'Register to'} TeSC Registry?`}</b>
+                </Grid.Column>
+                <Grid.Column width={13}>
+                    <ButtonRegistryAddRemove
+                        contractAddress={contractAddress}
+                        domain={domain}
+                        isOwner={true}
+                        onClick={setIsRegistered}
+                    />
+                </Grid.Column>
+            </Grid.Row>
         </Grid>
     );
 };

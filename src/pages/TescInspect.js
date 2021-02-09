@@ -261,6 +261,7 @@ const TeSCInspect = ({ location }) => {
                                             )}
 
                                             <ButtonRegistryAddRemove
+                                                verbose
                                                 contractAddress={contractAddress}
                                                 domain={domainFromChain}
                                                 isOwner={account === contractOwner}

@@ -9,7 +9,7 @@ import {
     getRegistryContractInstance
 } from '../utils/registry';
 
-const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, ...rest }) => {
+const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, verbose, onClick, style }) => {
     const { web3, showMessage, handleBlockScreen, hasAccountChanged } = useContext(AppContext);
 
     const [isInRegistry, setIsInRegistry] = useState(false);
@@ -50,6 +50,7 @@ const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, ...rest }) 
             const cb = (message) => {
                 showMessage(buildPositiveMsg(message));
                 setIsInRegistry(!isInRegistry);
+                if(onClick) onClick(!isInRegistry)
             };
             await addRemoveEntry(isAdding, { web3, domain, contractAddress, cb });
 
@@ -68,19 +69,29 @@ const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, ...rest }) 
             trigger={
                 <Button
                     basic
-                    color={isInRegistry ? 'red' : 'green'}
+                    color={isInRegistry ? 'red' : 'teal'}
                     onClick={() => handleRegistryAction(!isInRegistry)}
-                    content={isInRegistry ? 'Deregister' : 'Register'}
+                    content={`${isInRegistry ? 'Dergister' : 'Register'} ${verbose ? `${isInRegistry ? 'from' : 'to'} TeSC Registry` : ''}`}
                     icon={isInRegistry ? 'delete' : 'plus'}
-                    {...rest}
+                    style={style}
                 />
             }
         />
     ) : (
             <Popup
                 inverted
-                content={isInRegistry ? 'In the registry' : 'Not in the registry'}
-                trigger={<Icon name={isInRegistry ? 'checkmark' : 'delete'} color={isInRegistry ? 'green' : 'red'} circular />}
+                content={`This contract is ${isInRegistry ? '' : 'not'} registered in the registry`}
+                trigger={
+                    <span style={{ ...style, marginRight: '20px' }}>
+                        <Icon
+                            circular
+                            name={isInRegistry ? 'checkmark' : 'delete'}
+                            color={isInRegistry ? 'green' : 'red'}
+                            
+                        />
+                        {verbose && <b>{isInRegistry ? 'Registered in the registry' : 'Not registered in the registry'}</b>}
+                    </span>
+                }
             />
         );
 };
