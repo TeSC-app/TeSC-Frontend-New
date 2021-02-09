@@ -1,8 +1,8 @@
 import RLP from 'rlp-browser';
 import { PrivateKey } from '@fidm/x509';
 import BitSet from 'bitset';
-import moment from 'moment'
-import web3 from 'web3'
+import moment from 'moment';
+import web3 from 'web3';
 
 window.web3Utils = web3.utils;
 
@@ -29,7 +29,7 @@ export const predictContractAddress = async (web3) => {
     const futureAddress = "0x" + web3.utils.sha3(RLP.encode([senderAddress, nonce])).substring(26);
     console.log("Faddress:", futureAddress);
 
-    return  web3.utils.toChecksumAddress(futureAddress);
+    return web3.utils.toChecksumAddress(futureAddress);
 };
 
 export const generateSignature = async ({ address, domain, expiry, flagsHex }, privateKeyPem) => {
@@ -48,7 +48,7 @@ export const generateSignature = async ({ address, domain, expiry, flagsHex }, p
 export const flagsToBytes24Hex = (flagsBitVector) => {
     const flagsBitVectorWithSANITY = new BitSet(flagsBitVector.toString() + '1');
     let hex = '0x' + flagsBitVectorWithSANITY.slice(0, Object.keys(FLAGS).length - 1).toString(16);
-    console.log('hex', hex)
+    console.log('hex', hex);
     return web3.utils.padLeft(hex, 48);
 };
 
@@ -72,16 +72,6 @@ export const estimateDeploymentCost = async (web3, tx) => {
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 };
 
-export const estimateRegistryAddCost = async (web3, selectedAccount, contractRegistry, contractTeSCAddress) => {
-    const gasEstimation = await contractRegistry.methods.add(contractTeSCAddress).estimateGas({ from: selectedAccount, gas: '3000000' });
-    return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
-}
-
-export const estimateRegistryRemoveCost = async (web3, selectedAccount, contractRegistry, domain, contractTeSCAddress) => {
-    const gasEstimation = await contractRegistry.methods.remove(domain, contractTeSCAddress).estimateGas({ from: selectedAccount, gas: '3000000' });
-    console.log(`Gas estimation is ${gasEstimation}`)
-    return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
-}
 
 export const storeTesc = ({ account, claim }) => {
     const { contractAddress, domain, expiry } = claim;
@@ -110,14 +100,14 @@ export const isValidContractAddress = (address, withReason = false) => {
     } else if (address.length !== 42) {
         throw new Error('Contract address must be 42 characters long (prefix 0x and 40 hexadecimal digits)');
     } else if (!web3.utils.checkAddressChecksum(address)) {
-        throw new Error('The capitalization checksum test for the contract address failed')
+        throw new Error('The capitalization checksum test for the contract address failed');
     }
     return true;
 };
 
 export const isSha3 = (str) => {
     return str.length === 66 && web3.utils.isHex(str);
-}
+};
 
 export const formatClaim = ({ contractAddress, domain, expiry, flags }) => {
     return `${contractAddress}.${domain}.${expiry}.${flags}`;

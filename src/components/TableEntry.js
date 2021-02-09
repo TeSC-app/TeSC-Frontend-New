@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import moment from 'moment';
 import { Table, Icon, Popup, Button, Image } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
@@ -6,10 +6,10 @@ import AppContext from '../appContext';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
 import LinkTescInspect from './InternalLink';
 import {
-    estimateRegistryAddCost,
-    estimateRegistryRemoveCost,
     isSha3,
 } from '../utils/tesc';
+import { estimateRegistryActionCost } from '../utils/registry';
+import { getRegistryContractInstance } from '../utils/registry';
 import { addRemoveEntry } from '../utils/registry';
 import TableCellVerification from './TableCellVerification';
 import PieChart from '../components/analytics/PieChart';
@@ -24,21 +24,22 @@ function TableEntry(props) {
         handleSearchSubmit,
         cols
     } = props;
-    const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged } = useContext(AppContext);
+    const { web3, showMessage, account, handleBlockScreen, hasAccountChanged, handleAccountChanged } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
-    const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
-    const [costEstimatedRemove, setCostEstimatedRemove] = useState(0);
+    const [costEstimatedRegistryAction, setCostEstimatedRegistryAction] = useState(0);
     const [verified, setVerified] = useState(typeof preverified === 'boolean' ? preverified : null);
     //registry buttons need this state to get rerendered
     const [isInRegistry, setIsInRegistry] = useState(false);
     const [loading, setLoading] = useState(true);
+    const registryContract = useRef(getRegistryContractInstance(web3));
+
 
     useEffect(() => {
         if (!cols.has(COL.TSC)) {
             const checkRegistry = async () => {
                 try {
-                    const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call();
+                    const isInRegistry = await registryContract.current.methods.isContractRegistered(contractAddress).call();
                     setIsInRegistry(isInRegistry);
                     setLoading(false);
                 } catch (error) {
@@ -48,7 +49,7 @@ function TableEntry(props) {
             };
             checkRegistry();
         }
-    }, [contractAddress, registryContract, cols]);
+    }, [contractAddress, cols]);
 
     useEffect(() => {
         if (hasAllColumns(cols)) handleAccountChanged(false); //???
@@ -57,22 +58,18 @@ function TableEntry(props) {
 
     useEffect(() => {
         const runEffect = async () => {
-            if (!isInRegistry && own && account && !hasAccountChanged && !loading) {
-                const estCostAdd = registryContract ? await estimateRegistryAddCost(web3, account, registryContract, contractAddress) : 0;
-                setCostEstimatedAdd(estCostAdd);
-            } else if (isInRegistry && own && account && !hasAccountChanged && !loading) {
-                const estCostRemove = registryContract ? await estimateRegistryRemoveCost(web3, account, registryContract, domain, contractAddress) : 0;
-                setCostEstimatedRemove(estCostRemove);
+            if (own && account && !hasAccountChanged && !loading) {
+                const cost = await estimateRegistryActionCost(isInRegistry, { web3, contractAddress, domain });
+                console.log('$$$$$$', cost);
+                setCostEstimatedRegistryAction(cost);
             }
         };
         runEffect();
-    }, [web3, contractAddress, account, registryContract, domain, isInRegistry, own, hasAccountChanged, loading]);
+    }, [web3, contractAddress, account, domain, isInRegistry, own, hasAccountChanged, loading]);
 
     const handleChangeVerified = (verified) => {
         setVerified(verified);
     };
-
-
 
 
     const handleRegistryAction = async (isAdding) => {
@@ -95,37 +92,6 @@ function TableEntry(props) {
         handleBlockScreen(false);
     };
 
-    // const removeFromRegistry = async () => {
-    //     handleBlockScreen(true);
-    //     try {
-    //         const isContractRegistered = await registryContract.methods.isContractRegistered(contractAddress).call();
-    //         if (isContractRegistered) {
-    //             await registryContract.methods.remove(domain, contractAddress).send({ from: account, gas: '2000000' })
-    //                 .on('receipt', async (txReceipt) => {
-    //                     showMessage(buildPositiveMsg({
-    //                         header: 'Entry removed from the registry',
-    //                         msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully removed from the registry.
-    //                             You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
-    //                     }));
-    //                     onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt });
-    //                     setIsInRegistry(false);
-    //                 });
-    //         } else {
-    //             showMessage(buildNegativeMsg({
-    //                 header: 'Unable to remove entry from the registry',
-    //                 msg: `TLS-endorsed Smart Contract at address ${contractAddress} was not found in the registry`
-    //             }));
-    //         }
-    //     } catch (err) {
-    //         showMessage(buildNegativeMsg({
-    //             code: err.code,
-    //             header: 'Unable to remove entry from the registry',
-    //             msg: `${!domain ? 'Domain' : !contractAddress ? 'Contract address' : 'Some required input'} is invalid or empty`
-    //         }));
-    //     }
-    //     handleBlockScreen(false);
-    // };
-
     const addRemoveFavourites = () => {
         let isFavourite;
         if (tescIsInFavourites) {
@@ -141,23 +107,25 @@ function TableEntry(props) {
     const renderRegistryButtons = () => {
         if (own) {
             return (
-                isInRegistry ?
-                    <Popup inverted content={`Remove entry from the TeSC registry. This would cost around ${costEstimatedRemove.toFixed(5)} ETH.`}
-                        trigger={<Button basic color='red' onClick={() => handleRegistryAction(false)} content='Remove' icon='delete' className='button-remove' />} />
-                    :
-                    <Popup inverted content={`Add entry to the TeSC registry. This would cost around ${costEstimatedAdd.toFixed(5)} ETH.`}
-                        trigger={
-                            <Button basic disabled={!verified && !(domain.length === 64 && domain.split('.').length === 1)} color='blue'
-                                onClick={() => handleRegistryAction(true)} content='Add' icon='plus' className='button-add' />
-                        }
-                    />
+                <Popup inverted
+                    content={`${isInRegistry ? 'Remove entry from' : 'Add entry to'} the TeSC registry. This would cost around ${costEstimatedRegistryAction.toFixed(5)} ETH.`}
+                    trigger={
+                        <Button
+                            basic
+                            color={isInRegistry ? 'red' : 'blue'}
+                            onClick={() => handleRegistryAction(!isInRegistry)}
+                            disabled={!isInRegistry && !verified && !(domain.length === 64 && domain.split('.').length === 1)}
+                            content={isInRegistry ? 'Remove' : 'Add'}
+                            icon={isInRegistry ? 'delete' : 'plus'}
+                            className='button-remove'
+                        />
+                    }
+                />
             );
         } else {
             return (
-                isInRegistry ? <Popup inverted content='In the registry'
-                    trigger={<Icon name='checkmark' color='green' circular />} /> :
-                    <Popup inverted content='Not in the registry'
-                        trigger={<Icon name='delete' color='red' circular />} />
+                <Popup inverted content={isInRegistry ? 'In the registry' : 'Not in the registry'}
+                    trigger={<Icon name={isInRegistry ? 'checkmark' : 'delete'} color={isInRegistry ? 'green' : 'red'} circular />} />
             );
         }
     };

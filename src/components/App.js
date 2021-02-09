@@ -31,7 +31,7 @@ const App = ({ web3 }) => {
     const [hasAccountChanged, setHasAccountChanged] = useState(false);
     const [networkId, setNetworkId] = useState('');
 
-    const registryContract = useRef(getRegistryContractInstance(web3));
+    // const registryContract = useRef(getRegistryContractInstance(web3));
     const location = useLocation();
 
     const loadStorage = () => {
@@ -103,7 +103,7 @@ const App = ({ web3 }) => {
             loadStorage,
             hasAccountChanged,
             handleAccountChanged,
-            registryContract: registryContract.current,
+            // registryContract: registryContract.current,
             networkId
         }}
         >

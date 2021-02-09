@@ -97,10 +97,10 @@ const TeSCInspect = ({ location }) => {
                     timeout: 10000
                 });
 
-                
+
                 console.log('>>> VERIF_RESULT', response);
                 result = response.data;
-                
+
                 if (!response.data.message.includes('Domain in TeSC is hashed')) {
                     setCurVerifResult({ target: address, ...result });
                 }
@@ -269,6 +269,7 @@ const TeSCInspect = ({ location }) => {
                                                         style={{ float: 'right' }}
                                                     />}
                                             />
+   
                                         </div>
                                     </Segment>
                                 </Grid.Column>
@@ -348,7 +349,7 @@ const TeSCInspect = ({ location }) => {
                 {endorsers && !loading &&
                     <>
                         <p>The contract <b>{contractAddress}</b> is not a TLS-endorsed Smart Contract (TeSC) but is subendorsed by <b className='main-color'>{endorsers.length}</b> TeSCs</p>
-       
+
                         <TableOverview
                             cols={new Set([COL.VERIF, COL.FAV])}
                             rowData={endorsers}
