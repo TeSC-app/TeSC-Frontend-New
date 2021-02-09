@@ -3,7 +3,6 @@ import moment from 'moment';
 import { Table, Icon, Popup, Button, Image } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
 import AppContext from '../appContext';
-import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
 import LinkTescInspect from './InternalLink';
 import ButtonRegistryAddRemove from './ButtonRegistryAddRemove';
 import {
@@ -22,12 +21,10 @@ function TableEntry(props) {
         handleSearchSubmit,
         cols
     } = props;
-    const { web3, showMessage, account, handleBlockScreen, hasAccountChanged, handleAccountChanged } = useContext(AppContext);
+    const { handleAccountChanged } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [verified, setVerified] = useState(typeof preverified === 'boolean' ? preverified : null);
-    //registry buttons need this state to get rerendered
-    const [isInRegistry, setIsInRegistry] = useState(false);
 
 
 
@@ -51,22 +48,6 @@ function TableEntry(props) {
             setTescIsInFavourites(true);
         }
         onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt });
-    };
-
-    const renderRegistryButtons = () => {
-        if (own) {
-            return (
-                <ButtonRegistryAddRemove 
-                    tesc={tesc}
-                    onTescsChange={onTescsChange}
-                />
-            );
-        } else {
-            return (
-                <Popup inverted content={isInRegistry ? 'In the registry' : 'Not in the registry'}
-                    trigger={<Icon name={isInRegistry ? 'checkmark' : 'delete'} color={isInRegistry ? 'green' : 'red'} circular />} />
-            );
-        }
     };
 
     const renderDomain = () => {
@@ -134,7 +115,7 @@ function TableEntry(props) {
             {!cols.has(COL.TSC) && <TableCellVerification {...tableCellVerifProps} />}
             {cols.has(COL.REG) &&
                 <Table.Cell textAlign="center">
-                    {renderRegistryButtons()}
+                    <ButtonRegistryAddRemove contractAddress={contractAddress} domain={domain} isOwner={own} />
                 </Table.Cell>
             }
             {!cols.has(COL.TSC) &&

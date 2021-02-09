@@ -13,6 +13,7 @@ import PageHeader from "../components/PageHeader";
 import TescDataTable from "../components/tesc/TescDataTable";
 import TableOverview, { COL } from "../components/TableOverview";
 import SubEndorsementAddition from "../components/tescInspect/SubEndorsementAddition";
+import ButtonRegistryAddRemove from "../components/ButtonRegistryAddRemove";
 import moment from 'moment';
 
 
@@ -206,6 +207,7 @@ const TeSCInspect = ({ location }) => {
     };
 
 
+
     return (
         <div>
             <PageHeader
@@ -231,7 +233,7 @@ const TeSCInspect = ({ location }) => {
                                         <TescDataTable
                                             data={{ contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint }}
                                         />
-                                        <div style={{ marginTop: '0.5em' }}>
+                                        <div style={{ marginTop: '2em' }}>
                                             {account === contractOwner && (
                                                 <Modal
                                                     closeIcon
@@ -241,7 +243,7 @@ const TeSCInspect = ({ location }) => {
                                                 >
                                                     <Modal.Header style={{ borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
                                                         Update TLS-endorsed Smart Contract
-                                            </Modal.Header>
+                                                    </Modal.Header>
                                                     <Modal.Content style={{ borderBottomLeftRadius: '15px', borderBottomRightRadius: '15px' }}>
                                                         <DeploymentForm
                                                             initInputs={{
@@ -257,7 +259,16 @@ const TeSCInspect = ({ location }) => {
                                                     </Modal.Content>
                                                 </Modal>
                                             )}
-                                            <Popup content={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
+
+                                            <ButtonRegistryAddRemove
+                                                contractAddress={contractAddress}
+                                                domain={domainFromChain}
+                                                isOwner={account === contractOwner}
+                                                style={{ float: 'left' }}
+                                            />
+
+                                            <Popup inverted
+                                                content={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
                                                 trigger={
                                                     <Button
                                                         basic
@@ -266,10 +277,11 @@ const TeSCInspect = ({ location }) => {
                                                         className={isFavourite ? "favourite" : "notFavourite"}
                                                         onClick={toggleFavourite}
                                                         content={isFavourite ? 'Unfavourite' : 'Favourite'}
-                                                        style={{ float: 'right' }}
-                                                    />}
+                                                        style={{ float: 'left' }}
+                                                    />
+                                                }
                                             />
-   
+
                                         </div>
                                     </Segment>
                                 </Grid.Column>
@@ -299,7 +311,6 @@ const TeSCInspect = ({ location }) => {
                                                                 />
                                                             </Form.Field>
                                                         </Form>
-
                                                     )
                                                 }
                                                 {curVerifResult && (

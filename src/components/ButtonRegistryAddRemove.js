@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
-import { Popup, Button } from 'semantic-ui-react';
+import { Popup, Button, Icon } from 'semantic-ui-react';
 
 import AppContext from '../appContext';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
-import { 
-    addRemoveEntry, 
-    estimateRegistryActionCost, 
-    getRegistryContractInstance 
+import {
+    addRemoveEntry,
+    estimateRegistryActionCost,
+    getRegistryContractInstance
 } from '../utils/registry';
 
-const ButtonRegistryAddRemove = ({ tesc }) => {
+const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, ...rest }) => {
     const { web3, showMessage, handleBlockScreen, hasAccountChanged } = useContext(AppContext);
 
     const [isInRegistry, setIsInRegistry] = useState(false);
@@ -17,15 +17,11 @@ const ButtonRegistryAddRemove = ({ tesc }) => {
     const [loading, setLoading] = useState(true);
 
     const registryContract = useRef(getRegistryContractInstance(web3));
-    const contractAddress = useRef(tesc.contractAddress);
-    const domain = useRef(tesc.domain);
-    const own = useRef(tesc.own);
-
 
     useEffect(() => {
         const checkRegistry = async () => {
             try {
-                const isInRegistry = await registryContract.current.methods.isContractRegistered(contractAddress.current).call();
+                const isInRegistry = await registryContract.current.methods.isContractRegistered(contractAddress).call();
                 setIsInRegistry(isInRegistry);
                 setLoading(false);
             } catch (error) {
@@ -34,19 +30,19 @@ const ButtonRegistryAddRemove = ({ tesc }) => {
             }
         };
         checkRegistry();
-    }, []);
+    }, [contractAddress, domain]);
 
 
     useEffect(() => {
         const runEffect = async () => {
-            if (own.current && !hasAccountChanged && !loading) {
-                const cost = await estimateRegistryActionCost(isInRegistry, { web3, contractAddress: contractAddress.current, domain: domain.current });
+            if (!hasAccountChanged && !loading) {
+                const cost = await estimateRegistryActionCost(isInRegistry, { web3, contractAddress, domain });
                 console.log('$$$$$$', cost);
                 setCostEstimatedRegistryAction(cost);
             }
         };
         runEffect();
-    }, [web3, isInRegistry, hasAccountChanged, loading]);
+    }, [web3, isInRegistry, hasAccountChanged, loading, domain, contractAddress]);
 
     const handleRegistryAction = async (isAdding) => {
         handleBlockScreen(true);
@@ -55,7 +51,7 @@ const ButtonRegistryAddRemove = ({ tesc }) => {
                 showMessage(buildPositiveMsg(message));
                 setIsInRegistry(!isInRegistry);
             };
-            await addRemoveEntry(isAdding, { web3, domain: domain.current, contractAddress: contractAddress.current, cb });
+            await addRemoveEntry(isAdding, { web3, domain, contractAddress, cb });
 
         } catch (error) {
             showMessage(buildNegativeMsg({
@@ -66,21 +62,27 @@ const ButtonRegistryAddRemove = ({ tesc }) => {
         handleBlockScreen(false);
     };
 
-    return (
+    return isOwner ? (
         <Popup inverted
-            content={`${isInRegistry ? 'Remove entry from' : 'Add entry to'} the TeSC registry. This would cost around ${costEstimatedRegistryAction.toFixed(5)} ETH.`}
+            content={`${isInRegistry ? 'Remove entry from' : 'Add entry to'} the TeSC Registry. This would cost around ${costEstimatedRegistryAction.toFixed(5)} ETH.`}
             trigger={
                 <Button
                     basic
-                    color={isInRegistry ? 'red' : 'blue'}
+                    color={isInRegistry ? 'red' : 'green'}
                     onClick={() => handleRegistryAction(!isInRegistry)}
-                    content={isInRegistry ? 'Remove' : 'Add'}
+                    content={isInRegistry ? 'Deregister' : 'Register'}
                     icon={isInRegistry ? 'delete' : 'plus'}
-                    className='button-remove'
+                    {...rest}
                 />
             }
         />
-    );
+    ) : (
+            <Popup
+                inverted
+                content={isInRegistry ? 'In the registry' : 'Not in the registry'}
+                trigger={<Icon name={isInRegistry ? 'checkmark' : 'delete'} color={isInRegistry ? 'green' : 'red'} circular />}
+            />
+        );
 };
 
 export default ButtonRegistryAddRemove;
