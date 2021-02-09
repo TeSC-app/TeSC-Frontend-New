@@ -5,12 +5,10 @@ import 'react-day-picker/lib/style.css';
 import AppContext from '../appContext';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
 import LinkTescInspect from './InternalLink';
+import ButtonRegistryAddRemove from './ButtonRegistryAddRemove';
 import {
     isSha3,
 } from '../utils/tesc';
-import { estimateRegistryActionCost } from '../utils/registry';
-import { getRegistryContractInstance } from '../utils/registry';
-import { addRemoveEntry } from '../utils/registry';
 import TableCellVerification from './TableCellVerification';
 import PieChart from '../components/analytics/PieChart';
 import { COL, hasAllColumns } from './TableOverview';
@@ -27,69 +25,20 @@ function TableEntry(props) {
     const { web3, showMessage, account, handleBlockScreen, hasAccountChanged, handleAccountChanged } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
-    const [costEstimatedRegistryAction, setCostEstimatedRegistryAction] = useState(0);
     const [verified, setVerified] = useState(typeof preverified === 'boolean' ? preverified : null);
     //registry buttons need this state to get rerendered
     const [isInRegistry, setIsInRegistry] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const registryContract = useRef(getRegistryContractInstance(web3));
 
 
-    useEffect(() => {
-        if (!cols.has(COL.TSC)) {
-            const checkRegistry = async () => {
-                try {
-                    const isInRegistry = await registryContract.current.methods.isContractRegistered(contractAddress).call();
-                    setIsInRegistry(isInRegistry);
-                    setLoading(false);
-                } catch (error) {
-                    console.log(error);
-                    setLoading(false);
-                }
-            };
-            checkRegistry();
-        }
-    }, [contractAddress, cols]);
 
     useEffect(() => {
         if (hasAllColumns(cols)) handleAccountChanged(false); //???
         isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false);
     }, [isFavourite, setTescIsInFavourites, handleAccountChanged, cols]);
 
-    useEffect(() => {
-        const runEffect = async () => {
-            if (own && account && !hasAccountChanged && !loading) {
-                const cost = await estimateRegistryActionCost(isInRegistry, { web3, contractAddress, domain });
-                console.log('$$$$$$', cost);
-                setCostEstimatedRegistryAction(cost);
-            }
-        };
-        runEffect();
-    }, [web3, contractAddress, account, domain, isInRegistry, own, hasAccountChanged, loading]);
 
     const handleChangeVerified = (verified) => {
         setVerified(verified);
-    };
-
-
-    const handleRegistryAction = async (isAdding) => {
-        handleBlockScreen(true);
-        try {
-            const cb = (message) => {
-                showMessage(buildPositiveMsg(message));
-                onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt });
-                setIsInRegistry(!isInRegistry);
-            };
-
-            await addRemoveEntry(isAdding, { web3, domain, contractAddress, cb });
-
-        } catch (error) {
-            showMessage(buildNegativeMsg({
-                header: 'Unable to add entry to the registry',
-                msg: error.message
-            }));
-        }
-        handleBlockScreen(false);
     };
 
     const addRemoveFavourites = () => {
@@ -107,19 +56,9 @@ function TableEntry(props) {
     const renderRegistryButtons = () => {
         if (own) {
             return (
-                <Popup inverted
-                    content={`${isInRegistry ? 'Remove entry from' : 'Add entry to'} the TeSC registry. This would cost around ${costEstimatedRegistryAction.toFixed(5)} ETH.`}
-                    trigger={
-                        <Button
-                            basic
-                            color={isInRegistry ? 'red' : 'blue'}
-                            onClick={() => handleRegistryAction(!isInRegistry)}
-                            disabled={!isInRegistry && !verified && !(domain.length === 64 && domain.split('.').length === 1)}
-                            content={isInRegistry ? 'Remove' : 'Add'}
-                            icon={isInRegistry ? 'delete' : 'plus'}
-                            className='button-remove'
-                        />
-                    }
+                <ButtonRegistryAddRemove 
+                    tesc={tesc}
+                    onTescsChange={onTescsChange}
                 />
             );
         } else {
