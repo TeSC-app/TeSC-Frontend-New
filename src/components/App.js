@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { BrowserRouter, Route, useLocation } from 'react-router-dom';
 import { Container, Loader, Dimmer, Segment } from 'semantic-ui-react';
+import web3 from 'web3';
 import 'semantic-ui-css/semantic.min.css';
 
 import AppContext from '../appContext';
@@ -14,9 +15,11 @@ import RegistryInspect from '../pages/RegistryInspect';
 import RegistryAdd from '../pages/RegistryAdd';
 import RegistryAnalytics from '../pages/RegistryAnalytics';
 
+import { getRegistryContractInstance } from '../utils/registry';
+
 
 import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
-// import LandingPage from '../landingPage/LandingPage';
+
 
 const App = ({ web3 }) => {
     const [collapsed, setCollapsed] = useState(false);
@@ -26,9 +29,9 @@ const App = ({ web3 }) => {
     const [hasWalletAddress, setHasWalletAddress] = useState(false);
     const [account, setAccount] = useState('');
     const [hasAccountChanged, setHasAccountChanged] = useState(false);
-    const [registryContract, setRegistryContract] = useState(undefined);
-    const [networkId, setNetworkId] = useState('')
+    const [networkId, setNetworkId] = useState('');
 
+    const registryContract = useRef(getRegistryContractInstance(web3));
     const location = useLocation();
 
     const loadStorage = () => {
@@ -42,27 +45,10 @@ const App = ({ web3 }) => {
 
     useEffect(() => {
         const init = async () => {
-            try {
-                const registryContract = new web3.eth.Contract(
-                    TeSCRegistry.abi,
-                    process.env.REACT_APP_REGISTRY_ADDRESS,
-                );
-                setRegistryContract(registryContract);
-            }
-            catch (error) {
-                console.error(error);
-            }
-        };
-        init();
-    }, [web3.eth.Contract, web3.eth.net]);
-
-    useEffect(() => {
-        const init = async () => {
             if (window.ethereum) {
-                const networkId = await web3.eth.net.getId()
-                setNetworkId(networkId)
+                const networkId = await web3.eth.net.getId();
+                setNetworkId(networkId);
                 const [selectedAccount] = await web3.eth.getAccounts();
-                // setAccount(selectedAccount ? selectedAccount.toLowerCase() : '');
                 setAccount(web3.utils.toChecksumAddress(selectedAccount));
                 window.ethereum.on('accountsChanged', function (accounts) {
                     setHasAccountChanged(true);
@@ -117,7 +103,7 @@ const App = ({ web3 }) => {
             loadStorage,
             hasAccountChanged,
             handleAccountChanged,
-            registryContract,
+            registryContract: registryContract.current,
             networkId
         }}
         >
@@ -126,7 +112,7 @@ const App = ({ web3 }) => {
                 :
                 <div className='layout'>
                     <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} handleCollapseSidebar={handleCollapseSidebar} />
-                    <div style={{width: '100vw', height: '100vh'}}>
+                    <div style={{ width: '100vw', height: '100vh' }}>
                         <Navbar hasWalletAddress={hasWalletAddress} selectedAccount={account} handleCollapseSidebar={handleCollapseSidebar} sidebarCollapsed={collapsed} />
 
                         <div className="page">
@@ -140,14 +126,15 @@ const App = ({ web3 }) => {
                             <Route path="/tesc/new" component={TeSCNew} exact />
                             <Route path="/tesc/inspect" component={TeSCInspect} exact />
                             <Route path="/registry/inspect" exact render={props => {
-                                return <RegistryInspect {...props}
-                                    contractRegistry={registryContract} />;
+                                return <RegistryInspect {...props} />;
                             }} />
                             <Route path="/registry/add" exact render={props => {
-                                return <RegistryAdd {...props}
-                                    handleBlockScreen={handleBlockScreen}
-                                    selectedAccount={account}
-                                    contractRegistry={registryContract} />;
+                                return (
+                                    <RegistryAdd {...props}
+                                        handleBlockScreen={handleBlockScreen}
+                                        selectedAccount={account}
+                                    />
+                                );
                             }} />
                             <Route path="/registry/analytics" component={RegistryAnalytics} exact />
                             {/* </Segment> */}

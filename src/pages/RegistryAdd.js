@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useCallback } from 'react'
+import React, { useState, useContext, useEffect, useRef, useCallback } from 'react'
 import { Button, Grid, Icon, Label, Table } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import ERCXXXImplementation from '../ethereum/build/contracts/ERCXXXImplementation.json';
@@ -6,13 +6,14 @@ import { buildNegativeMsg, buildPositiveMsg } from "../components/FeedbackMessag
 import {
     estimateRegistryAddCost
 } from '../utils/tesc';
+import { getRegistryContractInstance } from '../utils/registry';
+
 import moment from 'moment';
 import SearchBox from '../components/SearchBox';
 import PageHeader from '../components/PageHeader';
 
-function RegistryAdd(props) {
-    const { handleBlockScreen, contractRegistry, selectedAccount } = props
-    const { web3, showMessage } = useContext(AppContext)
+function RegistryAdd() {
+    const { web3, showMessage, handleBlockScreen, account } = useContext(AppContext)
     const [contractAddress, setContractAddress] = useState('')
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0)
     const [tescContractOwner, setTescContractOwner] = useState(undefined)
@@ -23,6 +24,8 @@ function RegistryAdd(props) {
     const [inconsistentAddress, setInconsistentAddress] = useState(false)
     const [submitted, setSubmitted] = useState(false)
     const [added, setAdded] = useState(false)
+
+    const contractRegistry = useRef(getRegistryContractInstance(web3))
 
     const clearValues = () => {
         setValidInput(false)
@@ -37,7 +40,7 @@ function RegistryAdd(props) {
             if (tescContract && contractAddress.length === 42 && tescContract._address) {
                 const tescContractOwner = await tescContract.methods.owner.call().call()
                 setTescContractOwner(tescContractOwner)
-                const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
+                const isContractRegistered = await contractRegistry.current.methods.isContractRegistered(contractAddress).call()
                 setIsContractRegistered(isContractRegistered)
                 const tescDomain = await tescContract.methods.getDomain().call()
                 setTescDomain(tescDomain)
@@ -46,7 +49,7 @@ function RegistryAdd(props) {
                 setInconsistentAddress(tescContractOwner.toLowerCase() !== account)
                 if (tescDomain && tescContractOwner && tescContractOwner.toLowerCase() === account && !isContractRegistered) {
                     setValidInput(true)
-                    const estCostAdd = await estimateRegistryAddCost(web3, account, contractRegistry, contractAddress);
+                    const estCostAdd = await estimateRegistryAddCost(web3, account, contractRegistry.current, contractAddress);
                     setCostEstimatedAdd(estCostAdd);
                 }
             } else {
@@ -55,7 +58,7 @@ function RegistryAdd(props) {
         } catch (error) {
             clearValues()
         }
-    }, [contractAddress, web3, contractRegistry])
+    }, [contractAddress, web3])
 
     //To predetermine the cost - only for valid input that would be able to be added to the registry
     useEffect(() => {
@@ -71,25 +74,25 @@ function RegistryAdd(props) {
                 })
             }
             try {
-                checkInput(selectedAccount)
+                checkInput(account)
             } catch (error) {
                 //console.log(error)
                 setValidInput(false)
             }
         }
         runEffect()
-    }, [web3, selectedAccount, checkInput])
+    }, [web3, account, checkInput])
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (tescDomain.length > 0 && contractAddress) {
             handleBlockScreen(true)
             try {
-                const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
+                const isContractRegistered = await contractRegistry.current.methods.isContractRegistered(contractAddress).call()
                 setIsContractRegistered(isContractRegistered)
                 if (!isContractRegistered) {
-                    if (tescContractOwner && tescContractOwner.toLowerCase() === selectedAccount) {
-                        await contractRegistry.methods.add(tescDomain, contractAddress).send({ from: selectedAccount, gas: '2000000' })
+                    if (tescContractOwner && tescContractOwner.toLowerCase() === account) {
+                        await contractRegistry.current.methods.add(tescDomain, contractAddress).send({ from: account, gas: '2000000' })
                             .on('receipt', async (txReceipt) => {
                                 showMessage(buildPositiveMsg({
                                     header: 'Entry added to the registry',

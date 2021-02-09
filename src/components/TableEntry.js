@@ -10,6 +10,7 @@ import {
     estimateRegistryRemoveCost,
     isSha3,
 } from '../utils/tesc';
+import { addRemoveEntry } from '../utils/registry';
 import TableCellVerification from './TableCellVerification';
 import PieChart from '../components/analytics/PieChart';
 import { COL, hasAllColumns } from './TableOverview';
@@ -30,24 +31,24 @@ function TableEntry(props) {
     const [costEstimatedRemove, setCostEstimatedRemove] = useState(0);
     const [verified, setVerified] = useState(typeof preverified === 'boolean' ? preverified : null);
     //registry buttons need this state to get rerendered
-    const [isInRegistry, setIsInRegistry] = useState(false)
-    const [loading, setLoading] = useState(true)
+    const [isInRegistry, setIsInRegistry] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!cols.has(COL.TSC)) {
             const checkRegistry = async () => {
                 try {
-                    const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call()
-                    setIsInRegistry(isInRegistry)
-                    setLoading(false)
+                    const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call();
+                    setIsInRegistry(isInRegistry);
+                    setLoading(false);
                 } catch (error) {
-                    console.log(error)
-                    setLoading(false)
+                    console.log(error);
+                    setLoading(false);
                 }
-            }
-            checkRegistry()
+            };
+            checkRegistry();
         }
-    }, [contractAddress, registryContract, cols])
+    }, [contractAddress, registryContract, cols]);
 
     useEffect(() => {
         if (hasAllColumns(cols)) handleAccountChanged(false); //???
@@ -71,77 +72,59 @@ function TableEntry(props) {
         setVerified(verified);
     };
 
-    const addToRegistry = async () => {
+
+
+
+    const handleRegistryAction = async (isAdding) => {
         handleBlockScreen(true);
-        if (domain && contractAddress) {
-            try {
-                const isContractRegistered = await registryContract.methods.isContractRegistered(contractAddress).call();
-                if (!isContractRegistered) {
-                    await registryContract.methods.add(contractAddress).send({ from: account, gas: '2000000' })
-                        .on('receipt', async (txReceipt) => {
-                            showMessage(buildPositiveMsg({
-                                header: 'Entry added to the registry',
-                                msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully added to the registry.
-                                You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
-                            }));
-                            onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt });
-                            setIsInRegistry(true);
-                        });
-                } else {
-                    showMessage(buildNegativeMsg({
-                        header: 'Unable to add entry to the registry',
-                        msg: `The address ${contractAddress} has already been added to the registry`
-                    }));
-                }
-            } catch (err) {
-                showMessage(buildNegativeMsg({
-                    code: err.code,
-                    header: 'Unable to add entry to the registry',
-                    msg: err.message
-                }));
-                console.log("Error", err);
-            }
-        } else {
+        try {
+            const cb = (message) => {
+                showMessage(buildPositiveMsg(message));
+                onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt });
+                setIsInRegistry(!isInRegistry);
+            };
+
+            await addRemoveEntry(isAdding, { web3, domain, contractAddress, cb });
+
+        } catch (error) {
             showMessage(buildNegativeMsg({
                 header: 'Unable to add entry to the registry',
-                msg: `${!domain ? 'Domain' : !contractAddress ? 'Contract address' : 'Some required input'} is empty`
+                msg: error.message
             }));
         }
         handleBlockScreen(false);
     };
 
-    const removeFromRegistry = async () => {
-        handleBlockScreen(true);
-        if (domain && contractAddress) {
-            try {
-                const isContractRegistered = await registryContract.methods.isContractRegistered(contractAddress).call();
-                if (isContractRegistered) {
-                    await registryContract.methods.remove(domain, contractAddress).send({ from: account, gas: '2000000' })
-                        .on('receipt', async (txReceipt) => {
-                            showMessage(buildPositiveMsg({
-                                header: 'Entry removed from the registry',
-                                msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully removed from the registry.
-                                You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
-                            }));
-                            onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt });
-                            setIsInRegistry(false);
-                        });
-                } else {
-                    showMessage(buildNegativeMsg({
-                        header: 'Unable to remove entry from the registry',
-                        msg: `TLS-endorsed Smart Contract at address ${contractAddress} was not found in the registry`
-                    }));
-                }
-            } catch (err) {
-                showMessage(buildNegativeMsg({
-                    code: err.code,
-                    header: 'Unable to remove entry from the registry',
-                    msg: `${!domain ? 'Domain' : !contractAddress ? 'Contract address' : 'Some required input'} is invalid or empty`
-                }));
-            }
-        };
-        handleBlockScreen(false);
-    };
+    // const removeFromRegistry = async () => {
+    //     handleBlockScreen(true);
+    //     try {
+    //         const isContractRegistered = await registryContract.methods.isContractRegistered(contractAddress).call();
+    //         if (isContractRegistered) {
+    //             await registryContract.methods.remove(domain, contractAddress).send({ from: account, gas: '2000000' })
+    //                 .on('receipt', async (txReceipt) => {
+    //                     showMessage(buildPositiveMsg({
+    //                         header: 'Entry removed from the registry',
+    //                         msg: `TLS-endorsed Smart Contract with domain ${domain} and ${contractAddress} was successfully removed from the registry.
+    //                             You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
+    //                     }));
+    //                     onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt });
+    //                     setIsInRegistry(false);
+    //                 });
+    //         } else {
+    //             showMessage(buildNegativeMsg({
+    //                 header: 'Unable to remove entry from the registry',
+    //                 msg: `TLS-endorsed Smart Contract at address ${contractAddress} was not found in the registry`
+    //             }));
+    //         }
+    //     } catch (err) {
+    //         showMessage(buildNegativeMsg({
+    //             code: err.code,
+    //             header: 'Unable to remove entry from the registry',
+    //             msg: `${!domain ? 'Domain' : !contractAddress ? 'Contract address' : 'Some required input'} is invalid or empty`
+    //         }));
+    //     }
+    //     handleBlockScreen(false);
+    // };
 
     const addRemoveFavourites = () => {
         let isFavourite;
@@ -152,7 +135,7 @@ function TableEntry(props) {
             isFavourite = true;
             setTescIsInFavourites(true);
         }
-        onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt })
+        onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt });
     };
 
     const renderRegistryButtons = () => {
@@ -160,10 +143,13 @@ function TableEntry(props) {
             return (
                 isInRegistry ?
                     <Popup inverted content={`Remove entry from the TeSC registry. This would cost around ${costEstimatedRemove.toFixed(5)} ETH.`}
-                        trigger={<Button basic color='red' onClick={removeFromRegistry} content='Remove' icon='delete' className='button-remove' />} />
+                        trigger={<Button basic color='red' onClick={() => handleRegistryAction(false)} content='Remove' icon='delete' className='button-remove' />} />
                     :
                     <Popup inverted content={`Add entry to the TeSC registry. This would cost around ${costEstimatedAdd.toFixed(5)} ETH.`}
-                        trigger={<Button basic disabled={!verified && !(domain.length === 64 && domain.split('.').length === 1)} color='blue' onClick={addToRegistry} content='Add' icon='plus' className='button-add' />}
+                        trigger={
+                            <Button basic disabled={!verified && !(domain.length === 64 && domain.split('.').length === 1)} color='blue'
+                                onClick={() => handleRegistryAction(true)} content='Add' icon='plus' className='button-add' />
+                        }
                     />
             );
         } else {
@@ -198,13 +184,13 @@ function TableEntry(props) {
     };
 
     const renderCreatedAt = () => {
-        return typeof createdAt === 'undefined' ? moment().format('DD/MM/YYYY HH:mm') : createdAt
-    }
+        return typeof createdAt === 'undefined' ? moment().format('DD/MM/YYYY HH:mm') : createdAt;
+    };
 
     const exploreDomain = () => {
-        handleSearchInput(domain)
-        handleSearchSubmit(domain)
-    }
+        handleSearchInput(domain);
+        handleSearchSubmit(domain);
+    };
 
     const renderDomainForRegistryInspect = () => {
         return (domain.length === 64 && domain.split('.').length === 1) ?
@@ -212,17 +198,17 @@ function TableEntry(props) {
                 cols.has(COL.TSC) ?
                     <Button basic size='medium' onClick={exploreDomain}>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
                     <i>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
-            : cols.has(COL.TSC) ? <Button basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain
-    }
+            : cols.has(COL.TSC) ? <Button basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain;
+    };
 
     const renderPieChartForVerified = () => {
-        const data = [{id: 'Valid', value: tesc.verifiedCount}, {id: 'Invalid', value: tesc.contractCount - tesc.verifiedCount}]
-        return <PieChart loading={false} data={data} isRegistryInspect={true} />
-    }
+        const data = [{ id: 'Valid', value: tesc.verifiedCount }, { id: 'Invalid', value: tesc.contractCount - tesc.verifiedCount }];
+        return <PieChart loading={false} data={data} isRegistryInspect={true} />;
+    };
 
     const renderTescContractCount = () => {
-        return (<div className='smart-contracts'>{tesc.contractAddresses.map((contractAddress) => (<Popup key={contractAddress} content={contractAddress} trigger={<Image src='../images/smart-contract-icon.png' className='smart-contracts__icon' alt='Smart Contract' size='mini' />} />))}</div>)
-    }
+        return (<div className='smart-contracts'>{tesc.contractAddresses.map((contractAddress) => (<Popup key={contractAddress} content={contractAddress} trigger={<Image src='../images/smart-contract-icon.png' className='smart-contracts__icon' alt='Smart Contract' size='mini' />} />))}</div>);
+    };
 
     return (
         <Table.Row key={contractAddress}>
@@ -237,7 +223,7 @@ function TableEntry(props) {
                 }
             </Table.Cell>
             <Table.Cell textAlign='center'>{hasAllColumns(cols) ? renderDomain() : !cols.has(COL.TSC) && !hasAllColumns(cols) ? renderDomainForRegistryInspect() : renderTescContractCount()}</Table.Cell>
-            <Table.Cell textAlign='center'>{!cols.has(COL.TSC)? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
+            <Table.Cell textAlign='center'>{!cols.has(COL.TSC) ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
             {!cols.has(COL.TSC) && <TableCellVerification {...tableCellVerifProps} />}
             {cols.has(COL.REG) &&
                 <Table.Cell textAlign="center">

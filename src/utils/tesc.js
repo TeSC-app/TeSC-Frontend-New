@@ -2,9 +2,9 @@ import RLP from 'rlp-browser';
 import { PrivateKey } from '@fidm/x509';
 import BitSet from 'bitset';
 import moment from 'moment'
-import web3Utils from 'web3-utils'
+import web3 from 'web3'
 
-window.web3Utils = web3Utils;
+window.web3Utils = web3.utils;
 
 export const FLAGS = {
     DOMAIN_HASHED: 0,
@@ -49,7 +49,7 @@ export const flagsToBytes24Hex = (flagsBitVector) => {
     const flagsBitVectorWithSANITY = new BitSet(flagsBitVector.toString() + '1');
     let hex = '0x' + flagsBitVectorWithSANITY.slice(0, Object.keys(FLAGS).length - 1).toString(16);
     console.log('hex', hex)
-    return web3Utils.padLeft(hex, 48);
+    return web3.utils.padLeft(hex, 48);
 };
 
 export const padToBytesX = (hexNumber, x) => {
@@ -98,7 +98,7 @@ export const isValidContractAddress = (address, withReason = false) => {
         return (address.substring(0, 2) === '0x')
             && Boolean(address.match(/^0x[0-9a-fA-F]*$/i))  // could've used web3Utils.isHex() or web3Utils.isAddress() instead
             && (address.length === 42)
-            && web3Utils.checkAddressChecksum(address);
+            && web3.utils.checkAddressChecksum(address);
     }
 
     if (!address) {
@@ -109,14 +109,14 @@ export const isValidContractAddress = (address, withReason = false) => {
         throw new Error('Contract address contains non-hexadecimal digits');
     } else if (address.length !== 42) {
         throw new Error('Contract address must be 42 characters long (prefix 0x and 40 hexadecimal digits)');
-    } else if (!web3Utils.checkAddressChecksum(address)) {
+    } else if (!web3.utils.checkAddressChecksum(address)) {
         throw new Error('The capitalization checksum test for the contract address failed')
     }
     return true;
 };
 
 export const isSha3 = (str) => {
-    return str.length === 66 && web3Utils.isHex(str);
+    return str.length === 66 && web3.utils.isHex(str);
 }
 
 export const formatClaim = ({ contractAddress, domain, expiry, flags }) => {
