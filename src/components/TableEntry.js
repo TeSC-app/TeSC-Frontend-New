@@ -226,8 +226,10 @@ function TableEntry(props) {
     }
 
     const renderPieChartForVerified = () => {
-        const data = [{ id: 'Valid', value: tesc.verifiedCount }, { id: 'Invalid', value: tesc.contractCount - tesc.verifiedCount }]
-        return <PieChart loading={false} data={data} isRegistryInspect={true} />
+        if (!isSha3(domain)) {
+            const data = [{ id: 'Valid', value: tesc.verifiedCount }, { id: 'Invalid', value: tesc.contractCount - tesc.verifiedCount }]
+            return <PieChart loading={false} data={data} isRegistryInspect={true} />
+        }
     }
 
     const renderTescContractCount = () => {
