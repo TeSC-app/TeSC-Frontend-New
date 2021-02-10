@@ -20,6 +20,7 @@ import moment from 'moment';
 
 const TeSCInspect = ({ location }) => {
     const { web3, account, showMessage, loadStorage } = useContext(AppContext);
+    window.web3 = web3
     const [contractAddress, setContractAddress] = useState('');
     const [contractOwner, setContractOwner] = useState('');
     const [domainFromChain, setDomainFromChain] = useState('');

@@ -42,6 +42,9 @@ import {
     isEmptyValidInputForType,
     validateConstructorParameterInput
 } from '../../utils/constructorInput';
+import {
+    ethToUsd
+} from '../../utils/conversionRate';
 
 import { extractAxiosErrorMessage } from '../../utils/formatError';
 import axios from 'axios';
@@ -94,8 +97,8 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const [endorsedSolidityCode, setEndorsedSolidityCode] = useState(null);
     const [solidityFileName, setSolidityFileName] = useState(null);
 
-    const [costEstimated, setCostEstimated] = useState(null);
-    const [costPaid, setCostPaid] = useState(null);
+    const [costsEstimated, setCostsEstimated] = useState(null);
+    const [costsPaid, setCostsPaid] = useState(null);
 
     const [isMetamaskOpen, setIsMetamaskOpen] = useState(false);
     const [isMatchedOriginalDomain, setIsMatchedOriginalDomain] = useState(typedInDomain ? true : false);
@@ -267,7 +270,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     if (!initInputs || contractAddress) {
                         try{
                             const estCost = await estimateDeploymentCost(web3, tx);
-                            setCostEstimated(estCost);
+                            const estCostUsd = await ethToUsd(estCost);
+                            setCostsEstimated({eth: estCost, usd: estCostUsd});
+                            console.log("$$$$$$$$", estCostUsd);
+                            
                         }catch(error){
                             showMessage(buildNegativeMsg({
                                 header: 'Unable to estimate transaction cost',
@@ -314,7 +320,8 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                 console.log("tx", tx)
                 await tx.send({ from: account, gas: '3000000' })
                     .on('receipt', async (txReceipt) => {
-                        setCostPaid(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether'));
+                        const costPaid = txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether');
+                        setCostsPaid({eth: costPaid, usd: await ethToUsd(costPaid)});
                         if(txReceipt.contractAddress) {
                             setContractAddress(txReceipt.contractAddress);
                         }
@@ -849,27 +856,28 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                             <TescDataTable
                                 data={{ contractAddress, domain: currentDomain, expiry, flags, signature, fingerprint }}
                             />
-                            {!!costEstimated && !!signature && (
+                            {!!costsEstimated && !!signature && (
                                 <div style={{ float: 'right'}}>
                                     <span>Cost estimation:  </span>
                                     <Label tag style={{ color: 'royalblue', }}>
-                                        {costEstimated.toFixed(5)} <span style={{ fontSize: '0.75em' }}>ETH</span>
+                                        {costsEstimated.eth.toFixed(5)} <span style={{ fontSize: '0.75em' }}>ETH </span>
+                                        {costsEstimated.usd > 0 && `(${costsEstimated.usd.toFixed(2)}`} <span style={{ fontSize: '0.75em' }}>USD</span>)
                                     </Label>
                                 </div>
                             )}
                         </Fragment>
                     ),
-                    completed: !!costPaid,
-                    reachable: getStepContent(step - 2).completed || !!costPaid  
+                    completed: !!costsPaid,
+                    reachable: getStepContent(step - 2).completed || !!costsPaid  
                 };
             case 5:
                 return {
                     component: (
                         <Fragment>
                             <Header as='h3' content='Receipt' style={{marginBottom: '30px'}} color='purple'/>
-                            {costPaid && 
+                            {costsPaid && 
                                 <Grid.Row style={{ minWidth: 'max-content', paddingTop: '2%' }}>
-                                    <DeploymentOutput contractAddress={contractAddress} domain={domain} costPaid={costPaid} />
+                                    <DeploymentOutput contractAddress={contractAddress} domain={domain} costsPaid={costsPaid} />
                                 </Grid.Row>
                             }
                             
@@ -929,8 +937,8 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         setFingerprint('');
         setPrivateKeyPEM('');
         setPrivateKeyFileName('');
-        setCostEstimated(null);
-        setCostPaid(null);
+        setCostsEstimated(null);
+        setCostsPaid(null);
         setSigInputType(null);
 
         showMessage(null);
@@ -972,7 +980,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                 </Form>
 
                                 <div className={classes.actionsContainer} style={{ float: 'right', height: 'min-content', padding: '1.5% 0' }}>
-                                    {costPaid && !initInputs && (
+                                    {costsPaid && !initInputs && (
                                         <BtnSuir
                                             basic
                                             onClick={handleReset}
@@ -989,7 +997,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                         Back
                                 </BtnSuir>
 
-                                    {((activeStep < 4 && !costPaid) || (activeStep <= 4 && costPaid)) && (
+                                    {((activeStep < 4 && !costsPaid) || (activeStep <= 4 && costsPaid)) && (
                                         <BtnSuir
                                             basic
                                             color="purple"
@@ -999,12 +1007,12 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                             Next
                                         </BtnSuir>
                                     )}
-                                    {activeStep === 4 && !costPaid && (
+                                    {activeStep === 4 && !costsPaid && (
                                         <BtnSuir
                                             icon='play circle'
                                             basic
                                             onClick={handleSubmit}
-                                            disabled={!signature || !privateKeyPEM}
+                                            disabled={!signature}
                                             positive
                                             content={!initInputs ? 'Deploy' : 'Update'}
                                         />
