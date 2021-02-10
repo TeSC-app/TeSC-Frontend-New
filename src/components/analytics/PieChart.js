@@ -5,7 +5,7 @@ import PageHeader from '../../components/PageHeader'
 
 function PieChart(props) {
 
-    const { data, loading, isFlags, isRegistryInspect } = props
+    const { data, loading, isFlags, isRegistryInspect, infoText } = props
 
     const renderPie = () => {
         return loading ? <Segment>
@@ -61,7 +61,8 @@ function PieChart(props) {
             <PageHeader title={isFlags ? 'Popular Flags' : 'Valid To Invalid Ratio'}
                 isRegistryAnalytics={true}
                 isPieValidInvalid={isFlags ? false : true}
-                isPieFlags={isFlags ? true : false} /> : null
+                isPieFlags={isFlags ? true : false}
+                infoText={infoText} /> : null
             }
             {renderPie()}
         </div>

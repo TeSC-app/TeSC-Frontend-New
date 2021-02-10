@@ -5,7 +5,7 @@ import { ResponsiveBar } from '@nivo/bar'
 
 function BarChart(props) {
 
-    const { data, loading } = props
+    const { data, loading, infoText } = props
 
     const getBarColor = bar => bar.data.color;
 
@@ -78,7 +78,10 @@ function BarChart(props) {
 
     return (
         <div style={{ height: 300 }}>
-            <PageHeader title='Domains With Most Smart Contracts' isRegistryAnalytics={true} isBarTop={true} />
+            <PageHeader title='Domains With Most Smart Contracts'
+                isRegistryAnalytics={true}
+                isBarTop={true}
+                infoText={infoText} />
             {renderBarChart()}
         </div>
     )

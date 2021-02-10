@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import PieChart from '../components/analytics/PieChart'
 import BarChart from '../components/analytics/BarChart';
-import { 
+import {
     computeTopDomains,
     countFlags,
     computeValidContracts
@@ -45,9 +45,16 @@ function RegistryAnalytics() {
             gridGap: '10px',
             height: '300px'
         }}>
-            <PieChart data={dataValidContracts} loading={loading} />
-            <BarChart data={computeTopDomains(entries)} loading={loading} />
-            <PieChart data={countFlags(entries)} isFlags={true} loading={loading} />
+            <PieChart data={dataValidContracts}
+                loading={loading}
+                infoText='Shows the number of valid and invalid smart contracts in the registry' />
+            <BarChart data={computeTopDomains(entries)}
+                loading={loading}
+                infoText='Shows the top 5 domains which have the most smart contracts associated to them' />
+            <PieChart data={countFlags(entries)}
+                isFlags={true}
+                loading={loading}
+                infoText='Shows the number of the flags that are used in all smart contracts in the registry' />
         </section>
     )
 }

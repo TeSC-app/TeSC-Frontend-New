@@ -139,11 +139,14 @@ function RegistryInspect() {
     const renderAnalytics = () => {
         return isExploringDomain &&
             <>
-                <PieChart data={dataValidContracts} loading={loading} />
+                <PieChart data={dataValidContracts}
+                    loading={loading}
+                    infoText={`Shows the number of valid and invalid smart contracts endorsed by ${domainFilter}`} />
                 <PieChart data={countFlags(entriesRaw.filter(entry =>
                     extractDomainAndTopLevelDomain(entry.domain) === extractDomainAndTopLevelDomain(domainFilter)))}
                     isFlags={true}
-                    loading={loading} />
+                    loading={loading}
+                    infoText={`Shows the number of the flags that are used in all smart contracts endorsed by ${domainFilter}`} />
             </>
     }
 
