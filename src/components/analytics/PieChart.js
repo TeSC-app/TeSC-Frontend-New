@@ -5,7 +5,7 @@ import PageHeader from '../../components/PageHeader'
 
 function PieChart(props) {
 
-    const { data, loading, isFlags, isRegistryInspect, infoText } = props
+    const { data, loading, isFlags, isRegistryInspect, infoText, isExploringDomain } = props
 
     const renderPie = () => {
         return loading ? <Segment>
@@ -25,6 +25,7 @@ function PieChart(props) {
                 radialLabelsSkipAngle={10}
                 radialLabelsTextColor="#333333"
                 radialLabelsLinkColor={{ from: 'color' }}
+                enableRadialLabels={isExploringDomain ? false : true}
                 sliceLabelsSkipAngle={10}
                 sliceLabelsTextColor="#333333"
                 legends={[

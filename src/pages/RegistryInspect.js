@@ -5,7 +5,7 @@ import PageHeader from '../components/PageHeader';
 import TableOverview, { COL } from '../components/TableOverview';
 import axios from 'axios';
 import moment from 'moment';
-import { extractDomainAndTopLevelDomain } from '../utils/tesc'
+import { extractDomainAndTopLevelDomain, isSha3 } from '../utils/tesc'
 import PieChart from '../components/analytics/PieChart';
 import {
     countFlags,
@@ -139,14 +139,20 @@ function RegistryInspect() {
     const renderAnalytics = () => {
         return isExploringDomain &&
             <>
+                {!isSha3(domainFilter) &&
                 <PieChart data={dataValidContracts}
                     loading={loading}
-                    infoText={`Shows the number of valid and invalid smart contracts endorsed by ${domainFilter}`} />
+                    infoText={`Shows the number of valid and invalid smart contracts endorsed by ${domainFilter}`}
+                    isExploringDomain={true} />
+                }
+            {console.log(entriesRaw.filter(entry =>
+                extractDomainAndTopLevelDomain(entry.domain) === extractDomainAndTopLevelDomain(domainFilter)))}
                 <PieChart data={countFlags(entriesRaw.filter(entry =>
                     extractDomainAndTopLevelDomain(entry.domain) === extractDomainAndTopLevelDomain(domainFilter)))}
                     isFlags={true}
                     loading={loading}
-                    infoText={`Shows the number of the flags that are used in all smart contracts endorsed by ${domainFilter}`} />
+                    infoText={`Shows the number of the flags that are used in all smart contracts endorsed by ${domainFilter}`}
+                    isExploringDomain={true} />
             </>
     }
 

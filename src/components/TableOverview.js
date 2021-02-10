@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Table, Dropdown, Pagination, Icon, Button, Popup, Input, Form, Checkbox } from 'semantic-ui-react';
+import { Table, Dropdown, Pagination, Icon, Button, Popup, Input, Form, Checkbox, Image, Label, Divider } from 'semantic-ui-react';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { formatDate, parseDate } from 'react-day-picker/moment';
@@ -505,10 +505,21 @@ function TableOverview(props) {
         />)
     }
 
+    const renderLegendForSCImages = () => {
+        if (cols.has(COL.TSC)) return (
+            <div style={{display: 'flex', float: 'left'}}>
+                <div style={{ display: 'flex', alignItems: 'center' }}><Image src='../images/smart-contract-icon-invalid.png' className='smart-contracts-legend__icon' alt='Smart Contract' size='mini' /><Label basic size='mini' content='Invalid Smart Contract' /></div>
+                <div style={{ display: 'flex', alignItems: 'center' }}><Image src='../images/smart-contract-icon-valid.png' className='smart-contracts-legend__icon' alt='Smart Contract' size='mini' /><Label basic size='mini' content='Valid Smart Contract' /></div>
+                <div style={{ display: 'flex', alignItems: 'center' }}><Image src='../images/smart-contract-icon.png' className='smart-contracts-legend__icon' alt='Smart Contract' size='mini' /><Label size='mini' basic content='Hashed domain. Cleartext domain must be provided to verify' /></div>
+            </div>
+        )
+    }
+
     return (
         <>
             {renderSearchBox()}
             <div style={{ textAlign: 'end' }}>
+                {renderLegendForSCImages()}
                 {renderFiltersGroup()}
                 {renderClearFiltersButton()}
                 <Button

@@ -20,6 +20,9 @@ export const countFlags = (entries) => {
                 break
             case 5: counterAllowSubendorsement++
                 break
+            case 7: counterDomainHashed++
+                counterAllowSubendorsement++
+                break
             default: break
         }
     }

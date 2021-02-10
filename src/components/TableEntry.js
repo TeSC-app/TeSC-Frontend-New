@@ -235,8 +235,8 @@ function TableEntry(props) {
     const renderTescContractCount = () => {
         return (<div className='smart-contracts'>{tesc.contractAddresses.map((entry, index, contractAddresses) =>
         (index <= 10 ? <Popup key={entry.contractAddress} content={entry.contractAddress} trigger={
-            <Image src={!entry.verified ? '../images/smart-contract-icon-invalid.png' :
-                '../images/smart-contract-icon-valid.png'} className='smart-contracts__icon' alt='Smart Contract' size='mini' />} /> : index === 11 ? `...and ${contractAddresses.length - index} more` : null))}</div>)
+            <Image src={!entry.verified && !isSha3(domain) ? '../images/smart-contract-icon-invalid.png' : entry.verified ?
+                '../images/smart-contract-icon-valid.png' : '../images/smart-contract-icon.png'} className='smart-contracts__icon' alt='Smart Contract' size='mini' />} /> : index === 11 ? `...and ${contractAddresses.length - index} more` : null))}</div>)
     }
 
     const renderOwnIcon = () => {
