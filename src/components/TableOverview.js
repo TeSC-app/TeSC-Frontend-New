@@ -275,8 +275,8 @@ function TableOverview(props) {
             createdAtToFilter: { createdAtToFilter: '', isFiltered: false }
         })
         if (cols.has(COL.VERIF) && cols.has(COL.FAV) && !cols.has(COL.TSC)) {
-            setDisplayedEntries(rowData.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(rowData)
+            setDisplayedEntries(loadStorage().slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+            setTescs(loadStorage())
         } else if(cols.has(COL.TSC)) {
             handleIsExploringDomain(false)
             setDisplayedEntries(tescsWithOccurances.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
@@ -329,7 +329,7 @@ function TableOverview(props) {
                 }))
                 break
             case 'VERIFIED':
-                setTescs(tescs.filter(tesc => filterTypes.isVerifiedFilter.isVerifiedFilter ? tesc.isVerified === true : filterTypes.isNotVerifiedFilter.isNotVerifiedFilter ? tesc.verified === false : tesc))
+                setTescs(tescs.filter(tesc => filterTypes.isVerifiedFilter.isVerifiedFilter ? tesc.verified === true : filterTypes.isNotVerifiedFilter.isNotVerifiedFilter ? tesc.verified === false : tesc))
                 setFilterTypes(prevState => ({
                     ...prevState, 'isVerifiedFilter': { 'isVerifiedFilter': filterTypes.isVerifiedFilter.isVerifiedFilter, isFiltered: true },
                     'isNotVerifiedFilter': { 'isNotVerifiedFilter': filterTypes.isNotVerifiedFilter.isNotVerifiedFilter, isFiltered: true }
