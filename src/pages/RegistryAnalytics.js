@@ -74,6 +74,8 @@ function RegistryAnalytics() {
             switch (flag.flag) {
                 case 3: counterDomainHashed++
                     break
+                case 5: counterAllowSubendorsement++
+                    break
                 default: break
             }
         }

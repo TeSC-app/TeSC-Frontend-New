@@ -233,7 +233,7 @@ function TableEntry(props) {
     }
 
     const renderTescContractCount = () => {
-        return (<div className='smart-contracts'>{tesc.contractAddresses.map((contractAddress) => (<Popup key={contractAddress} content={contractAddress} trigger={<Image src='../images/smart-contract-icon.png' className='smart-contracts__icon' alt='Smart Contract' size='mini' />} />))}</div>)
+        return (<div className='smart-contracts'>{tesc.contractAddresses.map(({ contractAddress, verified }) => (<Popup key={contractAddress} content={contractAddress} trigger={<Image src={!verified ? '../images/smart-contract-icon-invalid.png' : '../images/smart-contract-icon-valid.png'} className='smart-contracts__icon' alt='Smart Contract' size='mini' />} />))}</div>)
     }
 
     const renderOwnIcon = () => {

@@ -40,7 +40,7 @@ function RegistryInspect() {
                     //console.log(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })))
                     const entriesRaw = registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry)
                     const tescsWithOccurances = entriesRaw.map(entry => ({
-                        domain: entry.domain, contractAddresses: entriesRaw.filter((entry_) => entry_.domain === entry.domain).map(({contractAddress}) => contractAddress), contractCount: entriesRaw.reduce((counter, entry_) =>
+                        domain: entry.domain, contractAddresses: entriesRaw.filter((entry_) => entry_.domain === entry.domain).map(({contractAddress, verified}) => ({contractAddress, verified})), contractCount: entriesRaw.reduce((counter, entry_) =>
                                 entry_.domain === entry.domain ? counter += 1 : counter, 0),
                         verifiedCount: entriesRaw.reduce((counter, entry_) =>
                             entry_.verified === true && entry_.domain === entry.domain ? counter += 1 : counter, 0)
