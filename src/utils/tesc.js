@@ -122,3 +122,9 @@ export const isSha3 = (str) => {
 export const formatClaim = ({ contractAddress, domain, expiry, flags }) => {
     return `${contractAddress}.${domain}.${expiry}.${flags}`;
 };
+
+export const convertToUnix = date => {
+    const mDate = moment.utc(date);
+    mDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+    return mDate.unix()
+}
