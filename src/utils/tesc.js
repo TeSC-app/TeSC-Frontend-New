@@ -128,3 +128,15 @@ export const convertToUnix = date => {
     mDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
     return mDate.unix()
 }
+
+export const extractDomainAndTopLevelDomain = domain => {
+    const domainParts = domain.split('.')
+    let domainName = ''
+    let topLevelDomain = ''
+    if (domainParts.length > 1) {
+        domainName = domainParts[domainParts.length - 2]
+        topLevelDomain = domainParts[domainParts.length - 1]
+    }
+    const domainNameAndTopLevelDomain = domainName.concat(`.${topLevelDomain}`) !== '.' ? domainName.concat(`.${topLevelDomain}`) : domain
+    return domainNameAndTopLevelDomain
+} 

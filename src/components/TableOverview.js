@@ -8,7 +8,7 @@ import AppContext from '../appContext';
 import TableEntry from './TableEntry';
 import moment from 'moment';
 import SearchBox from './SearchBox';
-import { convertToUnix } from '../utils/tesc'
+import { convertToUnix, extractDomainAndTopLevelDomain } from '../utils/tesc'
 
 const ENTRIES_PER_PAGE = 5;
 
@@ -167,20 +167,20 @@ function TableOverview(props) {
     };
 
     const handleSearchSubmit = (e) => {
-        const domain = e.target[0].value
+        const domain = e.target ? e.target[0].value : e
         handleLoading(true);
         if (domain === '') {
             handleIsExploringDomain(false);
             setTescsWithOccurancesNew(tescsWithOccurances);
         } else {
             handleIsExploringDomain(true);
-            setTescs(rowData.filter(entry => entry.domain === domain).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
+            setTescs(rowData.filter(entry => extractDomainAndTopLevelDomain(entry.domain) === extractDomainAndTopLevelDomain(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
         }
         handleLoading(false);
     };
 
     const renderSearchBox = () => {
-        return cols.has(COL.DOMAIN) && cols.has(COL.TSC) ? (<SearchBox
+        return cols.has(COL.TSC) ? (<SearchBox
             onChange={handleSearchInput}
             onSubmit={handleSearchSubmit}
             value={domain}
@@ -277,6 +277,9 @@ function TableOverview(props) {
         if (cols.has(COL.VERIF) && cols.has(COL.FAV) && !cols.has(COL.TSC)) {
             setDisplayedEntries(loadStorage().slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setTescs(loadStorage())
+            if (cols.has(COL.DOMAIN) && !hasAllColumns(cols)) {
+                handleIsExploringDomain(false)
+            }
         } else if(cols.has(COL.TSC)) {
             handleIsExploringDomain(false)
             setDisplayedEntries(tescsWithOccurances.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))

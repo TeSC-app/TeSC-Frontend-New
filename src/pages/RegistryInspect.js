@@ -5,6 +5,7 @@ import PageHeader from '../components/PageHeader';
 import TableOverview, { COL } from '../components/TableOverview';
 import axios from 'axios';
 import moment from 'moment';
+import { extractDomainAndTopLevelDomain } from '../utils/tesc'
 
 function RegistryInspect() {
     const { loadStorage } = useContext(AppContext);
@@ -26,6 +27,8 @@ function RegistryInspect() {
         if (!isIdentical) return { isFavourite: false, createdAt: moment().unix() }
     }, [loadStorage])
 
+    
+
     useEffect(() => {
         (async () => {
             try {
@@ -37,28 +40,33 @@ function RegistryInspect() {
                         .map(({ contract, verified }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, createdAt: moment().unix(), verified: verified })))
                     .flat()
                 if (response.status === 200) {
+
                     //console.log(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })))
                     const entriesRaw = registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry)
                     const tescsWithOccurances = entriesRaw.map(entry => ({
-                        domain: entry.domain, contractAddresses: entriesRaw.filter((entry_) => entry_.domain === entry.domain).map(({contractAddress, verified}) => ({contractAddress, verified})), contractCount: entriesRaw.reduce((counter, entry_) =>
-                                entry_.domain === entry.domain ? counter += 1 : counter, 0),
+                        domain: entry.domain, contractAddresses: entriesRaw.filter((entry_) => extractDomainAndTopLevelDomain(entry_.domain) === extractDomainAndTopLevelDomain(entry.domain)).map(({ contractAddress, verified }) => ({ contractAddress, verified })),
+                        contractCount: entriesRaw.reduce((counter, entry_) =>
+                            extractDomainAndTopLevelDomain(entry_.domain) === extractDomainAndTopLevelDomain(entry.domain) ? counter += 1 : counter, 0),
                         verifiedCount: entriesRaw.reduce((counter, entry_) =>
-                            entry_.verified === true && entry_.domain === entry.domain ? counter += 1 : counter, 0)
+                            entry_.verified === true && extractDomainAndTopLevelDomain(entry_.domain) === extractDomainAndTopLevelDomain(entry.domain) ? counter += 1 : counter, 0)
                     }))
+                    console.log('TESCS WITH OCC', tescsWithOccurances)
                     let distinctTescsWithOccurances = []
-                    const map = new Map(); 
+                    const map = new Map();
                     //array of contract addresses used for the smart contract images in the exploration page
                     for (const entry of tescsWithOccurances) {
-                        if (!map.has(entry.domain)) {
-                            map.set(entry.domain, true);    // set any value to Map
+                        if (!map.has(extractDomainAndTopLevelDomain(entry.domain))) {
+                            map.set(extractDomainAndTopLevelDomain(entry.domain), true);    // set any value to Map
                             distinctTescsWithOccurances.push({
-                                domain: entry.domain,
+                                domain: extractDomainAndTopLevelDomain(entry.domain),
                                 contractAddresses: entry.contractAddresses,
                                 contractCount: entry.contractCount,
                                 verifiedCount: entry.verifiedCount
                             });
                         }
                     }
+                    console.log('entries raw ', entriesRaw)
+                    console.log('DISTINCT ENTRIES WITH OCCUR, ', distinctTescsWithOccurances)
                     setEntriesRaw(entriesRaw)
                     setTescsWithOccurances(distinctTescsWithOccurances)
                 } else {
