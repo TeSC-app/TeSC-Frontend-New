@@ -244,23 +244,26 @@ function TableEntry(props) {
 
     return (
         <Table.Row key={contractAddress}>
-            <Table.Cell>
-                {!cols.has(COL.TSC) ?
-                    <span className='contract-address-column'>
-                        {renderOwnIcon()}
-                        {renderContractAddress()}
-                    </span> : renderDomainForRegistryInspect()
-                }
-            </Table.Cell>
-            <Table.Cell textAlign='center'>{hasAllColumns(cols) ? renderDomain() : !cols.has(COL.TSC) && !hasAllColumns(cols) ? renderDomainForRegistryInspect() : renderTescContractCount()}</Table.Cell>
-            <Table.Cell textAlign='center'>{!cols.has(COL.TSC) ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
-            {!cols.has(COL.TSC) && <TableCellVerification {...tableCellVerifProps} />}
+            {cols.has(COL.ADDRESS) ? <Table.Cell>
+                <span className='contract-address-column'>
+                    {renderOwnIcon()}
+                    {renderContractAddress()}
+                </span>
+            </Table.Cell> : cols.has(COL.TSC) ? <Table.Cell>
+                <span className='contract-address-column'>{renderDomainForRegistryInspect()}</span></Table.Cell> : null}
+            {hasAllColumns(cols) ? <Table.Cell textAlign='center'>{renderDomain()}</Table.Cell> :
+                !cols.has(COL.TSC) && !hasAllColumns(cols) && cols.has(COL.DOMAIN) ?
+                    <Table.Cell textAlign='center'>{renderDomainForRegistryInspect()}</Table.Cell> :
+                    cols.has(COL.TSC) ? <Table.Cell textAlign='center'>{renderTescContractCount()}</Table.Cell> : null}
+            {cols.has(COL.EXPIRY) ? <Table.Cell textAlign='center'>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell> :
+                cols.has(COL.TSC) ? <Table.Cell textAlign='center'>{renderPieChartForVerified()}</Table.Cell> : null}
+            {cols.has(COL.VERIF) && !cols.has(COL.TSC) && <TableCellVerification {...tableCellVerifProps} />}
             {cols.has(COL.REG) &&
                 <Table.Cell textAlign="center">
                     {renderRegistryButtons()}
                 </Table.Cell>
             }
-            {!cols.has(COL.TSC) &&
+            {cols.has(COL.FAV) &&
                 <Table.Cell textAlign="center">
                     {renderFavourites()}
                 </Table.Cell>
@@ -268,7 +271,6 @@ function TableEntry(props) {
             {cols.has(COL.CA) &&
                 <Table.Cell>{renderCreatedAt()}</Table.Cell>
             }
-
         </Table.Row>
     );
 }

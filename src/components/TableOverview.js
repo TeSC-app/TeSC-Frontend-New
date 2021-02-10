@@ -180,7 +180,7 @@ function TableOverview(props) {
     };
 
     const renderSearchBox = () => {
-        return !cols.has(COL.REG) ? (<SearchBox
+        return cols.has(COL.DOMAIN) && cols.has(COL.TSC) ? (<SearchBox
             onChange={handleSearchInput}
             onSubmit={handleSearchSubmit}
             value={domain}
@@ -274,10 +274,10 @@ function TableOverview(props) {
             createdAtFromFilter: { createdAtFromFilter: '', isFiltered: false },
             createdAtToFilter: { createdAtToFilter: '', isFiltered: false }
         })
-        if (hasAllColumns(cols)) {
+        if (cols.has(COL.VERIF) && cols.has(COL.FAV) && !cols.has(COL.TSC)) {
             setDisplayedEntries(rowData.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setTescs(rowData)
-        } else {
+        } else if(cols.has(COL.TSC)) {
             handleIsExploringDomain(false)
             setDisplayedEntries(tescsWithOccurances.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setTescsWithOccurancesNew(tescsWithOccurances)
@@ -475,7 +475,7 @@ function TableOverview(props) {
             return (<>
                 {hasAllColumns(cols) ? renderFilteringDropdownForCheckboxes('OWN') : null}
                 {cols.has(COL.ADDRESS) ? renderFilteringDropdownTextfield('ADDRESS') : null}
-                {renderFilteringDropdownTextfield('DOMAIN')}
+                {cols.has(COL.DOMAIN) ? renderFilteringDropdownTextfield('DOMAIN') : null}
                 {cols.has(COL.EXPIRY) ? renderFilteringDropdownForDayPickers('EXPIRY', filterTypes.expiryFromFilter.expiryFromFilter, filterTypes.expiryToFilter.expiryToFilter) : null}
                 {!cols.has(COL.TSC) ? renderFilteringDropdownForCheckboxes('VERIFIED') : null}
                 {cols.has(COL.REG) ? renderFilteringDropdownForCheckboxes('REGISTRY') : null}
@@ -513,15 +513,17 @@ function TableOverview(props) {
             <Table color='purple'>
                 <Table.Header active='true' style={{ backgroundColor: 'purple' }}>
                     <Table.Row>
-                        {!cols.has(COL.TSC) && <Table.HeaderCell>{
+                        {cols.has(COL.ADDRESS) && <Table.HeaderCell>{
                             <Button basic className='column-header' onClick={() => sortEntries('ADDRESS')}>
                                 Address{sortingTypes.isSortingByAddress.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByAddress.isSortingByAddressAsc ? 'sort down' : 'sort up'} /> : null}</Button>
                         }</Table.HeaderCell>}
-                        <Table.HeaderCell>{
-                            <Button basic className='column-header' onClick={cols.has(COL.TSC) ? () => sortEntries('DOMAIN') : () => sortEntries('DOMAIN')}>
+                        {cols.has(COL.DOMAIN) &&
+                        <Table.HeaderCell>
+                            <Button basic className='column-header' onClick={() => sortEntries('DOMAIN')}>
                                 Domain{sortingTypes.isSortingByDomain.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByDomain.isSortingByDomainAsc ? 'sort down' : 'sort up'} /> : null}</Button>
-                        }</Table.HeaderCell>
-                        {!cols.has(COL.TSC) && <Table.HeaderCell>{
+                        </Table.HeaderCell>
+                        }
+                        {cols.has(COL.EXPIRY) && <Table.HeaderCell>{
                             <Button basic className='column-header' onClick={() => sortEntries('EXPIRY')}>
                                 Expiry{sortingTypes.isSortingByExpiry.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByExpiry.isSortingByExpiryAsc ? 'sort down' : 'sort up'} /> : null}</Button>
                         }</Table.HeaderCell>}
@@ -529,17 +531,19 @@ function TableOverview(props) {
                             <Button basic className='column-header' onClick={() => sortEntries('TOTAL_SC')}>
                                 Total Smart Contracts{sortingTypes.isSortingByTotalSC.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByTotalSC.isSortingByTotalSCAsc ? 'sort down' : 'sort up'} /> : null}</Button>
                         }</Table.HeaderCell>}
-                        <Table.HeaderCell textAlign="center">{
+                        {cols.has(COL.VERIF) &&
+                        <Table.HeaderCell textAlign="center">
                             <Button basic className='column-header' onClick={() => sortEntries('VERIFIED')}>
                                 Verified{sortingTypes.isSortingByVerified.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByVerified.isSortingByVerifiedAsc ? 'sort down' : 'sort up'} /> : null}</Button>
-                        }</Table.HeaderCell>
+                        </Table.HeaderCell>
+                        }
                         {cols.has(COL.REG) &&
                             <Table.HeaderCell textAlign="center">{
                                 <Button basic className='column-header' onClick={() => sortEntries('REGISTRY')}>
                                     Registry{sortingTypes.isSortingByIsInRegistry.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByIsInRegistry.isSortingByIsInRegistryAsc ? 'sort down' : 'sort up'} /> : null}</Button>
                             }</Table.HeaderCell>
                         }
-                        {!cols.has(COL.TSC) &&
+                        {cols.has(COL.FAV) &&
                             <Table.HeaderCell textAlign="center">{
                                 <Button basic className='column-header' onClick={() => sortEntries('FAVOURITES')}>
                                     Favourites{sortingTypes.isSortingByFavourite.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByFavourite.isSortingByFavouriteAsc ? 'sort down' : 'sort up'} /> : null}</Button>
