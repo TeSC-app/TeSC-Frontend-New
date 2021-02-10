@@ -34,6 +34,7 @@ function TableOverview(props) {
         tescsWithOccurances,
         handleLoading,
         handleIsExploringDomain,
+        handleDomainFilter,
         cols
     } = props;
 
@@ -174,6 +175,8 @@ function TableOverview(props) {
             setTescsWithOccurancesNew(tescsWithOccurances);
         } else {
             handleIsExploringDomain(true);
+            //for showing domain-specific analytics
+            handleDomainFilter(domain)
             setTescs(rowData.filter(entry => extractDomainAndTopLevelDomain(entry.domain) === extractDomainAndTopLevelDomain(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
         }
         handleLoading(false);
@@ -318,11 +321,14 @@ function TableOverview(props) {
                 }))
                 break
             case 'DOMAIN':
-                if (cols.has(COL.TSC)) setTescsWithOccurancesNew(tescsWithOccurancesNew.filter(tesc => tesc.domain === filterTypes.domainFilter.domainFilter))
-                else setTescs(tescs.filter(tesc => tesc.domain === filterTypes.domainFilter.domainFilter))
+                if (cols.has(COL.TSC)) setTescsWithOccurancesNew(tescsWithOccurancesNew.filter(tesc => extractDomainAndTopLevelDomain(tesc.domain) === extractDomainAndTopLevelDomain(filterTypes.domainFilter.domainFilter)))
+                else setTescs(tescs.filter(tesc => extractDomainAndTopLevelDomain(tesc.domain) === extractDomainAndTopLevelDomain(filterTypes.domainFilter.domainFilter)))
                 setFilterTypes(prevState => ({
                     ...prevState, 'domainFilter': { 'domainFilter': filterTypes.domainFilter.domainFilter, isFiltered: true }
                 }))
+                if (cols.has(COL.DOMAIN) && !hasAllColumns(cols) && typeof handleDomainFilter !== 'undefined') {
+                    handleDomainFilter(filterTypes.domainFilter.domainFilter) 
+                }
                 break
             case 'EXPIRY':
                 setTescs(tescs.filter(tesc => tesc.expiry >= filterTypes.expiryFromFilter.expiryFromFilter && tesc.expiry <= filterTypes.expiryToFilter.expiryToFilter))
