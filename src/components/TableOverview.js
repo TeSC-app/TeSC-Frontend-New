@@ -209,7 +209,7 @@ function TableOverview(props) {
                 console.log(sortingTypes)
                 break
             case 'DOMAIN':
-                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByDomain.isSortingByDomainAsc ? tescA.domain - tescB.domain : tescB.domain - tescA.domain).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByDomain.isSortingByDomainAsc ? tescA.domain.localeCompare(tescB.domain) : tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
                 clearSorting()
                 setSortingTypes(prevState => ({ ...prevState, isSortingByDomain: { isSortingByDomainAsc: sortingTypes.isSortingByDomain.isSortingByDomainAsc ? false : true, isSorting: true } }))
                 console.log(sortingTypes)
@@ -508,13 +508,8 @@ function TableOverview(props) {
         />)
     }
 
-    const printOutCrap = () => {
-        console.log(sortingTypes.isSortingByDomain.isSortingByDomainAsc)
-    }
-
     return (
         <>
-        {printOutCrap()}
             {renderSearchBox()}
             <div style={{ textAlign: 'end' }}>
                 {renderFiltersGroup()}
