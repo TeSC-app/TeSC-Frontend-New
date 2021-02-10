@@ -8,6 +8,7 @@ import AppContext from '../appContext';
 import TableEntry from './TableEntry';
 import moment from 'moment';
 import SearchBox from './SearchBox';
+import { convertToUnix } from '../utils/tesc'
 
 const ENTRIES_PER_PAGE = 5;
 
@@ -37,7 +38,6 @@ function TableOverview(props) {
     } = props;
 
     const { web3, account, loadStorage } = useContext(AppContext);
-
     const [tescs, setTescs] = useState(rowData);
     const [tescsWithOccurancesNew, setTescsWithOccurancesNew] = useState(tescsWithOccurances)
     const [currentPage, setCurrentPage] = useState(1);
@@ -47,55 +47,43 @@ function TableOverview(props) {
     //for search input
     const [domain, setDomain] = useState('');
 
+    const [sortingTypes, setSortingTypes] = useState({
+        isSortingByDomain: { isSortingByDomainAsc: true, isSorting: false },
+        isSortingByAddress: { isSortingByAddressAsc: true, isSorting: false },
+        isSortingByExpiry: { isSortingByExpiryAsc: true, isSorting: false },
+        isSortingByVerified: { isSortingByVerifiedAsc: true, isSorting: false },
+        isSortingByIsInRegistry: { isSortingByIsInRegistryAsc: true, isSorting: false },
+        isSortingByFavourite: { isSortingByFavouriteAsc: true, isSorting: false },
+        isSortingByCreatedAt: { isSortingByCreatedAtAsc: true, isSorting: false },
+        isSortingByTotalSC: { isSortingByTotalSCAsc: true, isSorting: false }
+    })
 
-    //for sorting - asc state and status state
-    const [isSortingByAddressAsc, setIsSortingByAddressAsc] = useState(true)
-    const [isSortingByAddress, setIsSortingByAddress] = useState(false)
-    const [isSortingByDomainAsc, setIsSortingByDomainAsc] = useState(true)
-    const [isSortingByDomain, setIsSortingByDomain] = useState(false)
-    const [isSortingByExpiryAsc, setIsSortingByExpiryAsc] = useState(true)
-    const [isSortingByExpiry, setIsSortingByExpiry] = useState(false)
-    const [isSortingByVerifiedAsc, setIsSortingByVerifiedAsc] = useState(true)
-    const [isSortingByVerified, setIsSortingByVerified] = useState(false)
-    const [isSortingByTotalSmartContractsAsc, setIsSortingByTotalSmartContractsAsc] = useState(true)
-    const [isSortingByTotalSmartContracts, setIsSortingByTotalSmartContracts] = useState(false)
-    const [isSortingByIsInRegistryAsc, setIsSortingByIsInRegistryAsc] = useState(true)
-    const [isSortingByIsInRegistry, setIsSortingByIsInRegistry] = useState(false)
-    const [isSortingByFavouriteAsc, setIsSortingByFavouriteAsc] = useState(true)
-    const [isSortingByFavourite, setIsSortingByFavourite] = useState(false)
-    const [isSortingByCreatedAtAsc, setIsSortingByCreatedAtAsc] = useState(true)
-    const [isSortingByCreatedAt, setIsSortingByCreatedAt] = useState(false)
-
-    //for filtering - for input and for status
     const [isShowingFilters, setIsShowingFilters] = useState(false)
-    const [isOwnFilter, setIsOwnFilter] = useState(true)
-    const [isNotOwnFilter, setIsNotOwnFilter] = useState(true)
-    const [isOwnFiltered, setIsOwnFiltered] = useState(false)
-    const [domainFilter, setDomainFilter] = useState('')
-    const [domainFiltered, setDomainFiltered] = useState(false)
-    const [contractAddressFilter, setContractAddressFilter] = useState('')
-    const [contractAddressFiltered, setContractAddressFiltered] = useState(false)
-    const [expiryFromFilter, setExpiryFromFilter] = useState('')
-    const [expiryToFilter, setExpiryToFilter] = useState('')
-    const [expiryFiltered, setExpiryFiltered] = useState(false)
-    const [isVerifiedFilter, setIsVerifiedFilter] = useState(true)
-    const [isNotVerifiedFilter, setIsNotVerifiedFilter] = useState(true)
-    const [verifiedFiltered, setVerifiedFiltered] = useState(false)
-    const [isInRegistryFilter, setIsInRegistryFilter] = useState(true)
-    const [isNotInRegistryFilter, setIsNotInRegistryFilter] = useState(true)
-    const [isInRegistryFiltered, setIsInRegistryFiltered] = useState(false)
-    const [isFavouriteFilter, setIsFavouriteFilter] = useState(true)
-    const [isNotFavouriteFilter, setIsNotFavouriteFilter] = useState(true)
-    const [isFavouriteFiltered, setIsFavouriteFiltered] = useState(false)
-    const [createdAtFromFilter, setCreatedAtFromFilter] = useState('')
-    const [createdAtToFilter, setCreatedAtToFilter] = useState('')
-    const [createdAtFiltered, setCreatedAtFiltered] = useState(false)
+    const [filterTypes, setFilterTypes] = useState({
+        isOwnFilter: { isOwnFilter: true, isFiltered: false },
+        isNotOwnFilter: { isNotOwnFilter: true, isFiltered: false },
+        domainFilter: { domainFilter: '', isFiltered: false },
+        contractAddressFilter: { contractAddressFilter: '', isFiltered: false },
+        expiryFromFilter: { expiryFromFilter: '', isFiltered: false },
+        expiryToFilter: { expiryToFilter: '', isFiltered: false },
+        isVerifiedFilter: { isVerifiedFilter: true, isFiltered: false },
+        isNotVerifiedFilter: { isNotVerifiedFilter: true, isFiltered: false },
+        isInRegistryFilter: { isInRegistryFilter: true, isFiltered: false },
+        isNotInRegistryFilter: { isNotInRegistryFilter: true, isFiltered: false },
+        isFavouriteFilter: { isFavouriteFilter: true, isFiltered: false },
+        isNotFavouriteFilter: { isNotFavouriteFilter: true, isFiltered: false },
+        createdAtFromFilter: { createdAtFromFilter: '', isFiltered: false },
+        createdAtToFilter: { createdAtToFilter: '', isFiltered: false }
+    })
 
     useEffect(() => {
         const init = async () => {
             try {
                 // setTescs(account ? (isDashboard? loadStorage() : []) : []);
-                setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRIES_PER_PAGE) : []);
+                console.log(cols)
+                if (cols.has(COL.TSC)) setDisplayedEntries(account && tescsWithOccurances ? tescsWithOccurances.slice(0, ENTRIES_PER_PAGE) : [])
+                else setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRIES_PER_PAGE) : []);
+
                 setTotalPages(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / ENTRIES_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRIES_PER_PAGE : 0));
                 window.ethereum.on('accountsChanged', (accounts) => {
                     const account = web3.utils.toChecksumAddress(accounts[0]);
@@ -110,7 +98,7 @@ function TableOverview(props) {
             }
         };
         init();
-    }, [tescs, account, web3, cols, tescsWithOccurancesNew,]);
+    }, [tescs, account, web3, cols, tescsWithOccurancesNew, tescsWithOccurances]);
 
 
     const handleChangeTescs = (tesc) => {
@@ -178,11 +166,12 @@ function TableOverview(props) {
         setDomain(domain);
     };
 
-    const handleSearchSubmit = (domain) => {
+    const handleSearchSubmit = (e) => {
+        const domain = e.target[0].value
         handleLoading(true);
         if (domain === '') {
             handleIsExploringDomain(false);
-            setTescs(tescsWithOccurancesNew);
+            setTescsWithOccurancesNew(tescsWithOccurances);
         } else {
             handleIsExploringDomain(true);
             setTescs(rowData.filter(entry => entry.domain === domain).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
@@ -203,117 +192,65 @@ function TableOverview(props) {
     };
 
     const clearSorting = () => {
-        setIsSortingByDomain(false)
-        setIsSortingByAddress(false)
-        setIsSortingByExpiry(false)
-        setIsSortingByVerified(false)
-        setIsSortingByTotalSmartContracts(false)
-        setIsSortingByIsInRegistry(false)
-        setIsSortingByFavourite(false)
-        setIsSortingByCreatedAt(false)
+        setSortingTypes({
+            isSortingByDomain: { isSortingByDomainAsc: true, isSorting: false },
+            isSortingByAddress: { isSortingByAddressAsc: true, isSorting: false },
+            isSortingByExpiry: { isSortingByExpiryAsc: true, isSorting: false },
+            isSortingByVerified: { isSortingByVerifiedAsc: true, isSorting: false },
+            isSortingByIsInRegistry: { isSortingByIsInRegistryAsc: true, isSorting: false },
+            isSortingByFavourite: { isSortingByFavouriteAsc: true, isSorting: false },
+            isSortingByCreatedAt: { isSortingByCreatedAtAsc: true, isSorting: false },
+            isSortingByTotalSC: { isSortingByTotalSCAsc: true, isSorting: false }
+        })
     }
 
-    const sortByContractAddress = () => {
-        if (isSortingByAddressAsc) {
-            setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.contractAddress - tescB.contractAddress).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByAddressAsc(false)
-        } else {
-            setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.contractAddress - tescA.contractAddress).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByAddressAsc(true)
+    const sortEntries = (sortType) => {
+        switch (sortType) {
+            case 'ADDRESS':
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByAddress.isSortingByAddressAsc ? tescA.contractAddress - tescB.contractAddress : tescB.contractAddress - tescA.contractAddress).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+                clearSorting()
+                setSortingTypes(prevState => ({ ...prevState, isSortingByAddress: { isSortingByAddressAsc: sortingTypes.isSortingByAddress.isSortingByAddressAsc ? false : true, isSorting: true } }))
+                break
+            case 'DOMAIN':
+                if (cols.has(COL.TSC)) setDisplayedEntries(tescsWithOccurancesNew.sort((tescA, tescB) => sortingTypes.isSortingByDomain.isSortingByDomainAsc ? tescA.domain.localeCompare(tescB.domain) : tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+                else setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByDomain.isSortingByDomainAsc ? tescA.domain.localeCompare(tescB.domain) : tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+                clearSorting()
+                setSortingTypes(prevState => ({ ...prevState, isSortingByDomain: { isSortingByDomainAsc: sortingTypes.isSortingByDomain.isSortingByDomainAsc ? false : true, isSorting: true } }))
+                break
+            case 'EXPIRY':
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByExpiry.isSortingByExpiryAsc ? tescA.expiry.toString().localeCompare(tescB.expiry) : tescB.expiry.toString().localeCompare(tescA.expiry)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+                clearSorting()
+                setSortingTypes(prevState => ({ ...prevState, isSortingByExpiry: { isSortingByExpiryAsc: sortingTypes.isSortingByExpiry.isSortingByExpiryAsc ? false : true, isSorting: true } }))
+                break
+            case 'TOTAL_SC':
+                setDisplayedEntries(tescsWithOccurances.sort((tescA, tescB) => sortingTypes.isSortingByTotalSC.isSortingByTotalSCAsc ? tescA.contractCount.toString().localeCompare(tescB.contractCount) : tescB.contractCount.toString().localeCompare(tescA.contractCount)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+                clearSorting()
+                setSortingTypes(prevState => ({ ...prevState, isSortingByTotalSC: { isSortingByTotalSCAsc: sortingTypes.isSortingByTotalSC.isSortingByTotalSCAsc ? false : true, isSorting: true } }))
+                break
+            case 'VERIFIED':
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByVerified.isSortingByVerifiedAsc ? tescA.verified.toString().localeCompare(tescB.verified) : tescB.verified.toString().localeCompare(tescA.verified)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+                clearSorting()
+                setSortingTypes(prevState => ({ ...prevState, isSortingByVerified: { isSortingByVerifiedAsc: sortingTypes.isSortingByVerified.isSortingByVerifiedAsc ? false : true, isSorting: true } }))
+                break
+            case 'REGISTRY':
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByIsInRegistry.isSortingByIsInRegistryAsc ? tescA.isInRegistry.toString().localeCompare(tescB.isInRegistry) : tescB.isInRegistry.toString().localeCompare(tescA.isInRegistry)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+                clearSorting()
+                setSortingTypes(prevState => ({ ...prevState, isSortingByIsInRegistry: { isSortingByIsInRegistryAsc: sortingTypes.isSortingByIsInRegistry.isSortingByIsInRegistryAsc ? false : true, isSorting: true } }))
+                break
+            case 'FAVOURITES':
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByFavourite.isSortingByFavouriteAsc ? tescA.isFavourite.toString().localeCompare(tescB.isFavourite) : tescB.isFavourite.toString().localeCompare(tescA.isFavourite)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+                clearSorting()
+                setSortingTypes(prevState => ({ ...prevState, isSortingByFavourite: { isSortingByFavouriteAsc: sortingTypes.isSortingByFavourite.isSortingByFavouriteAsc ? false : true, isSorting: true } }))
+                break
+            case 'CREATED_AT':
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByCreatedAt.isSortingByCreatedAtAsc ? tescA.createdAt.toString().localeCompare(tescB.createdAt) : tescB.createdAt.toString().localeCompare(tescA.createdAt)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+                clearSorting()
+                setSortingTypes(prevState => ({ ...prevState, isSortingByCreatedAt: { isSortingByCreatedAtAsc: sortingTypes.isSortingByCreatedAt.isSortingByCreatedAtAsc ? false : true, isSorting: true } }))
+                break
+            default:
+                setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+                setTescs(tescs.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
         }
-        clearSorting()
-        setIsSortingByAddress(true)
-    }
-
-    const sortByDomain = (tescs) => {
-        if (isSortingByDomainAsc) {
-            if (!cols.has(COL.TSC)) setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.domain.localeCompare(tescB.domain)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            else setTescsWithOccurancesNew(tescs.sort((tescA, tescB) => tescA.domain.localeCompare(tescB.domain)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByDomainAsc(false)
-        } else {
-            if (!cols.has(COL.TSC)) setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            else setTescsWithOccurancesNew(tescs.sort((tescA, tescB) => tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByDomainAsc(true)
-        }
-        clearSorting()
-        setIsSortingByDomain(true)
-    }
-
-    const sortByExpiry = () => {
-        console.log(tescs)
-        if (isSortingByExpiryAsc) {
-            setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.expiry.toString().localeCompare(tescB.expiry)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByExpiryAsc(false)
-        } else {
-            setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.expiry.toString().localeCompare(tescA.expiry)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByExpiryAsc(true)
-        }
-        clearSorting()
-        setIsSortingByExpiry(true)
-    }
-
-    const sortByVerified = () => {
-        if (isSortingByVerifiedAsc) {
-            console.log(tescs)
-            setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.verified.toString().localeCompare(tescB.verified)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByVerifiedAsc(false)
-        } else {
-            setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.verified.toString().localeCompare(tescA.verified)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByVerifiedAsc(true)
-        }
-        clearSorting()
-        setIsSortingByVerified(true)
-    }
-
-    const sortByTotalSmartContracts = () => {
-        if (isSortingByTotalSmartContractsAsc) {
-            setTescsWithOccurancesNew(tescsWithOccurancesNew.sort((tescA, tescB) => tescA.contractCount.toString().localeCompare(tescB.contractCount)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByTotalSmartContractsAsc(false)
-        } else {
-            setTescsWithOccurancesNew(tescsWithOccurancesNew.sort((tescA, tescB) => tescB.contractCount.toString().localeCompare(tescA.contractCount)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByTotalSmartContractsAsc(true)
-        }
-        clearSorting()
-        setIsSortingByTotalSmartContracts(true)
-    }
-
-    const sortByIsInRegistry = () => {
-        if (isSortingByIsInRegistryAsc) {
-            console.log(tescs)
-            setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.isInRegistry.toString().localeCompare(tescB.isInRegistry)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByIsInRegistryAsc(false)
-        } else {
-            setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.isInRegistry.toString().localeCompare(tescA.isInRegistry)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByIsInRegistryAsc(true)
-        }
-        clearSorting()
-        setIsSortingByIsInRegistry(true)
-    }
-
-    const sortByFavourite = () => {
-        if (isSortingByFavouriteAsc) {
-            console.log(tescs)
-            setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.isFavourite.toString().localeCompare(tescB.isFavourite)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByFavouriteAsc(false)
-        } else {
-            setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.isFavourite.toString().localeCompare(tescA.isFavourite)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByFavouriteAsc(true)
-        }
-        clearSorting()
-        setIsSortingByFavourite(true)
-    }
-
-    const sortByCreatedAt = () => {
-        if (isSortingByCreatedAtAsc) {
-            console.log(tescs)
-            setDisplayedEntries(tescs.sort((tescA, tescB) => tescA.createdAt.toString().localeCompare(tescB.createdAt)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByCreatedAtAsc(false)
-        } else {
-            setDisplayedEntries(tescs.sort((tescA, tescB) => tescB.createdAt.toString().localeCompare(tescA.createdAt)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setIsSortingByCreatedAtAsc(true)
-        }
-        clearSorting()
-        setIsSortingByCreatedAt(true)
     }
 
     const setVerificationInTescs = (tescsWithVerification) => {
@@ -321,242 +258,135 @@ function TableOverview(props) {
     }
 
     const clearFilters = () => {
-        setIsOwnFilter(true)
-        setIsNotOwnFilter(true)
-        setIsOwnFiltered(false)
-        setDomainFiltered(false)
-        setContractAddressFiltered(false)
-        setExpiryFiltered(false)
-        setExpiryFromFilter('')
-        setExpiryToFilter('')
-        setVerifiedFiltered(false)
-        setIsVerifiedFilter(true)
-        setIsNotVerifiedFilter(true)
-        setIsInRegistryFiltered(false)
-        setIsInRegistryFilter(true)
-        setIsNotInRegistryFilter(true)
-        setIsFavouriteFiltered(false)
-        setIsFavouriteFilter(true)
-        setIsNotFavouriteFilter(true)
-        setCreatedAtFiltered(false)
-        setCreatedAtFromFilter('')
-        setCreatedAtToFilter('')
-        setDisplayedEntries(rowData.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-        setTescs(rowData)
-        setTescsWithOccurancesNew(tescsWithOccurances)
-    }
-
-    //filtering logic starts from here
-
-    const filterByOwn = (isOwnFilter, isNotOwnFilter) => {
-        if (isOwnFilter === true && isNotOwnFilter === true) {
-            setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-        } else if (isOwnFilter === true && isNotOwnFilter === false) {
-            setDisplayedEntries(tescs.filter(tesc => tesc.own === true).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.own === true))
-        } else if (isOwnFilter === false && isNotOwnFilter === true) {
-            setDisplayedEntries(tescs.filter(tesc => tesc.own === false).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.own === false))
-        } else {
-            setDisplayedEntries([])
-            setTescs([])
-        }
-        setIsOwnFiltered(true)
-    }
-
-    const handleIsOwnFilter = () => {
-        if (isOwnFilter) setIsOwnFilter(false)
-        else setIsOwnFilter(true)
-    }
-
-    const handleIsNotOwnFilter = () => {
-        if (isNotOwnFilter) setIsNotOwnFilter(false)
-        else setIsNotOwnFilter(true)
-    }
-
-    const filterByDomain = (domain, tescs) => {
-        if (!cols.has(COL.TSC)) {
-            if (domain !== '') {
-                setDisplayedEntries(tescs.filter(tesc => tesc.domain === domain).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-                setTescs(tescs.filter(tesc => tesc.domain === domain))
-            } else {
-                clearFilters()
-            }
-        } else {
-            if (domain !== '')
-                setTescsWithOccurancesNew(tescs.filter(tesc => tesc.domain === domain).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            else {
-                clearFilters()
-            }
-        }
-        setDomainFiltered(true)
-    }
-
-    const handleDomainFilter = (e) => {
-        setDomainFilter(e.target.value)
-    }
-
-    const filterByContractAddress = (contractAddress) => {
-        if (contractAddress !== '') {
-            setDisplayedEntries(tescs.filter(tesc => tesc.contractAddress === contractAddress).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.contractAddress === contractAddress))
-        } else {
-            clearFilters()
-        }
-        setContractAddressFiltered(true)
-    }
-
-    const handleContractAddressFilter = (e) => {
-        setContractAddressFilter(e.target.value)
-    }
-
-    const filterByExpiry = (expiryFromFilter, expiryToFilter) => {
-        if (expiryFromFilter !== '' && expiryToFilter !== '') {
-            setDisplayedEntries(tescs.filter(tesc => tesc.expiry >= expiryFromFilter && tesc.expiry <= expiryToFilter).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.expiry >= expiryFromFilter && tesc.expiry <= expiryToFilter))
-        } else if (expiryFromFilter === '' && expiryToFilter !== '') {
-            setDisplayedEntries(tescs.filter(tesc => tesc.expiry <= expiryToFilter).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.expiry <= expiryToFilter))
-        } else if (expiryFromFilter !== '' && expiryToFilter === '') {
-            setDisplayedEntries(tescs.filter(tesc => tesc.expiry >= expiryFromFilter).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.expiry >= expiryFromFilter))
-        } else {
+        setFilterTypes({
+            isOwnFilter: { isOwnFilter: true, isFiltered: false },
+            isNotOwnFilter: { isNotOwnFilter: true, isFiltered: false },
+            domainFilter: { domainFilter: '', isFiltered: false },
+            contractAddressFilter: { contractAddressFilter: '', isFiltered: false },
+            expiryFromFilter: { expiryFromFilter: '', isFiltered: false },
+            expiryToFilter: { expiryToFilter: '', isFiltered: false },
+            isVerifiedFilter: { isVerifiedFilter: true, isFiltered: false },
+            isNotVerifiedFilter: { isNotVerifiedFilter: true, isFiltered: false },
+            isInRegistryFilter: { isInRegistryFilter: true, isFiltered: false },
+            isNotInRegistryFilter: { isNotInRegistryFilter: true, isFiltered: false },
+            isFavouriteFilter: { isFavouriteFilter: true, isFiltered: false },
+            isNotFavouriteFilter: { isNotFavouriteFilter: true, isFiltered: false },
+            createdAtFromFilter: { createdAtFromFilter: '', isFiltered: false },
+            createdAtToFilter: { createdAtToFilter: '', isFiltered: false }
+        })
+        if (hasAllColumns(cols)) {
             setDisplayedEntries(rowData.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setTescs(rowData)
-        }
-        setExpiryFiltered(true)
-    }
-
-    const handleExpiryFromFilter = (date) => {
-        setExpiryFromFilter(convertToUnix(date))
-    }
-
-    const handleExpiryToFilter = (date) => {
-        setExpiryToFilter(convertToUnix(date))
-    }
-
-    const filterByVerified = (isVerifiedFilter, isNotVerifiedFilter) => {
-        if (isVerifiedFilter === true && isNotVerifiedFilter === true) {
-            setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-        } else if (isVerifiedFilter === true && isNotVerifiedFilter === false) {
-            setDisplayedEntries(tescs.filter(tesc => tesc.verified === true).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.verified === true))
-        } else if (isVerifiedFilter === false && isNotVerifiedFilter === true) {
-            setDisplayedEntries(tescs.filter(tesc => tesc.verified === false).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.verified === false))
         } else {
-            setDisplayedEntries([])
-            setTescs([])
+            handleIsExploringDomain(false)
+            setDisplayedEntries(tescsWithOccurances.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+            setTescsWithOccurancesNew(tescsWithOccurances)
         }
-        setVerifiedFiltered(true)
     }
 
-    const handleIsVerifiedFilter = () => {
-        if (isVerifiedFilter) setIsVerifiedFilter(false)
-        else setIsVerifiedFilter(true)
+    const handleFiltersText = (e, { name, value }) => {
+        setFilterTypes(prevState => ({ ...prevState, [name]: { [name]: value, filtered: false } }))
     }
 
-    const handleIsNotVerifiedFilter = () => {
-        if (isNotVerifiedFilter) setIsNotVerifiedFilter(false)
-        else setIsNotVerifiedFilter(true)
+    const handleFiltersCheckbox = (e, { name, checked }) => {
+        setFilterTypes(prevState => ({ ...prevState, [name]: { [name]: checked, filtered: false } }))
     }
 
-    const filterByIsInRegistry = (isInRegistryFilter, isNotInRegistryFilter) => {
-        if (isInRegistryFilter === true && isNotInRegistryFilter === true) {
-            setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-        } else if (isInRegistryFilter === true && isNotInRegistryFilter === false) {
-            setDisplayedEntries(tescs.filter(tesc => tesc.isInRegistry === true).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.isInRegistry === true))
-        } else if (isInRegistryFilter === false && isNotInRegistryFilter === true) {
-            setDisplayedEntries(tescs.filter(tesc => tesc.isInRegistry === false).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.isInRegistry === false))
-        } else {
-            setDisplayedEntries([])
-            setTescs([])
+    const handleFiltersDate = (date, modifier, dayPickerInput) => {
+        const name = dayPickerInput.props.inputProps.name
+        setFilterTypes(prevState => ({ ...prevState, [name]: { [name]: convertToUnix(date), filtered: false } }))
+    }
+
+    const filterEntries = (filterType) => {
+        switch (filterType) {
+            case 'OWN':
+                setTescs(tescs.filter(tesc => filterTypes.isOwnFilter.isOwnFilter ? tesc.own === true :
+                    filterTypes.isNotOwnFilter.isNotOwnFilter ? tesc.own === false : tesc))
+                setFilterTypes(prevState => ({
+                    ...prevState, 'isOwnFilter': { 'isOwnFilter': filterTypes.isOwnFilter.isOwnFilter, isFiltered: true },
+                    'isNotOwnFilter': { 'isNotOwnFilter': filterTypes.isNotOwnFilter.isNotOwnFilter, isFiltered: true }
+                }))
+                break
+            case 'ADDRESS':
+                setTescs(tescs.filter(tesc => tesc.contractAddress === filterTypes.contractAddressFilter.contractAddressFilter))
+                setFilterTypes(prevState => ({
+                    ...prevState,
+                    'contractAddressFilter': { 'contractAddressFilter': filterTypes.contractAddressFilter.contractAddressFilter, isFiltered: true }
+                }))
+                break
+            case 'DOMAIN':
+                if (cols.has(COL.TSC)) setTescsWithOccurancesNew(tescsWithOccurancesNew.filter(tesc => tesc.domain === filterTypes.domainFilter.domainFilter))
+                else setTescs(tescs.filter(tesc => tesc.domain === filterTypes.domainFilter.domainFilter))
+                setFilterTypes(prevState => ({
+                    ...prevState, 'domainFilter': { 'domainFilter': filterTypes.domainFilter.domainFilter, isFiltered: true }
+                }))
+                break
+            case 'EXPIRY':
+                setTescs(tescs.filter(tesc => tesc.expiry >= filterTypes.expiryFromFilter.expiryFromFilter && tesc.expiry <= filterTypes.expiryToFilter.expiryToFilter))
+                setFilterTypes(prevState => ({
+                    ...prevState, 'expiryFromFilter': { 'expiryFromFilter': filterTypes.expiryFromFilter.expiryFromFilter, isFiltered: true },
+                    'expiryToFilter': { 'expiryToFilter': filterTypes.expiryToFilter.expiryToFilter, isFiltered: true }
+                }))
+                break
+            case 'VERIFIED':
+                setTescs(tescs.filter(tesc => filterTypes.isVerifiedFilter.isVerifiedFilter ? tesc.isVerified === true : filterTypes.isNotVerifiedFilter.isNotVerifiedFilter ? tesc.verified === false : tesc))
+                setFilterTypes(prevState => ({
+                    ...prevState, 'isVerifiedFilter': { 'isVerifiedFilter': filterTypes.isVerifiedFilter.isVerifiedFilter, isFiltered: true },
+                    'isNotVerifiedFilter': { 'isNotVerifiedFilter': filterTypes.isNotVerifiedFilter.isNotVerifiedFilter, isFiltered: true }
+                }))
+                break
+            case 'REGISTRY':
+                setTescs(tescs.filter(tesc => filterTypes.isInRegistryFilter.isInRegistryFilter ? tesc.isInRegistry === true : filterTypes.isNotInRegistryFilter.isNotInRegistryFilter ? tesc.isInRegistry === false : tesc))
+                setFilterTypes(prevState => ({
+                    ...prevState, 'isInRegistryFilter': { 'isInRegistryFilter': filterTypes.isInRegistryFilter.isInRegistryFilter, isFiltered: true },
+                    'isNotInRegistryFilter': { 'isNotInRegistryFilter': filterTypes.isNotInRegistryFilter.isNotInRegistryFilter, isFiltered: true }
+                }))
+                break
+            case 'FAVOURITES':
+                setTescs(tescs.filter(tesc => filterTypes.isFavouriteFilter.isFavouriteFilter ? tesc.isFavourite === true : filterTypes.isNotFavouriteFilter.isNotFavouriteFilter ? tesc.isFavourite === false : tesc))
+                setFilterTypes(prevState => ({
+                    ...prevState, 'isFavouriteFilter': { 'isFavouriteFilter': filterTypes.isFavouriteFilter.isFavouriteFilter, isFiltered: true },
+                    'isNotFavouriteFilter': { 'isNotFavouriteFilter': filterTypes.isNotFavouriteFilter.isNotFavouriteFilter, isFiltered: true }
+                }))
+                break
+            case 'CREATED_AT':
+                setTescs(tescs.filter(tesc => tesc.createdAt >= filterTypes.createdAtFromFilter.createdAtFromFilter && tesc.createdAt <= filterTypes.createdAtToFilter.createdAtToFilter))
+                setFilterTypes(prevState => ({
+                    ...prevState, 'createdAtFromFilter': { 'createdAtFromFilter': filterTypes.createdAtFromFilter.createdAtFromFilter, isFiltered: true },
+                    'createdAtToFilter': { 'createdAtToFilter': filterTypes.createdAtToFilter.createdAtToFilter, isFiltered: true }
+                }))
+                break
+            default:
+                setTescs(rowData)
         }
-        setIsInRegistryFiltered(true)
-    }
-
-    const handleIsInRegistryFilter = () => {
-        if (isInRegistryFilter) setIsInRegistryFilter(false)
-        else setIsInRegistryFilter(true)
-    }
-
-    const handleIsNotInRegistryFilter = () => {
-        if (isNotInRegistryFilter) setIsNotInRegistryFilter(false)
-        else setIsNotInRegistryFilter(true)
-    }
-
-    const filterByIsFavourite = (isFavouriteFilter, isNotFavouriteFilter) => {
-        if (isFavouriteFilter === true && isNotFavouriteFilter === true) {
-            setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-        } else if (isFavouriteFilter === true && isNotFavouriteFilter === false) {
-            setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === true).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.isFavourite === true))
-        } else if (isFavouriteFilter === false && isNotFavouriteFilter === true) {
-            setDisplayedEntries(tescs.filter(tesc => tesc.isFavourite === false).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.isFavourite === false))
-        } else {
-            setDisplayedEntries([])
-            setTescs([])
-        }
-        setIsFavouriteFiltered(true)
-    }
-
-    const handleIsFavouriteFilter = () => {
-        if (isFavouriteFilter) setIsFavouriteFilter(false)
-        else setIsFavouriteFilter(true)
-    }
-
-    const handleIsNotFavouriteFilter = () => {
-        if (isNotFavouriteFilter) setIsNotFavouriteFilter(false)
-        else setIsNotFavouriteFilter(true)
-    }
-
-    const filterByCreatedAt = (createdAtFromFilter, createdAtToFilter) => {
-        if (createdAtFromFilter !== '' && createdAtToFilter !== '') {
-            setDisplayedEntries(tescs.filter(tesc => tesc.createdAt >= createdAtFromFilter && tesc.createdAt <= createdAtToFilter).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.createdAt >= createdAtFromFilter && tesc.createdAt <= createdAtToFilter))
-        } else if (createdAtFromFilter === '' && createdAtToFilter !== '') {
-            setDisplayedEntries(tescs.filter(tesc => tesc.createdAt <= createdAtToFilter).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.createdAt <= createdAtToFilter))
-        } else if (createdAtFromFilter !== '' && createdAtToFilter === '') {
-            setDisplayedEntries(tescs.filter(tesc => tesc.createdAt >= createdAtFromFilter).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(tescs.filter(tesc => tesc.createdAt >= createdAtFromFilter))
-        } else {
-            setDisplayedEntries(rowData.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(rowData)
-        }
-        setCreatedAtFiltered(true)
-    }
-
-    const handleCreatedAtFromFilter = date => {
-        setCreatedAtFromFilter(convertToUnix(date))
-    }
-
-    const handleCreatedAtToFilter = date => {
-        setCreatedAtToFilter(convertToUnix(date))
-    }
-
-    const convertToUnix = date => {
-        const mDate = moment.utc(date);
-        mDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-        return mDate.unix()
     }
 
     //end of filtering logic
-
-    const renderFilteringDropdownForCheckboxes = (title, isTypeFilter, handleIsTypeFilter, isNotTypeFilter, handleIsNotTypeFilter, filterByType) => {
-        const checkboxLabelOne = title === 'Verified' ? 'Verified' : title === 'Registry' ? 'In Registry' : title === 'Favourites' ? 'Favourite' : title === 'Own' ? 'Own' : ''
-        const checkboxLabelTwo = title === 'Verified' ? 'Not Verified' : title === 'Registry' ? 'Not In Registry' : title === 'Favourites' ? 'Not Favourite' : title === 'Own' ? 'Not Own' : ''
-        const classesDropdown = title === 'Verified' && verifiedFiltered ? 'icon dropdown-filters-filtered' :
-            title === 'Verified' && !verifiedFiltered ? 'icon dropdown-filters' :
-                title === 'Registry' && isInRegistryFiltered ? 'icon dropdown-filters-filtered' :
-                    title === 'Registry' && !isInRegistryFiltered ? 'icon dropdown-filters' :
-                        title === 'Favourites' && isFavouriteFiltered ? 'icon dropdown-filters-filtered' :
-                            title === 'Favourites' && !isFavouriteFiltered ? 'icon dropdown-filters' :
-                                title === 'Own' && isOwnFiltered ? 'icon dropdown-filters-filtered' :
-                                    title === 'Own' && !isOwnFiltered ? 'icon dropdown-filters' : 'icon dropdown-filters'
+    const renderFilteringDropdownForCheckboxes = (filterType) => {
+        const title = filterType === 'VERIFIED' ? 'Verified' : filterType === 'REGISTRY' ? 'Registry' :
+            filterType === 'FAVOURITES' ? 'Favourites' : 'Own'
+        const checkboxLabelOne = filterType === 'VERIFIED' ? 'Verified' : filterType === 'REGISTRY' ? 'In Registry' :
+            filterType === 'FAVOURITES' ? 'Favourite' : filterType === 'OWN' ? 'Own' : ''
+        const checkboxLabelTwo = filterType === 'VERIFIED' ? 'Not Verified' : filterType === 'REGISTRY' ? 'Not In Registry' :
+            filterType === 'FAVOURITES' ? 'Not Favourite' : filterType === 'OWN' ? 'Not Own' : ''
+        const inputPropNameOne = filterType === 'VERIFIED' ? 'isVerifiedFilter' : filterType === 'REGISTRY' ? 'isInRegistryFilter' :
+            filterType === 'FAVOURITES' ? 'isFavouriteFilter' : 'isOwnFilter'
+        const inputPropNameTwo = filterType === 'VERIFIED' ? 'isNotVerifiedFilter' : filterType === 'REGISTRY' ? 'isNotInRegistryFilter' :
+            filterType === 'FAVOURITES' ? 'isNotFavouriteFilter' : 'isNotOwnFilter'
+        const classesDropdown = filterType === 'VERIFIED' && (filterTypes.isVerifiedFilter.isFiltered || filterTypes.isNotVerifiedFilter.isFiltered) ? 'icon dropdown-filters-filtered' :
+            filterType === 'VERIFIED' && (!filterTypes.isVerifiedFilter.isFiltered && !filterTypes.isNotVerifiedFilter.isFiltered) ? 'icon dropdown-filters' :
+                filterType === 'REGISTRY' && (filterTypes.isInRegistryFilter.isFiltered || filterTypes.isNotInRegistryFilter.isFiltered) ? 'icon dropdown-filters-filtered' :
+                    filterType === 'REGISTRY' && (!filterTypes.isInRegistryFilter.isFiltered && !filterTypes.isNotInRegistryFilter.isFiltered) ? 'icon dropdown-filters' :
+                        filterType === 'FAVOURITES' && (filterTypes.isFavouriteFilter.isFiltered || filterTypes.isNotFavouriteFilter.isFiltered) ? 'icon dropdown-filters-filtered' :
+                            filterType === 'FAVOURITES' && (!filterTypes.isFavouriteFilter.isFiltered && !filterTypes.isNotFavouriteFilter.isFiltered) ? 'icon dropdown-filters' :
+                                filterType === 'OWN' && (filterTypes.isOwnFilter.isFiltered || filterTypes.isNotOwnFilter.isFiltered) ? 'icon dropdown-filters-filtered' :
+                                    filterType === 'OWN' && (!filterTypes.isOwnFilter.isFiltered && !filterTypes.isNotOwnFilter.isFiltered) ? 'icon dropdown-filters' : 'icon dropdown-filters'
+        const checkedOne = filterType === 'OWN' ? filterTypes.isOwnFilter.isOwnFilter : filterType === 'VERIFIED' ?
+            filterTypes.isVerifiedFilter.isVerifiedFilter : filterType === 'REGISTRY' ?
+                filterTypes.isInRegistryFilter.isInRegistryFilter : filterTypes.isFavouriteFilter.isFavouriteFilter
+        const checkedTwo = filterType === 'OWN' ? filterTypes.isNotOwnFilter.isNotOwnFilter : filterType === 'VERIFIED' ?
+            filterTypes.isNotVerifiedFilter.isNotVerifiedFilter : filterType === 'REGISTRY' ?
+                filterTypes.isNotInRegistryFilter.isNotInRegistryFilter : filterTypes.isNotFavouriteFilter.isNotFavouriteFilter
         return (
             <Dropdown
                 text={title}
@@ -564,20 +394,23 @@ function TableOverview(props) {
                 simple
                 className={classesDropdown}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
-                    <Form>
-                        <Form.Field><Checkbox className='checkbox__label' label={checkboxLabelOne} checked={isTypeFilter} onChange={handleIsTypeFilter} /></Form.Field>
-                        <Form.Field><Checkbox className='checkbox__label' label={checkboxLabelTwo} checked={isNotTypeFilter} onChange={handleIsNotTypeFilter} /></Form.Field>
-                        <Button basic className='dropdown-filters__menu__button' size='tiny' onClick={() => filterByType(isTypeFilter, isNotTypeFilter)}>Filter</Button>
+                    <Form onSubmit={() => filterEntries(filterType)}>
+                        <Form.Checkbox className='checkbox__label' name={inputPropNameOne} label={checkboxLabelOne} checked={checkedOne} onChange={handleFiltersCheckbox} />
+                        <Form.Checkbox className='checkbox__label' name={inputPropNameTwo} label={checkboxLabelTwo} checked={checkedTwo} onChange={handleFiltersCheckbox} />
+                        <Form.Button content='Filter' basic className='dropdown-filters__menu__button' size='tiny' />
                     </Form>
                 </Dropdown.Menu>
             </Dropdown>)
     }
 
-    const renderFilteringDropdownForDayPickers = (title, dateFrom, handleDateFrom, dateTo, handleDateTo, filterByType) => {
-        const classesDropdown = title === 'Expiry' && expiryFiltered ? 'icon dropdown-filters-filtered' :
-            title === 'Expiry' && !expiryFiltered ? 'icon dropdown-filters' :
-                title === 'Created At' && createdAtFiltered ? 'icon dropdown-filters-filtered' :
-                    title === 'Created At' && !createdAtFiltered ? 'icon dropdown-filters' : 'icon dropdown-filters'
+    const renderFilteringDropdownForDayPickers = (filterType, dateFrom, dateTo) => {
+        const classesDropdown = filterType === 'EXPIRY' && (filterTypes.expiryFromFilter.isFiltered || filterTypes.expiryToFilter.isFiltered) ? 'icon dropdown-filters-filtered' :
+            filterType === 'EXPIRY' && !filterTypes.expiryFromFilter.isFiltered && !filterTypes.expiryToFilter.isFiltered ? 'icon dropdown-filters' :
+                filterType === 'CREATED_AT' && (filterTypes.createdAtFromFilter.isFiltered || filterTypes.createdAtToFilter.isFiltered) ? 'icon dropdown-filters-filtered' :
+                    filterType === 'CREATED_AT' && !filterTypes.createdAtFromFilter.isFiltered && !filterTypes.createdAtToFilter.isFiltered ? 'icon dropdown-filters' : 'icon dropdown-filters'
+        const inputPropNameFrom = filterType === 'EXPIRY' ? 'expiryFromFilter' : 'createdAtFromFilter'
+        const inputPropNameTo = filterType === 'EXPIRY' ? 'expiryToFilter' : 'createdAtToFilter'
+        const title = filterType === 'EXPIRY' ? 'Expiry' : 'Created At'
         return (
             <Dropdown
                 text={title}
@@ -585,41 +418,43 @@ function TableOverview(props) {
                 simple
                 className={classesDropdown}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
-                    <Form>
+                    <Form onSubmit={() => filterEntries(filterType)}>
                         <Form.Field><DayPickerInput
                             value={dateFrom ? formatDate(new Date(dateFrom * 1000), 'DD/MM/YYYY') : null}
-                            onDayChange={handleDateFrom}
+                            onDayChange={handleFiltersDate}
                             format="DD/MM/YYYY"
                             formatDate={formatDate}
                             parseDate={parseDate}
                             placeholder='dd/mm/yyyy'
-                            inputProps={{ readOnly: true }}
+                            inputProps={{ readOnly: true, name: inputPropNameFrom }}
                             component={props => <Input icon='calendar alternate outline' {...props} />}
                         /></Form.Field>
                         <Form.Field>
                             <DayPickerInput
+                                onDayChange={handleFiltersDate}
                                 value={dateTo ? formatDate(new Date(dateTo * 1000), 'DD/MM/YYYY') : null}
-                                onDayChange={handleDateTo}
                                 format="DD/MM/YYYY"
                                 formatDate={formatDate}
                                 parseDate={parseDate}
                                 placeholder='dd/mm/yyyy'
-                                inputProps={{ readOnly: true }}
+                                inputProps={{ readOnly: true, name: inputPropNameTo }}
                                 component={props => <Input icon='calendar alternate outline' {...props} />}
                             /></Form.Field>
-                        <Button basic className='dropdown-filters__menu__button' size='tiny' onClick={() => filterByType(dateFrom, dateTo)}>Filter</Button>
+                        <Button basic content='Filter' className='dropdown-filters__menu__button' size='tiny' />
                     </Form>
                 </Dropdown.Menu>
             </Dropdown>)
 
     }
 
-    const renderFilteringDropdownGeneral = (title, filterByType, filterStateOne, handleChangeOne) => {
-        const placeholder = title === 'Domain' ? 'gaulug.de' : 'Address' ? '0xdF0d...' : ''
-        const classesDropdown = title === 'Domain' && domainFiltered ? 'icon dropdown-filters-filtered' :
-            title === 'Domain' && !domainFiltered ? 'icon dropdown-filters' :
-                title === 'Address' && contractAddressFiltered ? 'icon dropdown-filters-filtered' :
-                    title === 'Address' && !contractAddressFiltered ? 'icon dropdown-filters' : 'icon dropdown-filters'
+    const renderFilteringDropdownTextfield = (filterType) => {
+        const placeholder = filterType === 'DOMAIN' ? 'gaulug.de' : 'ADDRESS' ? '0xdF0d...' : ''
+        const title = filterType === 'DOMAIN' ? 'Domain' : 'ADDRESS' ? 'Address' : ''
+        const inputPropName = filterType === 'DOMAIN' ? 'domainFilter' : 'ADDRESS' ? 'contractAddressFilter' : ''
+        const classesDropdown = filterType === 'DOMAIN' && filterTypes.domainFilter.isFiltered ? 'icon dropdown-filters-filtered' :
+            filterType === 'DOMAIN' && !filterTypes.domainFilter.isFiltered ? 'icon dropdown-filters' :
+                filterType === 'ADDRESS' && filterTypes.contractAddressFilter.isFiltered ? 'icon dropdown-filters-filtered' :
+                    filterType === 'ADDRESS' && !filterTypes.contractAddressFilter.isFiltered ? 'icon dropdown-filters' : 'icon dropdown-filters'
         return (
             <Dropdown
                 text={title}
@@ -627,9 +462,9 @@ function TableOverview(props) {
                 simple
                 className={classesDropdown}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
-                    <Form>
-                        <Form.Input placeholder={placeholder} onChange={handleChangeOne} />
-                        <Button basic className='dropdown-filters__menu__button' size='tiny' onClick={!cols.has(COL.TSC) ? () => filterByType(filterStateOne, tescs) : () => filterByType(filterStateOne, tescsWithOccurancesNew)}>Filter</Button>
+                    <Form onSubmit={() => filterEntries(filterType)}>
+                        <Form.Input placeholder={placeholder} name={inputPropName} onChange={handleFiltersText} />
+                        <Form.Button basic content='Filter' className='dropdown-filters__menu__button' size='tiny' />
                     </Form>
                 </Dropdown.Menu>
             </Dropdown>)
@@ -638,21 +473,21 @@ function TableOverview(props) {
     const renderFiltersGroup = () => {
         if (isShowingFilters) {
             return (<>
-                {hasAllColumns(cols) ? renderFilteringDropdownForCheckboxes("Own", isOwnFilter, handleIsOwnFilter, isNotOwnFilter, handleIsNotOwnFilter, filterByOwn) : null}
-                {cols.has(COL.ADDRESS) ? renderFilteringDropdownGeneral("Address", filterByContractAddress, contractAddressFilter, handleContractAddressFilter) : null}
-                {renderFilteringDropdownGeneral("Domain", filterByDomain, domainFilter, handleDomainFilter)}
-                {cols.has(COL.EXPIRY) ? renderFilteringDropdownForDayPickers("Expiry", expiryFromFilter, handleExpiryFromFilter, expiryToFilter, handleExpiryToFilter, filterByExpiry) : null}
-                {cols.has(COL.TSC) ? renderFilteringDropdownGeneral("Total Smart Contracts") : null}
-                {!cols.has(COL.TSC) ? renderFilteringDropdownForCheckboxes("Verified", isVerifiedFilter, handleIsVerifiedFilter, isNotVerifiedFilter, handleIsNotVerifiedFilter, filterByVerified) : null}
-                {cols.has(COL.REG) ? renderFilteringDropdownForCheckboxes("Registry", isInRegistryFilter, handleIsInRegistryFilter, isNotInRegistryFilter, handleIsNotInRegistryFilter, filterByIsInRegistry) : null}
-                {cols.has(COL.FAV) ? renderFilteringDropdownForCheckboxes("Favourites", isFavouriteFilter, handleIsFavouriteFilter, isNotFavouriteFilter, handleIsNotFavouriteFilter, filterByIsFavourite) : null}
-                {cols.has(COL.CA) ? renderFilteringDropdownForDayPickers("Created At", createdAtFromFilter, handleCreatedAtFromFilter, createdAtToFilter, handleCreatedAtToFilter, filterByCreatedAt) : null}
+                {hasAllColumns(cols) ? renderFilteringDropdownForCheckboxes('OWN') : null}
+                {cols.has(COL.ADDRESS) ? renderFilteringDropdownTextfield('ADDRESS') : null}
+                {renderFilteringDropdownTextfield('DOMAIN')}
+                {cols.has(COL.EXPIRY) ? renderFilteringDropdownForDayPickers('EXPIRY', filterTypes.expiryFromFilter.expiryFromFilter, filterTypes.expiryToFilter.expiryToFilter) : null}
+                {!cols.has(COL.TSC) ? renderFilteringDropdownForCheckboxes('VERIFIED') : null}
+                {cols.has(COL.REG) ? renderFilteringDropdownForCheckboxes('REGISTRY') : null}
+                {cols.has(COL.FAV) ? renderFilteringDropdownForCheckboxes('FAVOURITES') : null}
+                {cols.has(COL.CA) ? renderFilteringDropdownForDayPickers('CREATED_AT', filterTypes.createdAtFromFilter.createdAtFromFilter, filterTypes.createdAtToFilter.createdAtToFilter) : null}
             </>)
         }
     }
 
     const renderClearFiltersButton = () => {
-        if (domainFiltered || contractAddressFiltered || expiryFiltered || isInRegistryFiltered || verifiedFiltered || isFavouriteFiltered || createdAtFiltered || isOwnFiltered) return (<Button
+        const isAtLeastOneFilterUsed = Object.values(filterTypes).some(e => e.isFiltered === true)
+        if (isAtLeastOneFilterUsed) return (<Button
             content='Clear filters'
             icon='remove circle'
             basic
@@ -679,54 +514,42 @@ function TableOverview(props) {
                 <Table.Header active='true' style={{ backgroundColor: 'purple' }}>
                     <Table.Row>
                         {!cols.has(COL.TSC) && <Table.HeaderCell>{
-                            <Button basic className='column-header' onClick={sortByContractAddress}>
-                                Address{isSortingByAddress ? <Icon className='column-header__sort' name={isSortingByAddressAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                            <Button basic className='column-header' onClick={() => sortEntries('ADDRESS')}>
+                                Address{sortingTypes.isSortingByAddress.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByAddress.isSortingByAddressAsc ? 'sort down' : 'sort up'} /> : null}</Button>
                         }</Table.HeaderCell>}
                         <Table.HeaderCell>{
-                            <Button basic className='column-header' onClick={cols.has(COL.TSC) ? () => sortByDomain(tescsWithOccurances) : () => sortByDomain(tescs)}>
-                                Domain{isSortingByDomain ? <Icon className='column-header__sort' name={isSortingByDomainAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                            <Button basic className='column-header' onClick={cols.has(COL.TSC) ? () => sortEntries('DOMAIN') : () => sortEntries('DOMAIN')}>
+                                Domain{sortingTypes.isSortingByDomain.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByDomain.isSortingByDomainAsc ? 'sort down' : 'sort up'} /> : null}</Button>
                         }</Table.HeaderCell>
                         {!cols.has(COL.TSC) && <Table.HeaderCell>{
-                            <Button basic className='column-header' onClick={sortByExpiry}>
-                                Expiry{isSortingByExpiry ? <Icon className='column-header__sort' name={isSortingByExpiryAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                            <Button basic className='column-header' onClick={() => sortEntries('EXPIRY')}>
+                                Expiry{sortingTypes.isSortingByExpiry.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByExpiry.isSortingByExpiryAsc ? 'sort down' : 'sort up'} /> : null}</Button>
                         }</Table.HeaderCell>}
                         {cols.has(COL.TSC) && <Table.HeaderCell textAlign="center">{
-                            <Button basic className='column-header' onClick={sortByTotalSmartContracts}>
-                                Total Smart Contracts{isSortingByTotalSmartContracts ? <Icon className='column-header__sort' name={isSortingByTotalSmartContractsAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                            <Button basic className='column-header' onClick={() => sortEntries('TOTAL_SC')}>
+                                Total Smart Contracts{sortingTypes.isSortingByTotalSC.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByTotalSC.isSortingByTotalSCAsc ? 'sort down' : 'sort up'} /> : null}</Button>
                         }</Table.HeaderCell>}
                         <Table.HeaderCell textAlign="center">{
-                            <Button basic className='column-header' onClick={sortByVerified}>
-                                Verified{isSortingByVerified ? <Icon className='column-header__sort' name={isSortingByVerifiedAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                            <Button basic className='column-header' onClick={() => sortEntries('VERIFIED')}>
+                                Verified{sortingTypes.isSortingByVerified.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByVerified.isSortingByVerifiedAsc ? 'sort down' : 'sort up'} /> : null}</Button>
                         }</Table.HeaderCell>
                         {cols.has(COL.REG) &&
                             <Table.HeaderCell textAlign="center">{
-                                <Button basic className='column-header' onClick={sortByIsInRegistry}>
-                                    Registry{isSortingByIsInRegistry ? <Icon className='column-header__sort' name={isSortingByIsInRegistryAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                                <Button basic className='column-header' onClick={() => sortEntries('REGISTRY')}>
+                                    Registry{sortingTypes.isSortingByIsInRegistry.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByIsInRegistry.isSortingByIsInRegistryAsc ? 'sort down' : 'sort up'} /> : null}</Button>
                             }</Table.HeaderCell>
                         }
                         {!cols.has(COL.TSC) &&
                             <Table.HeaderCell textAlign="center">{
-                                <Button basic className='column-header' onClick={sortByFavourite}>
-                                    Favourites{isSortingByFavourite ? <Icon className='column-header__sort' name={isSortingByFavouriteAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                                <Button basic className='column-header' onClick={() => sortEntries('FAVOURITES')}>
+                                    Favourites{sortingTypes.isSortingByFavourite.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByFavourite.isSortingByFavouriteAsc ? 'sort down' : 'sort up'} /> : null}</Button>
                             }
-                                {/*<Dropdown
-                                    icon='filter'
-                                    floating
-                                    button
-                                    className='icon dropdown-favourites'>
-                                    <Dropdown.Menu>
-                                        <Dropdown.Item icon='redo' text={!cols.has(COL.REG) && domain.length > 0 ? 'All (by domain)' : 'All'} onClick={() => showAllTescs(tescs)} />
-                                        {!cols.has(COL.REG) && <Dropdown.Item icon='redo' text='All (reset)' onClick={() => handleIsExploringDomain(false)} />}
-                                        <Dropdown.Item icon='heart' text='By favourite' onClick={showFavouriteTescs} />
-                                        <Dropdown.Item icon='user' text='Own' onClick={showOwnTescs} />
-                                    </Dropdown.Menu>
-                            </Dropdown>*/}
                             </Table.HeaderCell>
                         }
                         {cols.has(COL.CA) &&
                             <Table.HeaderCell>{
-                                <Button basic className='column-header' onClick={sortByCreatedAt}>
-                                    Created At{isSortingByCreatedAt ? <Icon className='column-header__sort' name={isSortingByCreatedAtAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                                <Button basic className='column-header' onClick={() => sortEntries('CREATED_AT')}>
+                                    Created At{sortingTypes.isSortingByCreatedAt.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByCreatedAt.isSortingByCreatedAtAsc ? 'sort down' : 'sort up'} /> : null}</Button>
                             }</Table.HeaderCell>
                         }
                     </Table.Row>
