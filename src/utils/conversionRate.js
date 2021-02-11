@@ -43,10 +43,14 @@ const getConversionRateFromNomics = async (currency = CURRENCY.USD) => {
     return ticker.data[0].price;
 };
 
-export const getEthRate = async (ether, to = CURRENCY.USD) => {
+export const getEthRates = (ether) => {
     try {
         const conversionRates = JSON.parse(localStorage.getItem(CONVERSION_RATE));
-        return parseFloat(ether) * conversionRates[to.toLowerCase()];
+        return {
+            eth: ether.toFixed(5),
+            usd: (parseFloat(ether) * conversionRates[CURRENCY.USD.toLowerCase()]).toFixed(2),
+            eur: (parseFloat(ether) * conversionRates[CURRENCY.EUR.toLowerCase()]).toFixed(2),
+        };
     } catch (error) {
         console.log(error);
         return -1;

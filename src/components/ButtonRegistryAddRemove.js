@@ -9,11 +9,15 @@ import {
     getRegistryContractInstance
 } from '../utils/registry';
 
+import {
+    getEthRates
+} from '../utils/conversionRate';
+
 const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, verbose, onClick, style }) => {
     const { web3, showMessage, handleBlockScreen, hasAccountChanged } = useContext(AppContext);
 
     const [isInRegistry, setIsInRegistry] = useState(false);
-    const [costEstimatedRegistryAction, setCostEstimatedRegistryAction] = useState(0);
+    const [costsEstimatedRegistryAction, setCostsEstimatedRegistryAction] = useState(0);
     const [loading, setLoading] = useState(true);
 
     const registryContract = useRef(getRegistryContractInstance(web3));
@@ -37,8 +41,7 @@ const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, verbose, on
         const runEffect = async () => {
             if (!hasAccountChanged && !loading) {
                 const cost = await estimateRegistryActionCost(isInRegistry, { web3, contractAddress, domain });
-                console.log('$$$$$$', cost);
-                setCostEstimatedRegistryAction(cost);
+                setCostsEstimatedRegistryAction(getEthRates(cost));
             }
         };
         runEffect();
@@ -65,7 +68,8 @@ const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, verbose, on
 
     return isOwner ? (
         <Popup inverted
-            content={`${isInRegistry ? 'Remove entry from' : 'Add entry to'} the TeSC Registry. This would cost around ${costEstimatedRegistryAction.toFixed(5)} ETH.`}
+            content={`${isInRegistry ? 'Remove entry from' : 'Add entry to'} the TeSC Registry. 
+            This would cost around ${costsEstimatedRegistryAction.eth} ETH (${costsEstimatedRegistryAction.usd} USD).`}
             trigger={
                 <Button
                     basic

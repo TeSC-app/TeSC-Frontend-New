@@ -43,8 +43,7 @@ import {
     validateConstructorParameterInput
 } from '../../utils/constructorInput';
 import {
-    CURRENCY,
-    getEthRate
+    getEthRates
 } from '../../utils/conversionRate';
 
 import { extractAxiosErrorMessage } from '../../utils/formatError';
@@ -271,9 +270,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     if (!initInputs || contractAddress) {
                         try{
                             const estCost = await estimateDeploymentCost(web3, tx);
-                            const estCostUsd = await getEthRate(estCost, CURRENCY.USD);
-                            setCostsEstimated({eth: estCost, usd: estCostUsd});
-                            console.log("$$$$$$$$", estCostUsd);
+                            setCostsEstimated(getEthRates(estCost));
                             
                         }catch(error){
                             showMessage(buildNegativeMsg({
@@ -322,7 +319,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                 await tx.send({ from: account, gas: '3000000' })
                     .on('receipt', async (txReceipt) => {
                         const costPaid = txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether');
-                        setCostsPaid({eth: costPaid, usd: await getEthRate(costPaid, CURRENCY.USD)});
+                        setCostsPaid(getEthRates(costPaid));
                         if(txReceipt.contractAddress) {
                             setContractAddress(txReceipt.contractAddress);
                         }
@@ -861,8 +858,8 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                 <div style={{ float: 'right'}}>
                                     <span>Cost estimation:  </span>
                                     <Label tag style={{ color: 'royalblue', }}>
-                                        {costsEstimated.eth.toFixed(5)} <span style={{ fontSize: '0.75em' }}>ETH </span>
-                                        {costsEstimated.usd > 0 && `(${costsEstimated.usd.toFixed(2)}`} <span style={{ fontSize: '0.75em' }}>USD</span>)
+                                        {costsEstimated.eth} <span style={{ fontSize: '0.75em' }}>ETH </span>
+                                        {costsEstimated.usd > 0 && `(${costsEstimated.usd}`} <span style={{ fontSize: '0.75em' }}>USD</span>)
                                     </Label>
                                 </div>
                             )}
