@@ -15,11 +15,7 @@ import RegistryInspect from '../pages/RegistryInspect';
 import RegistryAdd from '../pages/RegistryAdd';
 import RegistryAnalytics from '../pages/RegistryAnalytics';
 
-import { getRegistryContractInstance } from '../utils/registry';
-
-
-import TeSCRegistry from '../ethereum/build/contracts/TeSCRegistry.json';
-
+import { fetchConversionRate } from '../utils/conversionRate';
 
 const App = ({ web3 }) => {
     const [collapsed, setCollapsed] = useState(false);
@@ -31,7 +27,6 @@ const App = ({ web3 }) => {
     const [hasAccountChanged, setHasAccountChanged] = useState(false);
     const [networkId, setNetworkId] = useState('');
 
-    // const registryContract = useRef(getRegistryContractInstance(web3));
     const location = useLocation();
 
     const loadStorage = () => {
@@ -42,6 +37,12 @@ const App = ({ web3 }) => {
         console.log('loadStorage of ', walletAddress);
         return JSON.parse(localStorage.getItem(web3.utils.toChecksumAddress(walletAddress)));
     };
+
+    useEffect(() => {
+        setInterval(() => {
+            fetchConversionRate();
+        }, 1000 * 60 * 15);
+    }, []);
 
     useEffect(() => {
         const init = async () => {
@@ -63,7 +64,7 @@ const App = ({ web3 }) => {
             }
         };
         init();
-    });
+    }, [web3.utils, web3.eth]);
 
     const handleDismissMessage = () => {
         setSysMsg(null);

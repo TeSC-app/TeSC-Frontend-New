@@ -43,7 +43,8 @@ import {
     validateConstructorParameterInput
 } from '../../utils/constructorInput';
 import {
-    ethToUsd
+    CURRENCY,
+    getEthRate
 } from '../../utils/conversionRate';
 
 import { extractAxiosErrorMessage } from '../../utils/formatError';
@@ -270,7 +271,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     if (!initInputs || contractAddress) {
                         try{
                             const estCost = await estimateDeploymentCost(web3, tx);
-                            const estCostUsd = await ethToUsd(estCost);
+                            const estCostUsd = await getEthRate(estCost, CURRENCY.USD);
                             setCostsEstimated({eth: estCost, usd: estCostUsd});
                             console.log("$$$$$$$$", estCostUsd);
                             
@@ -321,7 +322,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                 await tx.send({ from: account, gas: '3000000' })
                     .on('receipt', async (txReceipt) => {
                         const costPaid = txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether');
-                        setCostsPaid({eth: costPaid, usd: await ethToUsd(costPaid)});
+                        setCostsPaid({eth: costPaid, usd: await getEthRate(costPaid, CURRENCY.USD)});
                         if(txReceipt.contractAddress) {
                             setContractAddress(txReceipt.contractAddress);
                         }
