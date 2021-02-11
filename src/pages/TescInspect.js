@@ -5,7 +5,7 @@ import axios from 'axios';
 import AppContext from '../appContext';
 import { FLAGS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc';
 import { extractAxiosErrorMessage } from '../utils/formatError';
-import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
+import { loadStorage } from '../utils/storage';
 import { buildNegativeMsg } from "../components/FeedbackMessage";
 import SearchBox from "../components/SearchBox";
 import DeploymentForm from "../components/tescNew/DeploymentForm";
@@ -19,7 +19,7 @@ import moment from 'moment';
 
 
 const TeSCInspect = ({ location }) => {
-    const { web3, account, showMessage, loadStorage } = useContext(AppContext);
+    const { web3, account, showMessage } = useContext(AppContext);
     window.web3 = web3
     const [contractAddress, setContractAddress] = useState('');
     const [contractOwner, setContractOwner] = useState('');
@@ -152,7 +152,7 @@ const TeSCInspect = ({ location }) => {
 
     useEffect(() => {
         if (Object.keys(localTescs.current).length === 0) {
-            const tescArray = loadStorage();
+            const tescArray = loadStorage(web3);
             //console.log('tescArray', tescArray);
             for (const tesc of tescArray) {
                 const { contractAddress, ...rest } = tesc;

@@ -3,19 +3,20 @@ import { Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import PageHeader from '../components/PageHeader';
 import TableOverview, { COL } from '../components/TableOverview';
+import { loadStorage } from '../utils/storage'
 import axios from 'axios';
 import moment from 'moment';
 
 function RegistryInspect() {
-    const { loadStorage } = useContext(AppContext);
-    const [entriesRaw, setEntriesRaw] = useState([])
-    const [entriesWithOccurances, setEntriesWithOccurances] = useState([])
+    const { web3 } = useContext(AppContext);
+    const [entriesRaw, setEntriesRaw] = useState([]);
+    const [entriesWithOccurances, setEntriesWithOccurances] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [isExploringDomain, setIsExploringDomain] = useState(false)
+    const [isExploringDomain, setIsExploringDomain] = useState(false);
 
     //add createdAt and isFavourite prop to objects retrieved from the backend - compares with localStorage values
     const updateCreatedAtAndFavouritesForRegistryInspectEntries = useCallback((newTesc) => {
-        const tescsLocalStorage = loadStorage() ? loadStorage() : [];
+        const tescsLocalStorage = loadStorage(web3);
         let isIdentical = false;
         for (const tesc of tescsLocalStorage) {
             if (tesc.contractAddress === newTesc.contractAddress) {
@@ -35,18 +36,18 @@ function RegistryInspect() {
                 const registryEntries = Object.keys(response.data['registryEntries'])
                     .map(domain => Object.values(response.data['registryEntries'][domain])
                         .map(({ contract, verified }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, createdAt: moment().format('DD/MM/YYYY HH:mm'), verified: verified })))
-                    .flat()
+                    .flat();
                 if (response.status === 200) {
                     //console.log(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })))
-                    const entriesRaw = registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry)
+                    const entriesRaw = registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry);
                     const entriesWithOccurances = entriesRaw.map(entry => ({
-                        domain: entry.domain, contractAddresses: entriesRaw.filter((entry_) => entry_.domain === entry.domain).map(({contractAddress}) => contractAddress), contractCount: entriesRaw.reduce((counter, entry_) =>
-                                entry_.domain === entry.domain ? counter += 1 : counter, 0),
+                        domain: entry.domain, contractAddresses: entriesRaw.filter((entry_) => entry_.domain === entry.domain).map(({ contractAddress }) => contractAddress), contractCount: entriesRaw.reduce((counter, entry_) =>
+                            entry_.domain === entry.domain ? counter += 1 : counter, 0),
                         verifiedCount: entriesRaw.reduce((counter, entry_) =>
                             entry_.verified === true && entry_.domain === entry.domain ? counter += 1 : counter, 0)
-                    }))
-                    let distinctEntriesWithOccurances = []
-                    const map = new Map(); 
+                    }));
+                    let distinctEntriesWithOccurances = [];
+                    const map = new Map();
                     //array of contract addresses used for the smart contract images in the exploration page
                     for (const entry of entriesWithOccurances) {
                         if (!map.has(entry.domain)) {
@@ -59,10 +60,10 @@ function RegistryInspect() {
                             });
                         }
                     }
-                    setEntriesRaw(entriesRaw)
-                    setEntriesWithOccurances(distinctEntriesWithOccurances)
+                    setEntriesRaw(entriesRaw);
+                    setEntriesWithOccurances(distinctEntriesWithOccurances);
                 } else {
-                    setEntriesRaw([])
+                    setEntriesRaw([]);
                 }
                 setLoading(false);
             } catch (error) {
@@ -72,8 +73,8 @@ function RegistryInspect() {
     }, [updateCreatedAtAndFavouritesForRegistryInspectEntries]);
 
     const handleIsExploringDomain = (isExploringDomain) => {
-        setIsExploringDomain(isExploringDomain)
-    }
+        setIsExploringDomain(isExploringDomain);
+    };
 
     const renderTable = () => {
         if (entriesRaw && entriesRaw.length > 0 && !loading) {
@@ -87,7 +88,7 @@ function RegistryInspect() {
                         cols={isExploringDomain ? new Set([COL.ADDRESS, COL.DOMAIN, COL.EXPIRY, COL.VERIF, COL.FAV]) : new Set([COL.DOMAIN, COL.TSC, COL.VERIF])}
                     />
                 </div>
-            )
+            );
         } else if (entriesRaw && entriesRaw.length === 0 && !loading) {
             return (
                 <div className="ui placeholder segment">
@@ -110,8 +111,8 @@ function RegistryInspect() {
     };
 
     const handleLoading = loading => {
-        setLoading(loading)
-    }
+        setLoading(loading);
+    };
 
     return (
         <div>

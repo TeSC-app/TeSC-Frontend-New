@@ -859,7 +859,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                     <span>Cost estimation:  </span>
                                     <Label tag style={{ color: 'royalblue', }}>
                                         {costsEstimated.eth} <span style={{ fontSize: '0.75em' }}>ETH </span>
-                                        {costsEstimated.usd > 0 && `(${costsEstimated.usd}`} <span style={{ fontSize: '0.75em' }}>USD</span>)
+                                        {costsEstimated.usd > 0 && `(~ ${costsEstimated.usd}`} <span style={{ fontSize: '0.75em' }}>USD</span>)
                                     </Label>
                                 </div>
                             )}

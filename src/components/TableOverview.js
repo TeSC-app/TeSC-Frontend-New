@@ -6,6 +6,8 @@ import TableEntry from './TableEntry';
 import moment from 'moment';
 import SearchBox from './SearchBox';
 
+import { loadStorage } from '../utils/storage';
+
 const ENTRIES_PER_PAGE = 5;
 
 export const COL = {
@@ -33,7 +35,7 @@ function TableOverview(props) {
         cols
     } = props;
 
-    const { web3, account, loadStorage } = useContext(AppContext);
+    const { web3, account } = useContext(AppContext);
 
     const [tescs, setTescs] = useState(rowData);
     const [currentPage, setCurrentPage] = useState(1);
@@ -46,11 +48,10 @@ function TableOverview(props) {
 
 
     useEffect(() => {
-        console.log(tescs)
-        console.log(entriesWithOccurances)
+        console.log(tescs);
+        console.log(entriesWithOccurances);
         const init = async () => {
             try {
-                // setTescs(account ? (isDashboard? loadStorage() : []) : []);
                 setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRIES_PER_PAGE) : []);
                 setTotalPages(cols.has(COL.TSC) ? Math.ceil(entriesWithOccurances.length / ENTRIES_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRIES_PER_PAGE : 0));
                 window.ethereum.on('accountsChanged', (accounts) => {
@@ -72,7 +73,7 @@ function TableOverview(props) {
     const handleChangeTescs = (tesc) => {
         const updatedTescs = [...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), tesc];
         if (!cols.has(COL.REG)) {
-            let tescsNew = loadStorage() ? loadStorage() : [];
+            let tescsNew = loadStorage(web3);
             let found = false;
             for (const tescNew of tescsNew) {
                 if (tescNew.contractAddress === tesc.contractAddress) {
@@ -163,7 +164,7 @@ function TableOverview(props) {
             setTescs(entriesWithOccurances);
         } else {
             handleIsExploringDomain(true);
-            setTescs(loadStorage().filter(entry => entry.domain === domain).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
+            setTescs(loadStorage(web3).filter(entry => entry.domain === domain).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
         }
         handleLoading(false);
     };

@@ -4,11 +4,11 @@ import PageHeader from '../components/PageHeader';
 import TableOverview, { COL } from '../components/TableOverview';
 import AppContext from '../appContext';
 
+import { loadStorage } from '../utils/storage';
 
 const Dashboard = () => {
-    const { loadStorage } = useContext(AppContext);
-
-    const rowData = useRef(loadStorage());
+    const { web3 } = useContext(AppContext);
+    const rowData = useRef(loadStorage(web3));
 
     return (
         <React.Fragment>

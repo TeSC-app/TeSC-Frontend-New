@@ -69,7 +69,7 @@ const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, verbose, on
     return isOwner ? (
         <Popup inverted
             content={`${isInRegistry ? 'Remove entry from' : 'Add entry to'} the TeSC Registry. 
-            This would cost around ${costsEstimatedRegistryAction.eth} ETH (${costsEstimatedRegistryAction.usd} USD).`}
+            This would cost around ${costsEstimatedRegistryAction.eth} ETH (~ ${costsEstimatedRegistryAction.usd} USD).`} 
             trigger={
                 <Button
                     basic
