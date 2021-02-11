@@ -1,8 +1,9 @@
 import React, { Fragment, useState, useContext, useCallback, useEffect, useRef } from 'react';
-import { Input, Form, Label, Button as BtnSuir, Segment, Popup, Radio, Header, TextArea, Divider, Icon, Grid, Dropdown } from 'semantic-ui-react';
+import { Input, Form, Label, Button as BtnSuir, Segment, Popup, Radio, Header, TextArea, Divider, Icon, Grid, Dropdown, Button } from 'semantic-ui-react';
 import Highlight from 'react-highlight.js';
 import hljs from 'highlight.js';
 import hljsSolidity from 'highlightjs-solidity';
+import fileDownload from 'js-file-download';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { formatDate, parseDate } from 'react-day-picker/moment';
@@ -471,6 +472,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         setDeploymentJson(compileRes.data.json);
     }
 
+    const downloadEndorsedSolidityCode = () => {
+        fileDownload(endorsedSolidityCode, "Endorsed" + solidityFileName);
+    }
+
     const handleTextCopy = (e) => {
         e.preventDefault();
         navigator.clipboard.writeText(`echo -n ${getClaimString()} | openssl dgst -RSA-SHA256 -sign <path_to_private_key_file> | openssl base64 | cat`);
@@ -624,6 +629,9 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                             content={solidityFileName + ' with endorsed ' + selectedContract}
                                             trigger={<Icon name='question circle' />}
                                         />
+                                        <Button circular icon size='mini' onClick={downloadEndorsedSolidityCode}>
+                                            <Icon name='download' />     
+                                        </Button>                                                                      
                                     </label>
                                     <Highlight language='solidity'>
                                         {endorsedSolidityCode}
