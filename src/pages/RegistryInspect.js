@@ -8,7 +8,7 @@ import axios from 'axios';
 import moment from 'moment';
 
 function RegistryInspect() {
-    const { web3 } = useContext(AppContext);
+    const { account } = useContext(AppContext);
     const [entriesRaw, setEntriesRaw] = useState([]);
     const [entriesWithOccurances, setEntriesWithOccurances] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -16,7 +16,7 @@ function RegistryInspect() {
 
     //add createdAt and isFavourite prop to objects retrieved from the backend - compares with localStorage values
     const updateCreatedAtAndFavouritesForRegistryInspectEntries = useCallback((newTesc) => {
-        const tescsLocalStorage = loadStorage(web3);
+        const tescsLocalStorage = loadStorage(account);
         let isIdentical = false;
         for (const tesc of tescsLocalStorage) {
             if (tesc.contractAddress === newTesc.contractAddress) {
@@ -25,7 +25,7 @@ function RegistryInspect() {
             }
         }
         if (!isIdentical) return { isFavourite: false, createdAt: moment().format('DD/MM/YYYY HH:mm') };
-    }, [loadStorage]);
+    }, [account]);
 
     useEffect(() => {
         (async () => {

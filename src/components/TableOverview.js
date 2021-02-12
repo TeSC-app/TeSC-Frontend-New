@@ -46,20 +46,22 @@ function TableOverview(props) {
     //for search input
     const [domain, setDomain] = useState('');
 
+    useEffect(() => {
+        console.log('rowData', rowData);
+        setTescs(rowData);
+    }, [rowData])
 
     useEffect(() => {
-        console.log(tescs);
         console.log(entriesWithOccurances);
         const init = async () => {
             try {
-                setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRIES_PER_PAGE) : []);
+                setDisplayedEntries(tescs.slice(0, ENTRIES_PER_PAGE));
                 setTotalPages(cols.has(COL.TSC) ? Math.ceil(entriesWithOccurances.length / ENTRIES_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRIES_PER_PAGE : 0));
                 window.ethereum.on('accountsChanged', (accounts) => {
-                    const account = web3.utils.toChecksumAddress(accounts[0]);
-                    setTescs(accounts[0] && localStorage.getItem(account) ?
-                        JSON.parse(localStorage.getItem(account)) : []);
-                    setDisplayedEntries(account && localStorage.getItem(account) ?
-                        JSON.parse(localStorage.getItem(account)).slice(0, ENTRIES_PER_PAGE) : []);
+                    console.log('accounts changed');
+                    const tescs = loadStorage(accounts[0]);
+                    setTescs(tescs);
+                    setDisplayedEntries(tescs.slice(0, ENTRIES_PER_PAGE));
                 });
             }
             catch (error) {
@@ -70,33 +72,36 @@ function TableOverview(props) {
     }, [tescs, account, web3, entriesWithOccurances, cols]);
 
 
-    const handleChangeTescs = (tesc) => {
-        const updatedTescs = [...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), tesc];
-        if (!cols.has(COL.REG)) {
-            let tescsNew = loadStorage(web3);
-            let found = false;
-            for (const tescNew of tescsNew) {
-                if (tescNew.contractAddress === tesc.contractAddress) {
-                    found = true;
-                    if (tescNew.isFavourite) {
-                        tescNew.isFavourite = false;
-                    } else {
-                        tescNew.isFavourite = true;
-                    }
-                    localStorage.setItem(account, JSON.stringify(tescsNew));
-                    break;
-                }
-            }
-            if (!found) {
-                tescsNew.push({ contractAddress: tesc.contractAddress, domain: tesc.domain, expiry: tesc.expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') });
-                localStorage.setItem(account, JSON.stringify(tescsNew));
-            }
+    const handleChangeTescs = () => {
+        console.log('loadStorage(account)', loadStorage(account))
+        setTescs(loadStorage(account));
 
-            setTescs(updatedTescs.sort((tescA, tescB) => tescB.expiry - tescA.expiry));
-        } else {
-            setTescs(updatedTescs.sort((tescA, tescB) => tescA.createdAt.localeCompare(tescB.createdAt)));
-            localStorage.setItem(account, JSON.stringify(updatedTescs));
-        }
+        // const updatedTescs = [...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), tesc];
+        // if (!cols.has(COL.REG)) {
+        //     let tescsNew = loadStorage(web3);
+        //     let found = false;
+        //     for (const tescNew of tescsNew) {
+        //         if (tescNew.contractAddress === tesc.contractAddress) {
+        //             found = true;
+        //             if (tescNew.isFavourite) {
+        //                 tescNew.isFavourite = false;
+        //             } else {
+        //                 tescNew.isFavourite = true;
+        //             }
+        //             localStorage.setItem(account, JSON.stringify(tescsNew));
+        //             break;
+        //         }
+        //     }
+        //     if (!found) {
+        //         tescsNew.push({ contractAddress: tesc.contractAddress, domain: tesc.domain, expiry: tesc.expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') });
+        //         localStorage.setItem(account, JSON.stringify(tescsNew));
+        //     }
+
+        //     setTescs(updatedTescs.sort((tescA, tescB) => tescB.expiry - tescA.expiry));
+        // } else {
+        //     setTescs(updatedTescs.sort((tescA, tescB) => tescA.createdAt.localeCompare(tescB.createdAt)));
+        //     localStorage.setItem(account, JSON.stringify(updatedTescs));
+        // }
     };
 
     const showAllTescs = (tescs) => {
@@ -135,7 +140,7 @@ function TableOverview(props) {
 
     const renderRows = () => {
         if (displayedEntries && !cols.has(COL.TSC)) {
-            return displayedEntries.map((tesc) => (
+            return displayedEntries.filter(tesc => tesc.isFavourite || tesc.own).map((tesc) => (
                 <TableEntry key={tesc.contractAddress}
                     tesc={tesc}
                     onTescsChange={handleChangeTescs}
@@ -143,7 +148,7 @@ function TableOverview(props) {
                 />
             ));
         } else if (displayedEntries && cols.has(COL.TSC)) {
-            return entriesWithOccurances.map((entry) => (
+            return entriesWithOccurances.filter(tesc => tesc.isFavourite || tesc.own).map((entry) => (
                 <TableEntry key={entry.domain}
                     tesc={entry}
                     handleSearchInput={handleSearchInput}
@@ -164,7 +169,7 @@ function TableOverview(props) {
             setTescs(entriesWithOccurances);
         } else {
             handleIsExploringDomain(true);
-            setTescs(loadStorage(web3).filter(entry => entry.domain === domain).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
+            setTescs(loadStorage(account).filter(entry => entry.domain === domain).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
         }
         handleLoading(false);
     };
@@ -216,7 +221,7 @@ function TableOverview(props) {
                         }
                     </Table.Row>
                 </Table.Header>
-                {(
+                {tescs && tescs.length > 0 && (
                     <Table.Body>
                         {renderRows()}
                     </Table.Body>

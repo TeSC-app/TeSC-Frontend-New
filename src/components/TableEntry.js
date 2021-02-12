@@ -8,9 +8,12 @@ import ButtonRegistryAddRemove from './ButtonRegistryAddRemove';
 import {
     isSha3,
 } from '../utils/tesc';
+import { loadStorage, getLocalTescs, toggleFavourite } from '../utils/storage';
+
 import TableCellVerification from './TableCellVerification';
 import PieChart from '../components/analytics/PieChart';
 import { COL, hasAllColumns } from './TableOverview';
+
 
 function TableEntry(props) {
     const {
@@ -21,33 +24,27 @@ function TableEntry(props) {
         handleSearchSubmit,
         cols
     } = props;
-    const { handleAccountChanged } = useContext(AppContext);
-    const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
-    const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
+    const { account, handleAccountChanged } = useContext(AppContext);
+    const { contractAddress, domain, expiry, own, createdAt } = tesc;
+    const [isFavourite, setIsFavourite] = useState(tesc.isFavourite);
     const [verified, setVerified] = useState(typeof preverified === 'boolean' ? preverified : null);
 
 
 
     useEffect(() => {
         if (hasAllColumns(cols)) handleAccountChanged(false); //???
-        isFavourite ? setTescIsInFavourites(true) : setTescIsInFavourites(false);
-    }, [isFavourite, setTescIsInFavourites, handleAccountChanged, cols]);
+        setIsFavourite(tesc.isFavourite);
+    }, [tesc.isFavourite, handleAccountChanged, cols]);
 
 
     const handleChangeVerified = (verified) => {
         setVerified(verified);
     };
 
-    const addRemoveFavourites = () => {
-        let isFavourite;
-        if (tescIsInFavourites) {
-            isFavourite = false;
-            setTescIsInFavourites(false);
-        } else {
-            isFavourite = true;
-            setTescIsInFavourites(true);
-        }
-        onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt });
+    const handleToggleFavourites = () => {
+        toggleFavourite({ account, contractAddress, domain, expiry });
+        onTescsChange();
+        setIsFavourite(!isFavourite);
     };
 
     const renderDomain = () => {
@@ -64,10 +61,10 @@ function TableEntry(props) {
 
     const renderFavourites = () => {
         return (
-            <Popup inverted content={tescIsInFavourites ? 'Remove from favourites' : 'Add to favourites'}
-                trigger={<Button icon={tescIsInFavourites ? 'heart' : 'heart outline'}
-                    className={tescIsInFavourites ? "favourite-dashboard" : "not-favourite-dashboard"}
-                    onClick={addRemoveFavourites} />} />
+            <Popup inverted content={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
+                trigger={<Button icon={isFavourite ? 'heart' : 'heart outline'}
+                    className={isFavourite ? "favourite-dashboard" : "not-favourite-dashboard"}
+                    onClick={handleToggleFavourites} />} />
         );
     };
 

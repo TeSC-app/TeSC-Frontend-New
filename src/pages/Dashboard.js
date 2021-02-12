@@ -7,8 +7,12 @@ import AppContext from '../appContext';
 import { loadStorage } from '../utils/storage';
 
 const Dashboard = () => {
-    const { web3 } = useContext(AppContext);
-    const rowData = useRef(loadStorage(web3));
+    const { account } = useContext(AppContext);
+    const [rowData, setRowData] = useState(loadStorage(account));
+
+    useEffect(() => {
+        setRowData(loadStorage(account));
+    }, [account]);
 
     return (
         <React.Fragment>
@@ -16,7 +20,7 @@ const Dashboard = () => {
             {rowData &&
                 <TableOverview
                     cols={new Set([COL.ADDRESS, COL.DOMAIN, COL.EXPIRY, COL.VERIF, COL.REG, COL.FAV, COL.CA])}
-                    rowData={rowData.current}
+                    rowData={rowData}
                 />
             }
         </React.Fragment>

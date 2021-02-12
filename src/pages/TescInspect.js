@@ -2,10 +2,12 @@ import React, { useState, useEffect, useContext, useCallback, useRef } from 'rea
 import { Input, Loader, Icon, Label, Grid, Card, Form, Dimmer, Popup, Button, Modal, Segment, Header, Checkbox, Image } from 'semantic-ui-react';
 import BitSet from 'bitset';
 import axios from 'axios';
+import moment from 'moment';
+
 import AppContext from '../appContext';
 import { FLAGS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc';
 import { extractAxiosErrorMessage } from '../utils/formatError';
-import { loadStorage } from '../utils/storage';
+import { toggleFavourite, getLocalTescs, save } from '../utils/storage';
 import { buildNegativeMsg } from "../components/FeedbackMessage";
 import SearchBox from "../components/SearchBox";
 import DeploymentForm from "../components/tescNew/DeploymentForm";
@@ -14,13 +16,10 @@ import TescDataTable from "../components/tesc/TescDataTable";
 import TableOverview, { COL } from "../components/TableOverview";
 import SubEndorsementAddition from "../components/tescInspect/SubEndorsementAddition";
 import ButtonRegistryAddRemove from "../components/ButtonRegistryAddRemove";
-import moment from 'moment';
-
-
 
 const TeSCInspect = ({ location }) => {
     const { web3, account, showMessage } = useContext(AppContext);
-    window.web3 = web3
+    window.web3 = web3;
     const [contractAddress, setContractAddress] = useState('');
     const [contractOwner, setContractOwner] = useState('');
     const [domainFromChain, setDomainFromChain] = useState('');
@@ -32,7 +31,7 @@ const TeSCInspect = ({ location }) => {
     const [typedInDomain, setTypedInDomain] = useState('');
     const [isPlainDomainSubmitted, setIsPlainDomainSubmitted] = useState(false);
     const [curVerifResult, setCurVerifResult] = useState(null);
-    const [isFavourite, setIsInFavourites] = useState(null);
+    const [isFavourite, setIsFavourite] = useState(null);
     const locationStateAddress = useRef(null);
     const localTescs = useRef({});
     const hasSentVerif = useRef(false);
@@ -43,24 +42,10 @@ const TeSCInspect = ({ location }) => {
     const [loading, setLoading] = useState(false);
 
 
-    const toggleFavourite = () => {
-        let found = localTescs.current[contractAddress] && Object.keys(localTescs.current[contractAddress]).length > 0;
-        if (found) {
-            const isFav = !localTescs.current[contractAddress].isFavourite;
-            setIsInFavourites(isFav);
-            localTescs.current[contractAddress].isFavourite = isFav;
-            if (!localTescs.current[contractAddress].isFavourite && !localTescs.current[contractAddress].own) {
-                delete localTescs.current[contractAddress];
-            }
-        } else {
-            localTescs.current[contractAddress] = { domain: domainFromChain, expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') };
-            setIsInFavourites(true);
-        }
-        const tescArray = Object.entries(localTescs.current).map(entry => {
-            entry[1].contractAddress = entry[0];
-            return entry[1];
-        });
-        localStorage.setItem(account, JSON.stringify(tescArray));
+    const handleToggleFavourite = () => {
+        const updatedTescs = toggleFavourite({ account, contractAddress, domain: domainFromChain, expiry });
+        setIsFavourite(updatedTescs[contractAddress] ? updatedTescs[contractAddress].isFavourite : false);
+        localTescs.current = updatedTescs;
     };
 
     const assignContractData = useCallback((contract) => {
@@ -75,9 +60,18 @@ const TeSCInspect = ({ location }) => {
         setFingerprint(contract.fingerprint);
 
         setContractOwner(contract.owner);
+
+        if(!localTescs.current[contract.contractAddress]) {
+            console.log('contract', contract)
+            const {subendorsements, ...rest} = contract
+            localTescs.current[contract.contractAddress] = {...rest, createdAt: moment().format('DD/MM/YYYY HH:mm')};
+        }
+
         if (contract.owner.toLowerCase() === account.toLowerCase()) {
             localTescs.current[contract.contractAddress].own = true;
+            save(localTescs.current, account);
         }
+
     }, [account]);
 
     const verifyTesc = useCallback(async (address) => {
@@ -143,7 +137,7 @@ const TeSCInspect = ({ location }) => {
         setContractAddress(address);
         setLoading(true);
         if (isValidContractAddress(address)) {
-            setIsInFavourites(localTescs.current[address] ? localTescs.current[address].isFavourite : false);
+            setIsFavourite(localTescs.current[address] ? localTescs.current[address].isFavourite : false);
             console.log('handleChangeAddress');
             await verifyTesc(address);
         }
@@ -152,14 +146,8 @@ const TeSCInspect = ({ location }) => {
 
     useEffect(() => {
         if (Object.keys(localTescs.current).length === 0) {
-            const tescArray = loadStorage(web3);
-            //console.log('tescArray', tescArray);
-            for (const tesc of tescArray) {
-                const { contractAddress, ...rest } = tesc;
-                localTescs.current[contractAddress] = rest;
-            }
+            localTescs.current = getLocalTescs(account);
             showMessage(null);
-
         }
 
         if (location.state && location.state.contractAddress !== locationStateAddress.current) {
@@ -167,7 +155,7 @@ const TeSCInspect = ({ location }) => {
             locationStateAddress.current = location.state.contractAddress;
         }
 
-    }, [loadStorage, showMessage, location.state, handleChangeAddress, locationStateAddress]);
+    }, [account, showMessage, location.state, handleChangeAddress, locationStateAddress, web3]);
 
     const clearDisplayData = () => {
         setDomainFromChain('');
@@ -277,7 +265,7 @@ const TeSCInspect = ({ location }) => {
                                                         color='pink'
                                                         icon={isFavourite ? 'heart' : 'heart outline'}
                                                         className={isFavourite ? "favourite" : "notFavourite"}
-                                                        onClick={toggleFavourite}
+                                                        onClick={() => handleToggleFavourite()}
                                                         content={isFavourite ? 'Unfavourite' : 'Favourite'}
                                                         style={{ float: 'left' }}
                                                     />
