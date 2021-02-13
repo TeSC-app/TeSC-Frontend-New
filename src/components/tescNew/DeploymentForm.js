@@ -189,6 +189,8 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                 }
             });
         }catch(error){
+            setContractsInFile(null);
+            setConstructorParameters(null);
             showMessage(buildNegativeMsg({
                 header: 'Unable to compile your file',
                 msg: "Please make sure to upload a valid file"
@@ -633,9 +635,11 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                             <Icon name='download' />     
                                         </Button>                                                                      
                                     </label>
-                                    <Highlight language='solidity'>
-                                        {endorsedSolidityCode}
-                                    </Highlight>
+                                    <div style={{maxHeight:"300px", overflowY:"auto"}}>
+                                        <Highlight language='solidity'>                         
+                                            {endorsedSolidityCode}                              
+                                        </Highlight>      
+                                    </div>                         
                                 </Form.Field>      
                                 </div>   
                             )}
