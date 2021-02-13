@@ -140,13 +140,13 @@ function RegistryInspect() {
         return isExploringDomain &&
             <>
                 {!isSha3(domainFilter) &&
-                <PieChart data={dataValidContracts}
-                    loading={loading}
-                    infoText={`Shows the number of valid and invalid smart contracts endorsed by ${domainFilter}`}
-                    isExploringDomain={true} />
+                    <PieChart data={dataValidContracts}
+                        loading={loading}
+                        infoText={`Shows the number of valid and invalid smart contracts endorsed by ${domainFilter}`}
+                        isExploringDomain={true} />
                 }
-            {console.log(entriesRaw.filter(entry =>
-                extractDomainAndTopLevelDomain(entry.domain) === extractDomainAndTopLevelDomain(domainFilter)))}
+                {console.log(entriesRaw.filter(entry =>
+                    extractDomainAndTopLevelDomain(entry.domain) === extractDomainAndTopLevelDomain(domainFilter)))}
                 <PieChart data={countFlags(entriesRaw.filter(entry =>
                     extractDomainAndTopLevelDomain(entry.domain) === extractDomainAndTopLevelDomain(domainFilter)))}
                     isFlags={true}
@@ -161,16 +161,19 @@ function RegistryInspect() {
             <PageHeader title='Explore TeSC Registry' />
             {/* Smart Contracts associated with Domain */}
             {renderTable()}
-            <section style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gridTemplateRows: 'auto auto',
-                gridGap: '10px',
-                height: '300px',
-                marginTop: '100px'
-            }}>
-                {renderAnalytics()}
-            </section>
+            {isExploringDomain && (<div style={{ backgroundColor: '#eff2f5'}}>
+                <PageHeader isRegistryInspect={true} title='Analytics' />
+                <section style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gridTemplateRows: 'auto auto',
+                    gridGap: '10px',
+                    height: '300px',
+                    marginTop: '100px'
+                }}>
+                    {renderAnalytics()}
+                </section>
+            </div>)}
         </div>
     );
 }

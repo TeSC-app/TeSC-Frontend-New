@@ -80,7 +80,6 @@ function BarChart(props) {
         <div style={{ height: 300 }}>
             <PageHeader title='Domains With Most Smart Contracts'
                 isRegistryAnalytics={true}
-                isBarTop={true}
                 infoText={infoText} />
             {renderBarChart()}
         </div>

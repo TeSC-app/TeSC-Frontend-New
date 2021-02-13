@@ -3,15 +3,15 @@ import { Grid, Icon, Popup } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import FeedbackMessage from "../components/FeedbackMessage";
 
-const PageHeader = ({ title, isRegistryAnalytics, isPieValidInvalid, isBarTop, isPieFlags, infoText }) => {
+const PageHeader = ({ title, isRegistryAnalytics, isRegistryInspect, infoText }) => {
     const { sysMsg, handleDismissMessage } = useContext(AppContext);
 
     return (
-        <Grid className={isRegistryAnalytics ? 'analytics' : 'regular'}>
+        <Grid className={isRegistryAnalytics ? 'analytics' : isRegistryInspect ? 'inspect' : 'regular'}>
             <Grid.Row style={{ height: '100%' }}>
-                <Grid.Column width={isRegistryAnalytics ? 16 : 5}>
+                <Grid.Column width={isRegistryAnalytics || isRegistryInspect ? 16 : 5}>
                     {
-                        isRegistryAnalytics ? <div className='chart-info'><h3>{title}</h3><Popup inverted content={infoText ? infoText : ''}
+                        isRegistryAnalytics && infoText ? <div className='chart-info'><h3>{title}</h3><Popup inverted content={infoText ? infoText : ''}
                             trigger={<Icon name='question circle' color='teal' />} /></div> : <h1>{title}</h1>
                     }
                     {/* <Header as='h1' content={title} color='purple'/> */}

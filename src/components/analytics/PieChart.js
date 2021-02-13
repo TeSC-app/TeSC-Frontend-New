@@ -61,8 +61,6 @@ function PieChart(props) {
             { !isRegistryInspect ? 
             <PageHeader title={isFlags ? 'Popular Flags' : 'Valid To Invalid Ratio'}
                 isRegistryAnalytics={true}
-                isPieValidInvalid={isFlags ? false : true}
-                isPieFlags={isFlags ? true : false}
                 infoText={infoText} /> : null
             }
             {renderPie()}
