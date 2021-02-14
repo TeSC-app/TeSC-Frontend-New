@@ -74,6 +74,7 @@ const useStyles = makeStyles((theme) => ({
 
 const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' }) => {
     const { web3, showMessage, handleBlockScreen, account } = useContext(AppContext);
+    const REVIEW_STEP = initInputs ? 4 : 4;
 
     
     const [contractAddress, setContractAddress] = useState('');
@@ -120,7 +121,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const prevPrivateKeyPEM = useRef(privateKeyPEM);
 
     useEffect(() => {
-        if(initInputs) {
+        if(initInputs && !prevExpiry.current) {
             const {contractAddress, domain, expiry, flags, fingerprint} = initInputs;
             console.log('>>>> initialize inputs')
             setContractAddress(contractAddress)
@@ -243,17 +244,14 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     };
 
     const handleExpiryChange = (date) => {
-        console.log('init expiry', initInputs.expiry)
-        console.log('cur expiry', expiry)
         const mDate = moment.utc(date);
         mDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-        console.log('new expiry', mDate.unix())
         setExpiry(mDate.unix());
     };
 
     useEffect(() => {
         (async () => {
-            if (!futureContractAddress) {
+            if (!futureContractAddress && !initInputs) {
                 setFutureContractAddress(await predictContractAddress(web3));
                 console.log(1)
             }
@@ -568,12 +566,9 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         )
     }
 
+
     const getStepContent = (step) => {
-        let actualStep = step;
-        if(initInputs){
-            actualStep ++;
-        }
-        switch (actualStep) {
+        switch (initInputs? step + 1 : step) {
             case 0:
                 return {
                     component: (
@@ -907,7 +902,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     }
 
     const isStepOptional = (step) => {
-        return step === 3;
+        return initInputs? step === 2 : step === 3;
     };
 
     const allStepsCompleted = () => {
@@ -957,6 +952,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         showMessage(null);
     };
 
+    const getCurrentStep = useCallback(() => {
+        console.log('getCurrentStep')
+        return initInputs? activeStep + 1 : activeStep
+    }, [activeStep, initInputs]);
 
     return (
         <React.Fragment>
@@ -1010,27 +1009,26 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                         Back
                                 </BtnSuir>
 
-                                    {((activeStep < 4 && !costsPaid) || (activeStep <= 4 && costsPaid)) && (
-                                        <BtnSuir
-                                            basic
-                                            color="purple"
-                                            disabled={!getStepContent(activeStep).completed}
-                                            onClick={handleNext}
-                                        >
-                                            Next
-                                        </BtnSuir>
-                                    )}
-                                    {activeStep === 4 && !costsPaid && (
-                                        <BtnSuir
-                                            icon='play circle'
-                                            basic
-                                            onClick={handleSubmit}
-                                            disabled={!signature}
-                                            positive
-                                            content={!initInputs ? 'Deploy' : 'Update'}
-                                        />
-                                    )
-                                    }
+                                {((getCurrentStep() < REVIEW_STEP && !costsPaid) || (getCurrentStep() <= REVIEW_STEP && costsPaid)) && (
+                                    <BtnSuir
+                                        basic
+                                        color="purple"
+                                        disabled={!getStepContent(activeStep).completed}
+                                        onClick={handleNext}
+                                    >
+                                        Next
+                                    </BtnSuir>
+                                )}
+                                {getCurrentStep() === REVIEW_STEP && !costsPaid && (
+                                    <BtnSuir
+                                        icon='play circle'
+                                        basic
+                                        onClick={handleSubmit}
+                                        disabled={!signature}
+                                        positive
+                                        content={!initInputs ? 'Deploy' : 'Update'}
+                                    />
+                                )}
                                 </div>
                             </Grid.Row>
 

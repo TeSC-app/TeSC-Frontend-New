@@ -48,7 +48,6 @@ export const generateSignature = async ({ address, domain, expiry, flagsHex }, p
 export const flagsToBytes24Hex = (flagsBitVector) => {
     const flagsBitVectorWithSANITY = new BitSet(flagsBitVector.toString() + '1');
     let hex = '0x' + flagsBitVectorWithSANITY.slice(0, Object.keys(FLAGS).length - 1).toString(16);
-    console.log('hex', hex);
     return web3.utils.padLeft(hex, 48);
 };
 
