@@ -72,23 +72,20 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
-
-
 const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' }) => {
     const { web3, showMessage, handleBlockScreen, account } = useContext(AppContext);
 
-    const defaultFingerprint = !initInputs || parseInt(initInputs.fisngerprint, 16) === 0 ? '' : initInputs.fingerprint;
-
-    const [contractAddress, setContractAddress] = useState(initInputs ? initInputs.contractAddress : '');
-    const [futureContractAddress, setFutureContractAddress] = useState(initInputs ? initInputs.contractAddress : '');
-
-    const [domain, setDomain] = useState(initInputs && !initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : typedInDomain);
-    const [expiry, setExpiry] = useState(initInputs ? initInputs.expiry : null);
+    
+    const [contractAddress, setContractAddress] = useState('');
+    const [futureContractAddress, setFutureContractAddress] = useState('');
+    
+    const [domain, setDomain] = useState('');
+    const [expiry, setExpiry] = useState(null);
     const [signature, setSignature] = useState('');
-    const [flags, setFlags] = useState(initInputs ? initInputs.flags : new BitSet('0x00'));
-    const [currentDomain, setCurrentDomain] = useState(initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : domain);
-    const [fingerprint, setFingerprint] = useState(defaultFingerprint);
+    const [flags, setFlags] = useState(new BitSet('0x00'));
+    const [currentDomain, setCurrentDomain] = useState('');
 
+    const [fingerprint, setFingerprint] = useState('');
 
     const [privateKeyPEM, setPrivateKeyPEM] = useState('');
     const [privateKeyFileName, setPrivateKeyFileName] = useState('');
@@ -122,6 +119,21 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const prevFingerprint = useRef(fingerprint);
     const prevPrivateKeyPEM = useRef(privateKeyPEM);
 
+    useEffect(() => {
+        if(initInputs) {
+            const {contractAddress, domain, expiry, flags, fingerprint} = initInputs;
+            console.log('>>>> initialize inputs')
+            setContractAddress(contractAddress)
+            setFutureContractAddress(contractAddress)
+            setDomain(flags.get(FLAGS.DOMAIN_HASHED)? typedInDomain : domain);
+            setExpiry(parseInt(expiry));
+            setFlags(new BitSet(flags.toString()));
+            setCurrentDomain(domain);
+            setFingerprint(fingerprint && parseInt(fingerprint, 16) !== 0 ? fingerprint : '')
+        }
+
+    }, [initInputs, typedInDomain])
+
     
 
     const getClaimString = () => {
@@ -153,7 +165,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
     const handleLoseDomainInputFocus = () => {
         if (fingerprint) {
-            setFingerprint(defaultFingerprint)
+            setFingerprint(!initInputs || parseInt(initInputs.fingerprint, 16) === 0 ? '' : initInputs.fingerprint)
         }
         computeSignature(currentDomain);
         
@@ -231,8 +243,11 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     };
 
     const handleExpiryChange = (date) => {
+        console.log('init expiry', initInputs.expiry)
+        console.log('cur expiry', expiry)
         const mDate = moment.utc(date);
         mDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+        console.log('new expiry', mDate.unix())
         setExpiry(mDate.unix());
     };
 
@@ -482,7 +497,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     };
 
     const shouldDisplayOriginalDomainStep = () => {
-        return initInputs && flags.get(FLAGS.DOMAIN_HASHED) && !typedInDomain && !isMatchedOriginalDomain
+        return initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) && !typedInDomain && !isMatchedOriginalDomain
     }
 
     const getSteps = () => {
@@ -501,13 +516,14 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
 
     const handleFlagsChange = (i, selected) => {
-        const newFlags = new BitSet(flags.flip(i).toString());
         console.log('initInputs.flags', flagsToBytes24Hex(initInputs.flags));
+        const newFlags = new BitSet(flags.flip(i).toString());
         setFlags(newFlags);
         if(i ===  FLAGS.DOMAIN_HASHED) {
             setCurrentDomain(domain && !selected ? web3.utils.sha3(domain) : domain)
         }
-        console.log('newFlags', flagsToBytes24Hex(flags));
+        console.log('newFlags', flagsToBytes24Hex(newFlags));
+        console.log('initInputs.flags II', flagsToBytes24Hex(initInputs.flags));
     };
 
     const renderFlagCheckboxes = () => {
@@ -693,7 +709,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                     checked={!!flags.get(FLAGS.DOMAIN_HASHED)}
                                     label='Hash Domain'
                                     onClick={() => handleFlagsChange(FLAGS.DOMAIN_HASHED, !!flags.get(FLAGS.DOMAIN_HASHED))}
-                                    disabled={(!initInputs && (!domain)) || (initInputs && !isMatchedOriginalDomain)}
+                                    disabled={!domain}
                                     slider
                                 />
                             </Form.Field>
@@ -733,7 +749,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                         </>
                     ),
                     completed: initInputs ? 
-                        (currentDomain !== initInputs.domain) || (expiry !== initInputs.expiry) || (flags !== initInputs.flags) : 
+                        (currentDomain !== initInputs.domain) || (expiry !== initInputs.expiry) || (flags.toString() !==  initInputs.flags.toString()) : 
                         !!currentDomain && !!expiry ,
                     reachable: initInputs && currentDomain? isMatchedOriginalDomain: true
                 };

@@ -55,7 +55,7 @@ const TeSCInspect = ({ location }) => {
         setFlags(hexStringToBitSet(flagsHex));
 
         setDomainFromChain(contract.domain);
-        setExpiry(contract.expiry);
+        setExpiry(parseInt(contract.expiry));
         setSignature(contract.signature);
         setFingerprint(contract.fingerprint);
 
