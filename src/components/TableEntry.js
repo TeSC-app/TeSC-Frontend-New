@@ -8,7 +8,7 @@ import ButtonRegistryAddRemove from './ButtonRegistryAddRemove';
 import {
     isSha3,
 } from '../utils/tesc';
-import { loadStorage, getLocalTescs, toggleFavourite } from '../utils/storage';
+import { toggleFavourite } from '../utils/storage';
 
 import TableCellVerification from './TableCellVerification';
 import PieChart from '../components/analytics/PieChart';
@@ -96,12 +96,13 @@ function TableEntry(props) {
     };
 
     return (
-        <Table.Row key={contractAddress}>
-            <Table.Cell>
+        <Table.Row key={contractAddress} >
+            <Table.Cell >
                 {!cols.has(COL.TSC) ?
-                    <span className='contract-address-column'>
-                        {
-                            own && hasAllColumns(cols) ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
+                    <span>
+                        {own && hasAllColumns(cols) ?
+                            <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="purple" />} /> :
+                            <Popup inverted content="You favorited this contract" trigger={<Icon className="user-icon" name="star" color="yellow" />} />
                         }
                         <LinkTescInspect contractAddress={contractAddress} />
                     </span> : renderDomainForRegistryInspect()

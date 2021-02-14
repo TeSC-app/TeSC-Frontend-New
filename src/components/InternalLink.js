@@ -13,7 +13,7 @@ const LinkTescInspect = ({ contractAddress, content }) => (
             }
         }}
     >
-        {content ? content : contractAddress}
+        <span style={{fontSize: '1.15em', fontFamily: 'monospace'}}>{content ? content : contractAddress}</span>
     </Link>
 );
 

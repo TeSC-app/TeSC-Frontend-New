@@ -75,33 +75,6 @@ function TableOverview(props) {
     const handleChangeTescs = () => {
         console.log('loadStorage(account)', loadStorage(account))
         setTescs(loadStorage(account));
-
-        // const updatedTescs = [...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), tesc];
-        // if (!cols.has(COL.REG)) {
-        //     let tescsNew = loadStorage(web3);
-        //     let found = false;
-        //     for (const tescNew of tescsNew) {
-        //         if (tescNew.contractAddress === tesc.contractAddress) {
-        //             found = true;
-        //             if (tescNew.isFavourite) {
-        //                 tescNew.isFavourite = false;
-        //             } else {
-        //                 tescNew.isFavourite = true;
-        //             }
-        //             localStorage.setItem(account, JSON.stringify(tescsNew));
-        //             break;
-        //         }
-        //     }
-        //     if (!found) {
-        //         tescsNew.push({ contractAddress: tesc.contractAddress, domain: tesc.domain, expiry: tesc.expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') });
-        //         localStorage.setItem(account, JSON.stringify(tescsNew));
-        //     }
-
-        //     setTescs(updatedTescs.sort((tescA, tescB) => tescB.expiry - tescA.expiry));
-        // } else {
-        //     setTescs(updatedTescs.sort((tescA, tescB) => tescA.createdAt.localeCompare(tescB.createdAt)));
-        //     localStorage.setItem(account, JSON.stringify(updatedTescs));
-        // }
     };
 
     const showAllTescs = (tescs) => {
