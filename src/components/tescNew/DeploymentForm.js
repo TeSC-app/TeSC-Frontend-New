@@ -502,22 +502,19 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
     const handleFlagsChange = (i, selected) => {
         const newFlags = new BitSet(flags.flip(i).toString());
+        console.log('initInputs.flags', flagsToBytes24Hex(initInputs.flags));
         setFlags(newFlags);
-        if (i === FLAGS.DOMAIN_HASHED) {
-            if (domain && !selected) {
-                setCurrentDomain(web3.utils.sha3(domain));
-            } else {
-                setCurrentDomain(domain)
-            }
+        if(i ===  FLAGS.DOMAIN_HASHED) {
+            setCurrentDomain(domain && !selected ? web3.utils.sha3(domain) : domain)
         }
-        console.log('newFlags', flagsToBytes24Hex(flags))
+        console.log('newFlags', flagsToBytes24Hex(flags));
     };
 
     const renderFlagCheckboxes = () => {
         const FLAGNAME_LABEL_MAPPING = {
             'ALLOW_SUBENDORSEMENT': 'Allow Subendorsement'
         }
-        return Object.entries(FLAGS).filter(([flagName, i]) => i=== FLAGS.ALLOW_SUBENDORSEMENT).map(([flagName, i]) =>
+        return Object.entries(FLAGS).filter(([flagName, i]) => i === FLAGS.ALLOW_SUBENDORSEMENT).map(([flagName, i]) =>
                 <Form.Checkbox
                     key={i}
                     checked={!!flags.get(i)}
@@ -735,7 +732,9 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                             </Form.Field>
                         </>
                     ),
-                    completed: initInputs? (currentDomain !== initInputs.domain) || (expiry !== initInputs.expiry) : !!currentDomain && !!expiry ,
+                    completed: initInputs ? 
+                        (currentDomain !== initInputs.domain) || (expiry !== initInputs.expiry) || (flags !== initInputs.flags) : 
+                        !!currentDomain && !!expiry ,
                     reachable: initInputs && currentDomain? isMatchedOriginalDomain: true
                 };
             case 2:

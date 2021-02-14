@@ -86,6 +86,8 @@ const TeSCInspect = ({ location }) => {
             let result;
             let response;
             try {
+                clearDisplayData();
+                setLoading(true)
                 hasSentVerif.current = true;
                 console.log('sending req...', typedInDomain);
                 response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/verify/${address}`, {
@@ -122,7 +124,7 @@ const TeSCInspect = ({ location }) => {
             console.log('---------------------------------------------------------');
             setIsPlainDomainSubmitted(false);
             hasSentVerif.current = false;
-
+            setLoading(false)
         }
     }, [isPlainDomainSubmitted, typedInDomain, showMessage, curVerifResult, assignContractData]);
 
@@ -169,11 +171,8 @@ const TeSCInspect = ({ location }) => {
 
     const handleSubmitAddress = async (e) => {
         e.preventDefault();
-        setLoading(true);
-        clearDisplayData();
         try {
-            console.log('submit with ', contractAddress);
-            isValidContractAddress(contractAddress, true);
+            setCurVerifResult(null);
             await verifyTesc(contractAddress);
         } catch (err) {
             showMessage(buildNegativeMsg({
@@ -181,7 +180,6 @@ const TeSCInspect = ({ location }) => {
                 msg: err.message
             }));
         }
-        setLoading(false);
     };
 
     const handleEnterOriginalDomain = async (e) => {
@@ -190,8 +188,9 @@ const TeSCInspect = ({ location }) => {
         verifyTesc(contractAddress);
     };
 
-    const handleCloseTescUpdate = async (e) => {
+    const handleCloseTescUpdateModal = async (e) => {
         showMessage(null);
+        setCurVerifResult(null);
         await verifyTesc(contractAddress);
     };
 
@@ -227,7 +226,7 @@ const TeSCInspect = ({ location }) => {
                                                 <Modal
                                                     closeIcon
                                                     trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
-                                                    onClose={handleCloseTescUpdate}
+                                                    onClose={handleCloseTescUpdateModal}
                                                     style={{ borderRadius: '20px', height: '80%', width: '75%' }}
                                                 >
                                                     <Modal.Header style={{ borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
@@ -238,9 +237,10 @@ const TeSCInspect = ({ location }) => {
                                                             initInputs={{
                                                                 contractAddress,
                                                                 domain: domainFromChain,
-                                                                expiry, flags,
+                                                                expiry, 
+                                                                flags,
                                                                 signature,
-                                                                fingerprint: fingerprint,
+                                                                fingerprint,
                                                             }}
                                                             typedInDomain={typedInDomain}
                                                             onMatchOriginalDomain={setTypedInDomain}
