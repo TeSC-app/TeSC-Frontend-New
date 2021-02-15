@@ -409,12 +409,12 @@ function TableOverview(props) {
                 text={title}
                 icon='angle down'
                 simple
-                className={classesDropdown}>
+                className={classesDropdown}
+                onBlur={() => filterEntries(filterType)}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
                     <Form onSubmit={() => filterEntries(filterType)}>
                         <Form.Checkbox className='checkbox__label' name={inputPropNameOne} label={checkboxLabelOne} checked={checkedOne} onChange={handleFiltersCheckbox} />
                         <Form.Checkbox className='checkbox__label' name={inputPropNameTwo} label={checkboxLabelTwo} checked={checkedTwo} onChange={handleFiltersCheckbox} />
-                        <Form.Button content='Filter' basic className='dropdown-filters__menu__button' size='tiny' />
                     </Form>
                 </Dropdown.Menu>
             </Dropdown>)
@@ -433,9 +433,10 @@ function TableOverview(props) {
                 text={title}
                 icon={'angle down'}
                 simple
-                className={classesDropdown}>
+                className={classesDropdown}
+                onBlur={() => filterEntries(filterType)}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
-                    <Form onSubmit={() => filterEntries(filterType)}>
+                    <Form>
                         <Form.Field><DayPickerInput
                             value={dateFrom ? formatDate(new Date(dateFrom * 1000), 'DD/MM/YYYY') : null}
                             onDayChange={handleFiltersDate}
@@ -457,7 +458,6 @@ function TableOverview(props) {
                                 inputProps={{ readOnly: true, name: inputPropNameTo }}
                                 component={props => <Input icon='calendar alternate outline' {...props} />}
                             /></Form.Field>
-                        <Button basic content='Filter' className='dropdown-filters__menu__button' size='tiny' />
                     </Form>
                 </Dropdown.Menu>
             </Dropdown>)
@@ -477,11 +477,11 @@ function TableOverview(props) {
                 text={title}
                 icon={'angle down'}
                 simple
-                className={classesDropdown}>
+                className={classesDropdown}
+                onBlur={() => filterEntries(filterType)}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
-                    <Form onSubmit={() => filterEntries(filterType)}>
+                    <Form>
                         <Form.Input placeholder={placeholder} name={inputPropName} onChange={handleFiltersText} />
-                        <Form.Button basic content='Filter' className='dropdown-filters__menu__button' size='tiny' />
                     </Form>
                 </Dropdown.Menu>
             </Dropdown>)
