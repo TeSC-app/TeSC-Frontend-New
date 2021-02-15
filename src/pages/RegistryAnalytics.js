@@ -5,7 +5,8 @@ import BarChart from '../components/analytics/BarChart';
 import {
     computeTopDomains,
     countFlags,
-    computeValidContracts
+    computeValidContracts,
+    checkExpirationDates
 } from '../utils/analytics';
 
 function RegistryAnalytics() {
@@ -55,6 +56,10 @@ function RegistryAnalytics() {
                 isFlags={true}
                 loading={loading}
                 infoText='Shows the number of the flags that are used in all smart contracts in the registry' />
+            <BarChart data={checkExpirationDates(entries)}
+                loading={loading}
+                isExpiration={true}
+                infoText='Shows a distribution of the expiry dates of all entries in the registry' />
         </section>
     )
 }

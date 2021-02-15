@@ -25,7 +25,7 @@ function PieChart(props) {
                 radialLabelsSkipAngle={10}
                 radialLabelsTextColor="#333333"
                 radialLabelsLinkColor={{ from: 'color' }}
-                enableRadialLabels={isExploringDomain ? false : true}
+                enableRadialLabels={isExploringDomain || isFlags ? false : true}
                 sliceLabelsSkipAngle={10}
                 sliceLabelsTextColor="#333333"
                 legends={[

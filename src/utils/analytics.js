@@ -1,6 +1,7 @@
 import { isSha3 } from './tesc'
 import { FLAGS } from '../utils/tesc'
-import BitSet from 'bitset';
+import BitSet from 'bitset'
+import moment from 'moment'
 
 export const computeValidContracts = (entries, verified) => {
     return entries.reduce((count, entry) => count + (entry.verified === verified), 0)
@@ -54,3 +55,25 @@ export const computeTopDomains = (entries) => {
     }
     return distinctTescsWithOccurances.slice(0, 5)
 }
+
+export const checkExpirationDates = (entries) => {
+    console.log(entries)
+    const colorsBar = ['#E8C1A0', '#F47560', '#F1E15B', '#E8A838', '#61CDBB']
+    const data = [{
+        expired: 'Expired', count: entries.reduce((counter, entry_) =>
+            entry_.expiry < moment().unix() ? counter += 1 : counter, 0), color: colorsBar[0]},
+        {
+            expired: '<1 month', count: entries.reduce((counter, entry_) =>
+                entry_.expiry < moment().add(1, 'months').unix() && entry_.expiry > moment().unix() ? counter += 1 : counter, 0), color: colorsBar[1] },
+        {
+            expired: '<3 months', count: entries.reduce((counter, entry_) =>
+                entry_.expiry < moment().add(3, 'months').unix() && entry_.expiry > moment().add(1, 'months').unix() ? counter += 1 : counter, 0), color: colorsBar[2] },
+        {
+            expired: '<6 months', count: entries.reduce((counter, entry_) =>
+                entry_.expiry < moment().add(6, 'months').unix() && entry_.expiry > moment().add(3, 'months').unix() ? counter += 1 : counter, 0), color: colorsBar[3] },
+        {
+            expired: '>=6 months', count: entries.reduce((counter, entry_) =>
+                entry_.expiry >= moment().add(6, 'months').unix() ? counter += 1 : counter, 0), color: colorsBar[4] }]
+    console.log(data)
+    return data
+} 

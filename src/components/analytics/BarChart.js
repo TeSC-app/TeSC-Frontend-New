@@ -5,7 +5,7 @@ import { ResponsiveBar } from '@nivo/bar'
 
 function BarChart(props) {
 
-    const { data, loading, infoText } = props
+    const { data, loading, infoText, isExpiration, isExploringDomain } = props
 
     const getBarColor = bar => bar.data.color;
 
@@ -18,7 +18,7 @@ function BarChart(props) {
         </Segment> : <ResponsiveBar
                 data={data}
                 keys={['count']}
-                indexBy="domain"
+                indexBy={isExpiration ? "expired" : "domain"}
                 margin={{ top: 50, right: 0, bottom: 50, left: 60 }}
                 padding={0.3}
                 valueScale={{ type: 'linear' }}
@@ -31,7 +31,7 @@ function BarChart(props) {
                     tickSize: 5,
                     tickPadding: 5,
                     tickRotation: 0,
-                    legend: 'Domain',
+                    legend: isExpiration ? 'Expiry' : 'Domain',
                     legendPosition: 'middle',
                     legendOffset: 32
                 }}
@@ -78,7 +78,7 @@ function BarChart(props) {
 
     return (
         <div style={{ height: 300 }}>
-            <PageHeader title='Domains With Most Smart Contracts'
+            <PageHeader title={isExpiration ? 'Expiry of Smart Contracts' : 'Domains With Most Smart Contracts'}
                 isRegistryAnalytics={true}
                 infoText={infoText} />
             {renderBarChart()}

@@ -35,7 +35,8 @@ function TableOverview(props) {
         handleLoading,
         handleIsExploringDomain,
         handleDomainFilter,
-        cols
+        cols,
+        handleEntriesInspect
     } = props;
 
     const { web3, account, loadStorage } = useContext(AppContext);
@@ -177,7 +178,7 @@ function TableOverview(props) {
             handleIsExploringDomain(true);
             //for showing domain-specific analytics
             handleDomainFilter(domain)
-            setTescs(rowData.filter(entry => extractDomainAndTopLevelDomain(entry.domain) === extractDomainAndTopLevelDomain(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
+            setTescs(rowData.filter(entry => entry.domain.includes(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
         }
         handleLoading(false);
     };
@@ -319,16 +320,18 @@ function TableOverview(props) {
                     ...prevState,
                     'contractAddressFilter': { 'contractAddressFilter': filterTypes.contractAddressFilter.contractAddressFilter, isFiltered: true }
                 }))
+                if (typeof handleEntriesInspect !== 'undefined') handleEntriesInspect(tescs.filter(tesc => tesc.contractAddress === filterTypes.contractAddressFilter.contractAddressFilter))
                 break
             case 'DOMAIN':
-                if (cols.has(COL.TSC)) setTescsWithOccurancesNew(tescsWithOccurancesNew.filter(tesc => extractDomainAndTopLevelDomain(tesc.domain) === extractDomainAndTopLevelDomain(filterTypes.domainFilter.domainFilter)))
-                else setTescs(tescs.filter(tesc => extractDomainAndTopLevelDomain(tesc.domain) === extractDomainAndTopLevelDomain(filterTypes.domainFilter.domainFilter)))
+                if (cols.has(COL.TSC)) setTescsWithOccurancesNew(tescsWithOccurancesNew.filter(tesc => tesc.domain.includes(filterTypes.domainFilter.domainFilter)))
+                else setTescs(tescs.filter(tesc => tesc.domain.includes(filterTypes.domainFilter.domainFilter)))
                 setFilterTypes(prevState => ({
                     ...prevState, 'domainFilter': { 'domainFilter': filterTypes.domainFilter.domainFilter, isFiltered: true }
                 }))
                 if (cols.has(COL.DOMAIN) && !hasAllColumns(cols) && typeof handleDomainFilter !== 'undefined') {
                     handleDomainFilter(filterTypes.domainFilter.domainFilter) 
                 }
+                if (typeof handleEntriesInspect !== 'undefined') handleEntriesInspect(tescs.filter(tesc => tesc.domain.includes(filterTypes.domainFilter.domainFilter)))
                 break
             case 'EXPIRY':
                 setTescs(tescs.filter(tesc => tesc.expiry >= filterTypes.expiryFromFilter.expiryFromFilter && tesc.expiry <= filterTypes.expiryToFilter.expiryToFilter))
@@ -336,6 +339,7 @@ function TableOverview(props) {
                     ...prevState, 'expiryFromFilter': { 'expiryFromFilter': filterTypes.expiryFromFilter.expiryFromFilter, isFiltered: true },
                     'expiryToFilter': { 'expiryToFilter': filterTypes.expiryToFilter.expiryToFilter, isFiltered: true }
                 }))
+                if (typeof handleEntriesInspect !== 'undefined') handleEntriesInspect(tescs.filter(tesc => tesc.expiry >= filterTypes.expiryFromFilter.expiryFromFilter && tesc.expiry <= filterTypes.expiryToFilter.expiryToFilter))
                 break
             case 'VERIFIED':
                 setTescs(tescs.filter(tesc => filterTypes.isVerifiedFilter.isVerifiedFilter ? tesc.verified === true : filterTypes.isNotVerifiedFilter.isNotVerifiedFilter ? tesc.verified === false : tesc))
@@ -343,6 +347,7 @@ function TableOverview(props) {
                     ...prevState, 'isVerifiedFilter': { 'isVerifiedFilter': filterTypes.isVerifiedFilter.isVerifiedFilter, isFiltered: true },
                     'isNotVerifiedFilter': { 'isNotVerifiedFilter': filterTypes.isNotVerifiedFilter.isNotVerifiedFilter, isFiltered: true }
                 }))
+                if (typeof handleEntriesInspect !== 'undefined') handleEntriesInspect(tescs.filter(tesc => filterTypes.isVerifiedFilter.isVerifiedFilter ? tesc.verified === true : filterTypes.isNotVerifiedFilter.isNotVerifiedFilter ? tesc.verified === false : tesc))
                 break
             case 'REGISTRY':
                 setTescs(tescs.filter(tesc => filterTypes.isInRegistryFilter.isInRegistryFilter ? tesc.isInRegistry === true : filterTypes.isNotInRegistryFilter.isNotInRegistryFilter ? tesc.isInRegistry === false : tesc))
@@ -357,6 +362,7 @@ function TableOverview(props) {
                     ...prevState, 'isFavouriteFilter': { 'isFavouriteFilter': filterTypes.isFavouriteFilter.isFavouriteFilter, isFiltered: true },
                     'isNotFavouriteFilter': { 'isNotFavouriteFilter': filterTypes.isNotFavouriteFilter.isNotFavouriteFilter, isFiltered: true }
                 }))
+                if (typeof handleEntriesInspect !== 'undefined') handleEntriesInspect(tescs.filter(tesc => filterTypes.isFavouriteFilter.isFavouriteFilter ? tesc.isFavourite === true : filterTypes.isNotFavouriteFilter.isNotFavouriteFilter ? tesc.isFavourite === false : tesc))
                 break
             case 'CREATED_AT':
                 setTescs(tescs.filter(tesc => tesc.createdAt >= filterTypes.createdAtFromFilter.createdAtFromFilter && tesc.createdAt <= filterTypes.createdAtToFilter.createdAtToFilter))

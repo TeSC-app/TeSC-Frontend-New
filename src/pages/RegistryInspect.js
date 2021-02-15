@@ -9,8 +9,10 @@ import { extractDomainAndTopLevelDomain, isSha3 } from '../utils/tesc'
 import PieChart from '../components/analytics/PieChart';
 import {
     countFlags,
-    computeValidContracts
+    computeValidContracts,
+    checkExpirationDates
 } from '../utils/analytics'
+import BarChart from '../components/analytics/BarChart';
 
 function RegistryInspect() {
     const { loadStorage } = useContext(AppContext);
@@ -50,11 +52,11 @@ function RegistryInspect() {
                 if (response.status === 200) {
                     const entriesRaw = registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry)
                     const tescsWithOccurances = entriesRaw.map(entry => ({
-                        domain: entry.domain, contractAddresses: entriesRaw.filter((entry_) => extractDomainAndTopLevelDomain(entry_.domain) === extractDomainAndTopLevelDomain(entry.domain)).map(({ contractAddress, verified }) => ({ contractAddress, verified })),
+                        domain: entry.domain, contractAddresses: entriesRaw.filter((entry_) => entry_.domain.includes(entry.domain)).map(({ contractAddress, verified }) => ({ contractAddress, verified })),
                         contractCount: entriesRaw.reduce((counter, entry_) =>
-                            extractDomainAndTopLevelDomain(entry_.domain) === extractDomainAndTopLevelDomain(entry.domain) ? counter += 1 : counter, 0),
+                            entry_.domain.includes(entry.domain) ? counter += 1 : counter, 0),
                         verifiedCount: entriesRaw.reduce((counter, entry_) =>
-                            entry_.verified === true && extractDomainAndTopLevelDomain(entry_.domain) === extractDomainAndTopLevelDomain(entry.domain) ? counter += 1 : counter, 0)
+                            entry_.verified === true && entry_.domain.includes(entry.domain) ? counter += 1 : counter, 0)
                     }))
                     let distinctTescsWithOccurances = []
                     const map = new Map();
@@ -86,6 +88,10 @@ function RegistryInspect() {
         setIsExploringDomain(isExploringDomain)
     }
 
+    const handleEntriesInspect = (entriesRaw) => {
+        setEntriesRaw(entriesRaw)
+    }
+
     const renderTable = () => {
         if (entriesRaw && entriesRaw.length > 0 && !loading) {
             return (
@@ -96,6 +102,7 @@ function RegistryInspect() {
                         handleLoading={handleLoading}
                         handleIsExploringDomain={handleIsExploringDomain}
                         handleDomainFilter={handleDomainFilter}
+                        handleEntriesInspect={handleEntriesInspect}
                         cols={isExploringDomain ? new Set([COL.ADDRESS, COL.DOMAIN, COL.EXPIRY, COL.VERIF, COL.FAV]) : new Set([COL.DOMAIN, COL.TSC, COL.VERIF])}
                     />
                 </div>
@@ -128,12 +135,12 @@ function RegistryInspect() {
     const dataValidContracts = [{
         'id': 'Valid',
         'value': computeValidContracts(entriesRaw.filter(entry =>
-            extractDomainAndTopLevelDomain(entry.domain) === extractDomainAndTopLevelDomain(domainFilter)), true)
+            entry.domain.includes(domainFilter)), true)
     },
     {
         'id': 'Invalid',
         'value': computeValidContracts(entriesRaw.filter(entry =>
-            extractDomainAndTopLevelDomain(entry.domain) === extractDomainAndTopLevelDomain(domainFilter)), false)
+            entry.domain.includes(domainFilter)), false)
     }]
 
     const renderAnalytics = () => {
@@ -145,14 +152,19 @@ function RegistryInspect() {
                         infoText={`Shows the number of valid and invalid smart contracts endorsed by ${domainFilter}`}
                         isExploringDomain={true} />
                 }
-                {console.log(entriesRaw.filter(entry =>
-                    extractDomainAndTopLevelDomain(entry.domain) === extractDomainAndTopLevelDomain(domainFilter)))}
                 <PieChart data={countFlags(entriesRaw.filter(entry =>
-                    extractDomainAndTopLevelDomain(entry.domain) === extractDomainAndTopLevelDomain(domainFilter)))}
+                    entry.domain.includes(domainFilter)))}
                     isFlags={true}
                     loading={loading}
                     infoText={`Shows the number of the flags that are used in all smart contracts endorsed by ${domainFilter}`}
                     isExploringDomain={true} />
+                <BarChart data={checkExpirationDates(entriesRaw.filter(entry =>
+                    entry.domain.includes(domainFilter)))}
+                    isExpiration={true}
+                    loading={loading}
+                    isExploringDomain={isExploringDomain}
+                    infoText={`Shows a distribution of the expiry dates of all smart contracts endorsed by ${domainFilter}`}
+                />
             </>
     }
 
@@ -161,11 +173,11 @@ function RegistryInspect() {
             <PageHeader title='Explore TeSC Registry' />
             {/* Smart Contracts associated with Domain */}
             {renderTable()}
-            {isExploringDomain && (<div style={{ backgroundColor: '#eff2f5'}}>
+            {isExploringDomain && (<div style={{ backgroundColor: '#eff2f5' }}>
                 <PageHeader isRegistryInspect={true} title='Analytics' />
                 <section style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
+                    gridTemplateColumns: '1fr 1fr 1fr',
                     gridTemplateRows: 'auto auto',
                     gridGap: '10px',
                     height: '300px',
