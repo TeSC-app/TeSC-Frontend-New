@@ -8,7 +8,8 @@ import AppContext from '../appContext';
 import TableEntry from './TableEntry';
 import moment from 'moment';
 import SearchBox from './SearchBox';
-import { convertToUnix } from '../utils/tesc'
+import { convertToUnix, extractSubdomainFromDomain } from '../utils/tesc'
+import { forEach } from 'lodash';
 
 const ENTRIES_PER_PAGE = 5;
 
@@ -35,8 +36,7 @@ function TableOverview(props) {
         handleLoading,
         handleIsExploringDomain,
         handleDomainFilter,
-        cols,
-        handleEntriesInspect
+        cols
     } = props;
 
     const { web3, account, loadStorage } = useContext(AppContext);
@@ -78,11 +78,12 @@ function TableOverview(props) {
         createdAtToFilter: { createdAtToFilter: '', isFiltered: false }
     })
 
+    const [subdomainFilter, setSubdomainFilter] = useState([])
+
     useEffect(() => {
         const init = async () => {
             try {
                 // setTescs(account ? (isDashboard? loadStorage() : []) : []);
-                console.log(cols)
                 if (cols.has(COL.TSC)) setDisplayedEntries(account && tescsWithOccurances ? tescsWithOccurances.slice(0, ENTRIES_PER_PAGE) : [])
                 else setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRIES_PER_PAGE) : []);
 
@@ -102,7 +103,18 @@ function TableOverview(props) {
         init();
     }, [tescs, account, web3, cols, tescsWithOccurancesNew, tescsWithOccurances]);
 
-
+    useEffect(() => {
+        const subdomainList = rowData.filter(entry => extractSubdomainFromDomain(entry.domain) !== '').map(entry => extractSubdomainFromDomain(entry.domain))
+        const subdomainFilterState = []
+        const map = new Map();
+        for (const subdomain of subdomainList) {
+            if (!map.has(subdomain)) {
+                map.set(subdomain, true);    // set any value to Map
+                subdomainFilterState.push({ subdomain, isChecked: false, isFiltered: false })
+            }
+        }
+        setSubdomainFilter(subdomainFilterState)
+    }, [rowData])
     const handleChangeTescs = (tesc) => {
         const updatedTescs = [...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), tesc];
         if (!cols.has(COL.REG)) {
@@ -180,7 +192,6 @@ function TableOverview(props) {
             handleDomainFilter(domain)
             const filteredRowData = rowData.filter(entry => entry.domain.includes(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry)
             setTescs(filteredRowData);
-            if (filteredRowData.length === 0 && typeof handleEntriesInspect !== 'undefined') handleEntriesInspect([])
         }
         handleLoading(false);
     };
@@ -280,13 +291,16 @@ function TableOverview(props) {
             createdAtFromFilter: { createdAtFromFilter: '', isFiltered: false },
             createdAtToFilter: { createdAtToFilter: '', isFiltered: false }
         })
+
+        setSubdomainFilter(subdomainFilter.map(subdomainFilter => ({...subdomainFilter, isFiltered: false})))
+
         if (cols.has(COL.VERIF) && cols.has(COL.FAV) && !cols.has(COL.TSC)) {
             setDisplayedEntries(loadStorage().slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setTescs(loadStorage())
             if (cols.has(COL.DOMAIN) && !hasAllColumns(cols)) {
                 handleIsExploringDomain(false)
             }
-        } else if(cols.has(COL.TSC)) {
+        } else if (cols.has(COL.TSC)) {
             handleIsExploringDomain(false)
             setDisplayedEntries(tescsWithOccurances.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setTescsWithOccurancesNew(tescsWithOccurances)
@@ -299,6 +313,15 @@ function TableOverview(props) {
 
     const handleFiltersCheckbox = (e, { name, checked }) => {
         setFilterTypes(prevState => ({ ...prevState, [name]: { [name]: checked, filtered: false } }))
+    }
+
+    const handleFiltersCheckboxSubdomain = (e, subdomain, checked, index) => {
+        let items = [...subdomainFilter]
+        let item = { ...items[index] }
+        item.subdomain = subdomain
+        item.isChecked = !checked
+        items[index] = item
+        setSubdomainFilter(items)
     }
 
     const handleFiltersDate = (date, modifier, dayPickerInput) => {
@@ -322,7 +345,6 @@ function TableOverview(props) {
                     ...prevState,
                     'contractAddressFilter': { 'contractAddressFilter': filterTypes.contractAddressFilter.contractAddressFilter, isFiltered: true }
                 }))
-                if (typeof handleEntriesInspect !== 'undefined') handleEntriesInspect(tescs.filter(tesc => tesc.contractAddress === filterTypes.contractAddressFilter.contractAddressFilter))
                 break
             case 'DOMAIN':
                 if (cols.has(COL.TSC)) setTescsWithOccurancesNew(tescsWithOccurancesNew.filter(tesc => tesc.domain.includes(filterTypes.domainFilter.domainFilter)))
@@ -331,9 +353,12 @@ function TableOverview(props) {
                     ...prevState, 'domainFilter': { 'domainFilter': filterTypes.domainFilter.domainFilter, isFiltered: true }
                 }))
                 if (cols.has(COL.DOMAIN) && !hasAllColumns(cols) && typeof handleDomainFilter !== 'undefined') {
-                    handleDomainFilter(filterTypes.domainFilter.domainFilter) 
+                    handleDomainFilter(filterTypes.domainFilter.domainFilter)
                 }
-                if (typeof handleEntriesInspect !== 'undefined') handleEntriesInspect(tescs.filter(tesc => tesc.domain.includes(filterTypes.domainFilter.domainFilter)))
+                break
+            case 'SUBDOMAIN':
+                setTescs(tescs.filter(tesc => subdomainFilter.some(subdomainFilter => subdomainFilter.isChecked === true && extractSubdomainFromDomain(tesc.domain) === subdomainFilter.subdomain)))
+                setSubdomainFilter(subdomainFilter.map(subdomainFilter => ({...subdomainFilter, isFiltered: true})))
                 break
             case 'EXPIRY':
                 setTescs(tescs.filter(tesc => tesc.expiry >= filterTypes.expiryFromFilter.expiryFromFilter && tesc.expiry <= filterTypes.expiryToFilter.expiryToFilter))
@@ -341,7 +366,6 @@ function TableOverview(props) {
                     ...prevState, 'expiryFromFilter': { 'expiryFromFilter': filterTypes.expiryFromFilter.expiryFromFilter, isFiltered: true },
                     'expiryToFilter': { 'expiryToFilter': filterTypes.expiryToFilter.expiryToFilter, isFiltered: true }
                 }))
-                if (typeof handleEntriesInspect !== 'undefined') handleEntriesInspect(tescs.filter(tesc => tesc.expiry >= filterTypes.expiryFromFilter.expiryFromFilter && tesc.expiry <= filterTypes.expiryToFilter.expiryToFilter))
                 break
             case 'VERIFIED':
                 setTescs(tescs.filter(tesc => filterTypes.isVerifiedFilter.isVerifiedFilter ? tesc.verified === true : filterTypes.isNotVerifiedFilter.isNotVerifiedFilter ? tesc.verified === false : tesc))
@@ -349,7 +373,6 @@ function TableOverview(props) {
                     ...prevState, 'isVerifiedFilter': { 'isVerifiedFilter': filterTypes.isVerifiedFilter.isVerifiedFilter, isFiltered: true },
                     'isNotVerifiedFilter': { 'isNotVerifiedFilter': filterTypes.isNotVerifiedFilter.isNotVerifiedFilter, isFiltered: true }
                 }))
-                if (typeof handleEntriesInspect !== 'undefined') handleEntriesInspect(tescs.filter(tesc => filterTypes.isVerifiedFilter.isVerifiedFilter ? tesc.verified === true : filterTypes.isNotVerifiedFilter.isNotVerifiedFilter ? tesc.verified === false : tesc))
                 break
             case 'REGISTRY':
                 setTescs(tescs.filter(tesc => filterTypes.isInRegistryFilter.isInRegistryFilter ? tesc.isInRegistry === true : filterTypes.isNotInRegistryFilter.isNotInRegistryFilter ? tesc.isInRegistry === false : tesc))
@@ -364,7 +387,6 @@ function TableOverview(props) {
                     ...prevState, 'isFavouriteFilter': { 'isFavouriteFilter': filterTypes.isFavouriteFilter.isFavouriteFilter, isFiltered: true },
                     'isNotFavouriteFilter': { 'isNotFavouriteFilter': filterTypes.isNotFavouriteFilter.isNotFavouriteFilter, isFiltered: true }
                 }))
-                if (typeof handleEntriesInspect !== 'undefined') handleEntriesInspect(tescs.filter(tesc => filterTypes.isFavouriteFilter.isFavouriteFilter ? tesc.isFavourite === true : filterTypes.isNotFavouriteFilter.isNotFavouriteFilter ? tesc.isFavourite === false : tesc))
                 break
             case 'CREATED_AT':
                 setTescs(tescs.filter(tesc => tesc.createdAt >= filterTypes.createdAtFromFilter.createdAtFromFilter && tesc.createdAt <= filterTypes.createdAtToFilter.createdAtToFilter))
@@ -378,7 +400,29 @@ function TableOverview(props) {
         }
     }
 
-    //end of filtering logic
+    const renderFilteringDropdownForCheckboxesSubdomain = (subDomainFilterType) => {
+        const title = subDomainFilterType === 'SUBDOMAIN' ? 'Subdomain' : ''
+        const classesDropdown = subdomainFilter.some(subdomain => subdomain.isFiltered === true) ? 'icon dropdown-filters-filtered' : 'icon dropdown-filters'
+        return (
+            <Dropdown
+                text={title}
+                icon='angle down'
+                simple
+                className={classesDropdown}
+                onBlur={() => filterEntries(subDomainFilterType)}>
+                <Dropdown.Menu className='dropdown__menu-filters'>
+                    <Form onSubmit={() => filterEntries(subDomainFilterType)}>
+                        {subdomainFilter.map((subdomainFilter, index) => (
+                            <Form.Checkbox className='checkbox__label' name={subdomainFilter.subdomain}
+                                label={subdomainFilter.subdomain}
+                                checked={subdomainFilter.isChecked}
+                                onChange={(e) => handleFiltersCheckboxSubdomain(e, subdomainFilter.subdomain, subdomainFilter.isChecked, index)} />
+                        ))}
+                    </Form>
+                </Dropdown.Menu>
+            </Dropdown>)
+    }
+
     const renderFilteringDropdownForCheckboxes = (filterType) => {
         const title = filterType === 'VERIFIED' ? 'Verified' : filterType === 'REGISTRY' ? 'Registry' :
             filterType === 'FAVOURITES' ? 'Favourites' : 'Own'
@@ -493,6 +537,7 @@ function TableOverview(props) {
                 {hasAllColumns(cols) ? renderFilteringDropdownForCheckboxes('OWN') : null}
                 {cols.has(COL.ADDRESS) ? renderFilteringDropdownTextfield('ADDRESS') : null}
                 {cols.has(COL.DOMAIN) ? renderFilteringDropdownTextfield('DOMAIN') : null}
+                {cols.has(COL.DOMAIN) && !cols.has(COL.TSC) && subdomainFilter.length > 0 ? renderFilteringDropdownForCheckboxesSubdomain('SUBDOMAIN') : null}
                 {cols.has(COL.EXPIRY) ? renderFilteringDropdownForDayPickers('EXPIRY', filterTypes.expiryFromFilter.expiryFromFilter, filterTypes.expiryToFilter.expiryToFilter) : null}
                 {!cols.has(COL.TSC) ? renderFilteringDropdownForCheckboxes('VERIFIED') : null}
                 {cols.has(COL.REG) ? renderFilteringDropdownForCheckboxes('REGISTRY') : null}
@@ -503,7 +548,7 @@ function TableOverview(props) {
     }
 
     const renderClearFiltersButton = () => {
-        const isAtLeastOneFilterUsed = Object.values(filterTypes).some(e => e.isFiltered === true)
+        const isAtLeastOneFilterUsed = Object.values(filterTypes).some(e => e.isFiltered === true) || subdomainFilter.some(subdomain => subdomain.isFiltered)
         if (isAtLeastOneFilterUsed) return (<Button
             content='Clear filters'
             icon='remove circle'
@@ -515,7 +560,7 @@ function TableOverview(props) {
 
     const renderLegendForSCImages = () => {
         if (cols.has(COL.TSC)) return (
-            <div style={{display: 'flex', float: 'left'}}>
+            <div style={{ display: 'flex', float: 'left' }}>
                 <div style={{ display: 'flex', alignItems: 'center' }}><Image src='../images/smart-contract-icon-invalid.png' className='smart-contracts-legend__icon' alt='Smart Contract' size='mini' /><Label basic size='mini' content='Invalid Smart Contract' /></div>
                 <div style={{ display: 'flex', alignItems: 'center' }}><Image src='../images/smart-contract-icon-valid.png' className='smart-contracts-legend__icon' alt='Smart Contract' size='mini' /><Label basic size='mini' content='Valid Smart Contract' /></div>
                 <div style={{ display: 'flex', alignItems: 'center' }}><Image src='../images/smart-contract-icon.png' className='smart-contracts-legend__icon' alt='Smart Contract' size='mini' /><Label size='mini' basic content='Hashed domain. Cleartext domain must be provided to verify' /></div>
@@ -546,10 +591,10 @@ function TableOverview(props) {
                                 Address{sortingTypes.isSortingByAddress.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByAddress.isSortingByAddressAsc ? 'sort down' : 'sort up'} /> : null}</Button>
                         }</Table.HeaderCell>}
                         {cols.has(COL.DOMAIN) &&
-                        <Table.HeaderCell>
-                            <Button basic className='column-header' onClick={() => sortEntries('DOMAIN')}>
-                                Domain{sortingTypes.isSortingByDomain.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByDomain.isSortingByDomainAsc ? 'sort down' : 'sort up'} /> : null}</Button>
-                        </Table.HeaderCell>
+                            <Table.HeaderCell>
+                                <Button basic className='column-header' onClick={() => sortEntries('DOMAIN')}>
+                                    Domain{sortingTypes.isSortingByDomain.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByDomain.isSortingByDomainAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                            </Table.HeaderCell>
                         }
                         {cols.has(COL.EXPIRY) && <Table.HeaderCell>{
                             <Button basic className='column-header' onClick={() => sortEntries('EXPIRY')}>
@@ -560,10 +605,10 @@ function TableOverview(props) {
                                 Total Smart Contracts{sortingTypes.isSortingByTotalSC.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByTotalSC.isSortingByTotalSCAsc ? 'sort down' : 'sort up'} /> : null}</Button>
                         }</Table.HeaderCell>}
                         {cols.has(COL.VERIF) &&
-                        <Table.HeaderCell textAlign="center">
-                            <Button basic className='column-header' onClick={() => sortEntries('VERIFIED')}>
-                                Verified{sortingTypes.isSortingByVerified.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByVerified.isSortingByVerifiedAsc ? 'sort down' : 'sort up'} /> : null}</Button>
-                        </Table.HeaderCell>
+                            <Table.HeaderCell textAlign="center">
+                                <Button basic className='column-header' onClick={() => sortEntries('VERIFIED')}>
+                                    Verified{sortingTypes.isSortingByVerified.isSorting ? <Icon className='column-header__sort' name={sortingTypes.isSortingByVerified.isSortingByVerifiedAsc ? 'sort down' : 'sort up'} /> : null}</Button>
+                            </Table.HeaderCell>
                         }
                         {cols.has(COL.REG) &&
                             <Table.HeaderCell textAlign="center">{
