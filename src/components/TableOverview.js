@@ -8,7 +8,7 @@ import AppContext from '../appContext';
 import TableEntry from './TableEntry';
 import moment from 'moment';
 import SearchBox from './SearchBox';
-import { convertToUnix, extractDomainAndTopLevelDomain } from '../utils/tesc'
+import { convertToUnix } from '../utils/tesc'
 
 const ENTRIES_PER_PAGE = 5;
 
@@ -46,7 +46,7 @@ function TableOverview(props) {
     const [totalPages, setTotalPages] = useState(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / ENTRIES_PER_PAGE) : tescs ? Math.ceil(tescs.length / ENTRIES_PER_PAGE) : 0);
     const [displayedEntries, setDisplayedEntries] = useState([]);
 
-    //for search input
+    //for search input inside registry inspect
     const [domain, setDomain] = useState('');
 
     const [sortingTypes, setSortingTypes] = useState({
@@ -178,7 +178,9 @@ function TableOverview(props) {
             handleIsExploringDomain(true);
             //for showing domain-specific analytics
             handleDomainFilter(domain)
-            setTescs(rowData.filter(entry => entry.domain.includes(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry));
+            const filteredRowData = rowData.filter(entry => entry.domain.includes(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry)
+            setTescs(filteredRowData);
+            if (filteredRowData.length === 0 && typeof handleEntriesInspect !== 'undefined') handleEntriesInspect([])
         }
         handleLoading(false);
     };

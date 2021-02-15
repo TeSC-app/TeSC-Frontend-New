@@ -13,10 +13,12 @@ import {
     checkExpirationDates
 } from '../utils/analytics'
 import BarChart from '../components/analytics/BarChart';
+import SearchBox from '../components/SearchBox';
 
 function RegistryInspect() {
     const { loadStorage } = useContext(AppContext);
-    const [entriesRaw, setEntriesRaw] = useState([])
+    const [entriesToBeUpdated, setEntriesToBeUpdated] = useState([])
+    const [entriesOriginal, setEntriesOriginal] = useState([])
     const [tescsWithOccurances, setTescsWithOccurances] = useState([])
     const [loading, setLoading] = useState(false)
     const [isExploringDomain, setIsExploringDomain] = useState(false)
@@ -50,12 +52,12 @@ function RegistryInspect() {
                         .map(({ contract, verified }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, createdAt: moment().unix(), verified: verified, flags: contract.flags })))
                     .flat()
                 if (response.status === 200) {
-                    const entriesRaw = registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry)
-                    const tescsWithOccurances = entriesRaw.map(entry => ({
-                        domain: entry.domain, contractAddresses: entriesRaw.filter((entry_) => entry_.domain.includes(entry.domain)).map(({ contractAddress, verified }) => ({ contractAddress, verified })),
-                        contractCount: entriesRaw.reduce((counter, entry_) =>
+                    const entriesToBeUpdated = registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry)
+                    const tescsWithOccurances = entriesToBeUpdated.map(entry => ({
+                        domain: entry.domain, contractAddresses: entriesToBeUpdated.filter((entry_) => entry_.domain.includes(entry.domain)).map(({ contractAddress, verified }) => ({ contractAddress, verified })),
+                        contractCount: entriesToBeUpdated.reduce((counter, entry_) =>
                             entry_.domain.includes(entry.domain) ? counter += 1 : counter, 0),
-                        verifiedCount: entriesRaw.reduce((counter, entry_) =>
+                        verifiedCount: entriesToBeUpdated.reduce((counter, entry_) =>
                             entry_.verified === true && entry_.domain.includes(entry.domain) ? counter += 1 : counter, 0)
                     }))
                     let distinctTescsWithOccurances = []
@@ -72,10 +74,11 @@ function RegistryInspect() {
                             });
                         }
                     }
-                    setEntriesRaw(entriesRaw)
+                    setEntriesToBeUpdated(entriesToBeUpdated)
+                    setEntriesOriginal(entriesToBeUpdated)
                     setTescsWithOccurances(distinctTescsWithOccurances)
                 } else {
-                    setEntriesRaw([])
+                    setEntriesToBeUpdated([])
                 }
                 setLoading(false);
             } catch (error) {
@@ -88,16 +91,16 @@ function RegistryInspect() {
         setIsExploringDomain(isExploringDomain)
     }
 
-    const handleEntriesInspect = (entriesRaw) => {
-        setEntriesRaw(entriesRaw)
+    const handleEntriesInspect = (entriesToBeUpdated) => {
+        setEntriesToBeUpdated(entriesToBeUpdated)
     }
 
     const renderTable = () => {
-        if (entriesRaw && entriesRaw.length > 0 && !loading) {
+        if (entriesToBeUpdated && entriesToBeUpdated.length > 0 && !loading) {
             return (
                 <div style={{ justifyContent: 'center' }}>
                     <TableOverview
-                        rowData={entriesRaw}
+                        rowData={entriesToBeUpdated}
                         tescsWithOccurances={tescsWithOccurances}
                         handleLoading={handleLoading}
                         handleIsExploringDomain={handleIsExploringDomain}
@@ -107,14 +110,24 @@ function RegistryInspect() {
                     />
                 </div>
             )
-        } else if (entriesRaw && entriesRaw.length === 0 && !loading) {
+        } else if (entriesToBeUpdated && entriesToBeUpdated.length === 0 && !loading) {
             return (
+                <>
+                <SearchBox
+                            onChange={handleDomainFilter}
+                            onSubmit={() => setEntriesToBeUpdated(entriesOriginal.filter(entry => entry.domain.includes(domainFilter)).sort((tescA, tescB) => tescB.expiry - tescA.expiry))}
+                            value={domainFilter}
+                            placeholder='www.mysite.com'
+                            label='Domain'
+                            icon='search'
+                            validInput={true}
+                        />
                 <div className="ui placeholder segment">
                     <div className="ui icon header">
-                        <i className="search icon"></i>
                   We could not find a Smart Contract associated to this domain in the registry. Look for a different domain.
                 </div>
                 </div>
+                </>
             );
         } else if (loading) {
             return (
@@ -134,12 +147,12 @@ function RegistryInspect() {
 
     const dataValidContracts = [{
         'id': 'Valid',
-        'value': computeValidContracts(entriesRaw.filter(entry =>
+        'value': computeValidContracts(entriesToBeUpdated.filter(entry =>
             entry.domain.includes(domainFilter)), true)
     },
     {
         'id': 'Invalid',
-        'value': computeValidContracts(entriesRaw.filter(entry =>
+        'value': computeValidContracts(entriesToBeUpdated.filter(entry =>
             entry.domain.includes(domainFilter)), false)
     }]
 
@@ -152,13 +165,13 @@ function RegistryInspect() {
                         infoText={`Shows the number of valid and invalid smart contracts endorsed by ${domainFilter}`}
                         isExploringDomain={true} />
                 }
-                <PieChart data={countFlags(entriesRaw.filter(entry =>
+                <PieChart data={countFlags(entriesToBeUpdated.filter(entry =>
                     entry.domain.includes(domainFilter)))}
                     isFlags={true}
                     loading={loading}
                     infoText={`Shows the number of the flags that are used in all smart contracts endorsed by ${domainFilter}`}
                     isExploringDomain={true} />
-                <BarChart data={checkExpirationDates(entriesRaw.filter(entry =>
+                <BarChart data={checkExpirationDates(entriesToBeUpdated.filter(entry =>
                     entry.domain.includes(domainFilter)))}
                     isExpiration={true}
                     loading={loading}
@@ -173,11 +186,11 @@ function RegistryInspect() {
             <PageHeader title='Explore TeSC Registry' />
             {/* Smart Contracts associated with Domain */}
             {renderTable()}
-            {isExploringDomain && (<div style={{ backgroundColor: '#eff2f5' }}>
-                <PageHeader isRegistryInspect={true} title='Analytics' />
+            {isExploringDomain && entriesToBeUpdated.length > 0 && (<div style={{ backgroundColor: '#eff2f5' }}>
+                <PageHeader isRegistryInspect={true} title='Domain-specific Analytics' />
                 <section style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 1fr',
+                    gridTemplateColumns: isSha3(domainFilter) ? '1fr 1fr' : '1fr 1fr 1fr',
                     gridTemplateRows: 'auto auto',
                     gridGap: '10px',
                     height: '300px',

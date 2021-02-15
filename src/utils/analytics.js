@@ -57,7 +57,6 @@ export const computeTopDomains = (entries) => {
 }
 
 export const checkExpirationDates = (entries) => {
-    console.log(entries)
     const colorsBar = ['#E8C1A0', '#F47560', '#F1E15B', '#E8A838', '#61CDBB']
     const data = [{
         expired: 'Expired', count: entries.reduce((counter, entry_) =>
@@ -74,6 +73,5 @@ export const checkExpirationDates = (entries) => {
         {
             expired: '>=6 months', count: entries.reduce((counter, entry_) =>
                 entry_.expiry >= moment().add(6, 'months').unix() ? counter += 1 : counter, 0), color: colorsBar[4] }]
-    console.log(data)
     return data
 } 

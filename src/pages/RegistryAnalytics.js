@@ -8,6 +8,7 @@ import {
     computeValidContracts,
     checkExpirationDates
 } from '../utils/analytics';
+import PageHeader from '../components/PageHeader';
 
 function RegistryAnalytics() {
     const [loading, setLoading] = useState(false)
@@ -39,28 +40,32 @@ function RegistryAnalytics() {
 
     const dataValidContracts = [{ 'id': 'Valid', 'value': computeValidContracts(entries, true) }, { 'id': 'Invalid', 'value': computeValidContracts(entries, false) }]
     return (
-        <section style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gridTemplateRows: 'auto auto',
-            gridGap: '10px',
-            height: '300px'
-        }}>
-            <PieChart data={dataValidContracts}
-                loading={loading}
-                infoText='Shows the number of valid and invalid smart contracts in the registry' />
-            <BarChart data={computeTopDomains(entries)}
-                loading={loading}
-                infoText='Shows the top 5 domains which have the most smart contracts associated to them' />
-            <PieChart data={countFlags(entries)}
-                isFlags={true}
-                loading={loading}
-                infoText='Shows the number of the flags that are used in all smart contracts in the registry' />
-            <BarChart data={checkExpirationDates(entries)}
-                loading={loading}
-                isExpiration={true}
-                infoText='Shows a distribution of the expiry dates of all entries in the registry' />
-        </section>
+        <div>
+            <PageHeader title='Registry-wide Analytics' />
+            <section style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gridTemplateRows: 'auto auto',
+                gridGap: '10px',
+                height: '300px',
+                marginTop: '50px'
+            }}>
+                <PieChart data={dataValidContracts}
+                    loading={loading}
+                    infoText='Shows the number of valid and invalid smart contracts in the registry' />
+                <BarChart data={computeTopDomains(entries)}
+                    loading={loading}
+                    infoText='Shows the top 5 domains which have the most smart contracts associated to them' />
+                <PieChart data={countFlags(entries)}
+                    isFlags={true}
+                    loading={loading}
+                    infoText='Shows the number of the flags that are used in all smart contracts in the registry' />
+                <BarChart data={checkExpirationDates(entries)}
+                    loading={loading}
+                    isExpiration={true}
+                    infoText='Shows a distribution of the expiry dates of all entries in the registry' />
+            </section>
+        </div>
     )
 }
 
