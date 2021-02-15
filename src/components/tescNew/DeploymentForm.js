@@ -106,8 +106,6 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
     const [deploymentJson, setDeploymentJson] = useState(null);
     const [constructorParameters, setConstructorParameters] = useState(null);
-    const [constructorParameterValues, setConstructorParameterValues] = useState([]);
-    const [allParamsCorrectlyEntered, setAllParamsCorrectlyEntered] = useState(null);
     const [contractsInFile, setContractsInFile] = useState(null);
     const [selectedContract, setSelectedContract] = useState(null);
 
@@ -157,10 +155,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         
     }
 
-    const makeDeploymentTx = useCallback(async (currentDomain, json, constructorParameterValues) => {
+    const makeDeploymentTx = useCallback(async (currentDomain, json, parameterValuesForDeployment) => {
         return await new web3.eth.Contract(json.abi).deploy({
             data: json.bytecode,
-            arguments: [currentDomain, prevExpiry.current, flagsToBytes24Hex(prevFlags.current), padToBytesX(prevFingerprint.current, 32), prevSignature.current].concat(constructorParameterValues)
+            arguments: [currentDomain, prevExpiry.current, flagsToBytes24Hex(prevFlags.current), padToBytesX(prevFingerprint.current, 32), prevSignature.current].concat(parameterValuesForDeployment)
         });
     }, [web3.eth.Contract]);
 
@@ -266,7 +264,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
                 if (signature) {
                     console.log(5)
-                    const tx = !initInputs ? await makeDeploymentTx(currentDomain, deploymentJson, constructorParameterValues) : await makeUpdateTx(currentDomain);
+                    const tx = !initInputs ? await makeDeploymentTx(currentDomain, deploymentJson, buildConstructorParameterValuesForDeployment(constructorParameters)) : await makeUpdateTx(currentDomain);
                     if (!initInputs || contractAddress) {
                         try{
                             const estCost = await estimateDeploymentCost(web3, tx);
@@ -283,7 +281,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             } 
         })();
     }, [currentDomain, expiry, contractAddress, futureContractAddress, flags, signature, privateKeyPEM, computeSignature,
-        fingerprint, makeDeploymentTx, initInputs, makeUpdateTx, web3, constructorParameterValues, deploymentJson, showMessage]);
+        fingerprint, makeDeploymentTx, initInputs, makeUpdateTx, web3, constructorParameters, deploymentJson, showMessage]);
 
 
     const validateEndorsement = async () => {
@@ -313,7 +311,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         if (currentDomain && expiry && signature) {
             try {
                 await validateEndorsement();
-                const tx = !initInputs ? await makeDeploymentTx(currentDomain, deploymentJson, constructorParameterValues) : await makeUpdateTx(currentDomain);
+                const tx = !initInputs ? await makeDeploymentTx(currentDomain, deploymentJson, buildConstructorParameterValuesForDeployment(constructorParameters)) : await makeUpdateTx(currentDomain);
                 console.log("tx", tx)
                 await tx.send({ from: account, gas: '3000000' })
                     .on('receipt', async (txReceipt) => {
@@ -363,7 +361,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
     const renderConstructorParameterInputFields = () => {
         return constructorParameters.map((constructorParameter, i) => 
-            <Form.Group inline>
+            <Form.Group inline key={"constructorParam"+i}>
                 <label>
                     {constructorParameter.type} {constructorParameter.name} 
                     {!isEmptyValidInputForType(constructorParameter.type) && <span style={{ color: 'red' }}>*</span>} 
@@ -374,27 +372,28 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     />
                 </label>
                 <Input
-                    // TODO how does interaction between value and onChange work?
-                    //value={constructorParameterValues[i].toString()}
-                    onChange={e => handleTextChange(e.target.value, i, constructorParameter.type)}
+                    defaultValue={constructorParameters[i].value || ''}
+                    onBlur={e => constructorParameters[i].value = e.target.value}
                 />
             </Form.Group>
-        )
-    }
-
-    const handleTextChange = (value, index, type) => {
-        const updatedValues = constructorParameterValues;
-        if(type.endsWith("[]")){
-            if(value === ""){
-                updatedValues[index] = [];
-            }else{
-                updatedValues[index] = value.split(',');
-            }
-        }else{
-            updatedValues[index] = value;
+            )
         }
-        setConstructorParameterValues(updatedValues);
-        setAllParamsCorrectlyEntered(validateConstructorParameterInput(constructorParameters, constructorParameterValues));
+        
+    const buildConstructorParameterValuesForDeployment = (parameters) => {
+        const valuesForDeployment = [];
+        parameters.forEach(parameter => {
+            const value = parameter.value || '';
+            if(parameter.type.endsWith("[]")){
+                if(value === ""){
+                    valuesForDeployment.push([]);
+                }else{
+                    valuesForDeployment.push(value.split(','));
+                }
+            }else{
+                valuesForDeployment.push(value);
+            }
+        });
+        return valuesForDeployment;
     }
 
     const handleEnterOriginalDomain = (originalDomain) => {
@@ -421,8 +420,6 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             setContractsInFile(null);
             setSelectedContract(null);
             setConstructorParameters(null);
-            setConstructorParameterValues([]);
-            setAllParamsCorrectlyEntered(null);
         }
     }
 
@@ -441,18 +438,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             }
         });
         const constructorParamsFromRes = constructorParametersRes.data.constructorParameters;
-        setConstructorParameters(constructorParamsFromRes);
-
-        // constructor parameters initial values
-        const initialConstructorParameterValues = [];
-        constructorParamsFromRes.forEach((parameter) => {
-            if(parameter.type.endsWith("[]")){
-                initialConstructorParameterValues.push([]);
-            }else{
-                initialConstructorParameterValues.push("");
-            } 
-        });
-        setConstructorParameterValues(initialConstructorParameterValues);
+        // add value to each entry
+        const constructorParamsWithValue = [];
+        constructorParamsFromRes.forEach(entry => constructorParamsWithValue.push({...entry, value: ''}));
+        setConstructorParameters(constructorParamsWithValue);
         
         // endorsed solidity code
         const addInterfaceRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/addInterface`, {
@@ -612,6 +601,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                     </label>
                                     <Dropdown 
                                         placeholder='Select Smart Contract'
+                                        value={selectedContract || null}
                                         fluid
                                         selection
                                         onChange={handleContractSelectedFromDropdown}
@@ -659,7 +649,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                             )}
                         </>
                     ),
-                    completed: deploymentType === "reference" || (selectedContract && constructorParameters && (constructorParameters.length === 0 || allParamsCorrectlyEntered && allParamsCorrectlyEntered === true)),
+                    completed: deploymentType === "reference" || selectedContract !== null,
                     reachable: true
                 }
             case 1:
@@ -910,6 +900,9 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     };
 
     const handleNext = () => {
+        if(constructorParameterValuesInvalid()){
+            return;
+        }
         console.log('fingerprint', fingerprint)
         const newActiveStep =
             isLastStep() && !allStepsCompleted()
@@ -926,8 +919,25 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     };
 
     const handleStep = (step) => () => {
+        if(constructorParameterValuesInvalid()){
+            return;
+        }
         setActiveStep(step);
     };
+
+    const constructorParameterValuesInvalid = () => {
+        if(activeStep === 0 && constructorParameters && constructorParameters.length !== 0){
+            const invalidInputIndex = validateConstructorParameterInput(constructorParameters);
+            if(invalidInputIndex !== -1){
+                showMessage(buildNegativeMsg({
+                    header: 'Invalid constructor parameter value',
+                    msg: "Please enter a valid value for parameter " + constructorParameters[invalidInputIndex].type + " " + constructorParameters[invalidInputIndex].name
+                }));
+                return true;
+            }
+        }
+        return false;
+    }
 
     const handleReset = () => {
         setActiveStep(0);

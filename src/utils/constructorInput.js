@@ -37,8 +37,8 @@ export const isEmptyValidInputForType = (type) => {
         && type !== "address" && type !== "bool";
 }
 
-export const validateConstructorParameterInput = (parameters, values) => {   
-    return values.findIndex((value, index) => !validateSingleInput(parameters[index].type, value));
+export const validateConstructorParameterInput = (parameters) => {   
+    return parameters.findIndex(entry => !validateSingleInput(entry.type, entry.value));
 }
 
 const validateSingleInput = (type, value) => {
