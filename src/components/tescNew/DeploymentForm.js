@@ -72,10 +72,8 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
-const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' }) => {
+const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomain='', onTescUpdated }) => {
     const { web3, showMessage, handleBlockScreen, account } = useContext(AppContext);
-    const REVIEW_STEP = initInputs ? 4 : 4;
-
     
     const [contractAddress, setContractAddress] = useState('');
     const [futureContractAddress, setFutureContractAddress] = useState('');
@@ -99,7 +97,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const [costsPaid, setCostsPaid] = useState(null);
 
     const [isMetamaskOpen, setIsMetamaskOpen] = useState(false);
-    const [isMatchedOriginalDomain, setIsMatchedOriginalDomain] = useState(typedInDomain ? true : false);
+    const [isMatchedOriginalDomain, setIsMatchedOriginalDomain] = useState(innputOriginalDomain ? true : false);
 
     const [sigInputType, setSigInputType] = useState(null);
     const [deploymentType, setDeploymentType] = useState(null);
@@ -126,14 +124,14 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             console.log('>>>> initialize inputs')
             setContractAddress(contractAddress)
             setFutureContractAddress(contractAddress)
-            setDomain(flags.get(FLAGS.DOMAIN_HASHED)? typedInDomain : domain);
+            setDomain(flags.get(FLAGS.DOMAIN_HASHED)? innputOriginalDomain : domain);
             setExpiry(parseInt(expiry));
             setFlags(new BitSet(flags.toString()));
             setCurrentDomain(domain);
             setFingerprint(fingerprint && parseInt(fingerprint, 16) !== 0 ? fingerprint : '')
         }
 
-    }, [initInputs, typedInDomain])
+    }, [initInputs, innputOriginalDomain])
 
     
 
@@ -352,6 +350,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                 expiry 
                             }
                         });
+
+                        if (onTescUpdated){
+                            onTescUpdated(true)
+                        }
                     });
 
             } catch (error) {
@@ -495,7 +497,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     };
 
     const shouldDisplayOriginalDomainStep = () => {
-        return initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) && !typedInDomain && !isMatchedOriginalDomain
+        return initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) && !innputOriginalDomain && !isMatchedOriginalDomain
     }
 
     const getSteps = () => {
@@ -884,9 +886,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                         <Fragment>
                             <Header as='h3' content='Receipt' style={{marginBottom: '30px'}} color='purple'/>
                             {costsPaid && 
-                                <Grid.Row style={{ minWidth: 'max-content', paddingTop: '2%' }}>
-                                    <DeploymentOutput contractAddress={contractAddress} domain={domain} costsPaid={costsPaid} />
-                                </Grid.Row>
+                                <DeploymentOutput contractAddress={contractAddress} domain={domain} costsPaid={costsPaid}/>
                             }
                             
 
@@ -1009,7 +1009,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                         Back
                                 </BtnSuir>
 
-                                {((getCurrentStep() < REVIEW_STEP && !costsPaid) || (getCurrentStep() <= REVIEW_STEP && costsPaid)) && (
+                                {((getCurrentStep() < 4 && !costsPaid) || (getCurrentStep() <= 4 && costsPaid)) && (
                                     <BtnSuir
                                         basic
                                         color="purple"
@@ -1019,7 +1019,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                         Next
                                     </BtnSuir>
                                 )}
-                                {getCurrentStep() === REVIEW_STEP && !costsPaid && (
+                                {getCurrentStep() === 4 && !costsPaid && (
                                     <BtnSuir
                                         icon='play circle'
                                         basic
