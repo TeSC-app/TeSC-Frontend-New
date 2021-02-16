@@ -45,3 +45,8 @@ export const estimateRegistryActionCost = async (isInRegistry, { web3, contractA
     return gasEstimation * web3.utils.fromWei(await web3.eth.getGasPrice(), 'ether');
 
 };
+
+export const isRegistered = async (web3, contractAddress) => {
+    const instance = getRegistryContractInstance(web3);
+    return await instance.methods.isContractRegistered(contractAddress).call(); 
+};
