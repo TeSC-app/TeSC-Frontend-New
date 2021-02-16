@@ -582,7 +582,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                     <FilePicker
                                         label='Choose solidity file'
                                         onPickFile={handlePickSolidityFile}
-                                        input={{fileName:solidityFileName, content: solidityCode}}
+                                        input={{fileName:solidityFileName, content: solidityCode, acceptedFiles:".sol"}}
                                     />
                                     <div><em>Pick the solidity file with the Smart Contract that you want to endorse and deploy</em></div>
                                 </div>     
@@ -782,7 +782,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                             label='Choose certificate  key'
                                             onPickFile={handlePickPrivateKey}
                                             isDisabled={!currentDomain || !expiry}
-                                            input={{fileName:privateKeyFileName, content: privateKeyPEM}}
+                                            input={{fileName:privateKeyFileName, content: privateKeyPEM, acceptedFiles: ".pem, .txt, .cer, .cert, .key"}}
                                         />
                                     </div>
                                     <div><em>Pick the certificate private key file to automatically compute the signature</em></div>

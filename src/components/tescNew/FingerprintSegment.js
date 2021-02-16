@@ -201,7 +201,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
                             label='Choose certificate'
                             onPickFile={handlePickCert}
                             isDisabled={!sliderState}
-                            input={{ fileName: certFileName, content: certPEM }}
+                            input={{ fileName: certFileName, content: certPEM, acceptedFiles: ".pem, .txt, .cer, .cert, .key" }}
                         />
                     )}
                     {sliderState && fingerprint && (<span style={{ wordBreak: 'break-all' }}><b>Fingerprint: <Label>{fingerprint}</Label></b></span>)
