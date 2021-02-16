@@ -3,6 +3,7 @@ import classNames from 'classnames';
 import { SectionSplitProps } from '../../utils/SectionProps';
 import SectionHeader from './partials/SectionHeader';
 import Image from '../elements/Image';
+import { Link } from 'react-router-dom';
 
 import '../../assets/scss/landingPage.scoped.scss';
 
@@ -113,14 +114,20 @@ const FeaturesSplit = ({
             <div className="split-item">
               <div className="split-item-content center-content-mobile reveal-from-right" data-reveal-container=".split-item">
                 <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
-                  Lightning fast workflow
+                  Dashboard
                   </div>
                 <h3 className="mt-0 mb-12">
-                  Data-driven insights
+                  Overview over your contracts
                   </h3>
                 <p className="m-0">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                  </p>
+                  The dashboard helps you to keep track of your deployed contracts. Check the verification status, 
+                  set favourites, and use the diverse filter options!
+                  <br/><br/>
+               
+                  <Link to="/dashboard">
+                    <span className="text-color-primary"><b>Go to dashboard</b></span> 📰         
+                  </Link>  
+                </p>
               </div>
               <div className={
                 classNames(
@@ -139,13 +146,20 @@ const FeaturesSplit = ({
             <div className="split-item">
               <div className="split-item-content center-content-mobile reveal-from-left" data-reveal-container=".split-item">
                 <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
-                  Lightning fast workflow
+                  Create & Deploy TeSC
                   </div>
                 <h3 className="mt-0 mb-12">
-                  Data-driven insights
+                  Guided deployment process
                   </h3>
-                <p className="m-0">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                <p className="m-0">  
+                  Six easy to perform steps guide you through the endorsement and deployment of your contract.
+                  Tedious tasks, like inheriting the reference implementation or computing the signature, will be automated for you.
+                  All you need is a <b>'.sol' file</b> including your contract, your <b>domain name</b>, and the <b>certificate private key</b> of your domain. 
+                  <br/><br/>
+               
+                  <Link to="/tesc/new">
+                    <span className="text-color-primary"><b>Deploy</b></span> 🚀         
+                  </Link>            
                   </p>
               </div>
               <div className={
