@@ -179,6 +179,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     };
 
     const handlePickSolidityFile = async (filename, content) => {
+        setConstructorParameters(null);
         setSelectedContract(null);
         try{
             await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/compile`, {
@@ -188,7 +189,6 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             });
         }catch(error){
             setContractsInFile(null);
-            setConstructorParameters(null);
             showMessage(buildNegativeMsg({
                 header: 'Unable to compile your file',
                 msg: "Please make sure to upload a valid file"
@@ -380,6 +380,9 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         }
         
     const buildConstructorParameterValuesForDeployment = (parameters) => {
+        if(parameters === null){
+            return [];
+        }
         const valuesForDeployment = [];
         parameters.forEach(parameter => {
             const value = parameter.value || '';
@@ -420,6 +423,8 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             setContractsInFile(null);
             setSelectedContract(null);
             setConstructorParameters(null);
+        }else{
+            setDeploymentJson(null);
         }
     }
 
@@ -460,7 +465,19 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                 selectedContract: value
             }
         });
-        setDeploymentJson(compileRes.data.json);
+        if(!compileRes.data.json){
+            compileRes.data.compileErrors.forEach(err => {
+                if(err.severity === 'error'){
+                    showMessage(buildNegativeMsg({
+                        header: "Compilation of endorsed contract failed",
+                        msg: err.message + ' (' + err.sourceLocation.file + ": " + err.sourceLocation.start + "-" + err.sourceLocation.end + ")"
+                    }));
+                }             
+            });
+            setDeploymentJson(null);
+        }else{
+            setDeploymentJson(compileRes.data.json);
+        }
     }
 
     const downloadEndorsedSolidityCode = () => {
@@ -634,7 +651,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                 </div>   
                             )}
 
-                            {(constructorParameters && constructorParameters.length > 0) && (
+                            {(constructorParameters && constructorParameters.length > 0 && deploymentJson !== null) && (
                                <div style={{ paddingTop: '20px' }}>
                                     <label>
                                         <b>Values for constructor parameters</b> <span style={{ color: 'red' }}>*</span>
@@ -649,7 +666,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                             )}
                         </>
                     ),
-                    completed: deploymentType === "reference" || selectedContract !== null,
+                    completed: deploymentJson !== null,
                     reachable: true
                 }
             case 1:
