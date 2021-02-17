@@ -21,7 +21,6 @@ import { FLAGS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc'
 
 const TeSCInspect = ({ location }) => {
     const { web3, account } = useContext(AppContext);
-    window.web3 = web3;
     const [contractAddress, setContractAddress] = useState('');
     const [contractOwner, setContractOwner] = useState('');
     const [domainFromChain, setDomainFromChain] = useState('');
@@ -187,10 +186,11 @@ const TeSCInspect = ({ location }) => {
     const handleSubmitAddress = async (e) => {
         e.preventDefault();
         try {
-            curVerifResult ? setCurVerifResult(null) : await verifyTesc(contractAddress, originalDomain, true);
-            clearDisplayData();
-            setLoading(true);
-            
+            if(isValidContractAddress(contractAddress, true)){
+                curVerifResult ? setCurVerifResult(null) : await verifyTesc(contractAddress, originalDomain, true);
+                clearDisplayData();
+                setLoading(true);
+            }
         } catch (err) {
             toast.error(negativeMsg({
                 header: 'Invalid smart contract address',

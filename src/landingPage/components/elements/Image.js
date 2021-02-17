@@ -69,7 +69,7 @@ const Image = ({
     <img
       {...props}
       ref={image}
-      className={className}
+      // className={className}
       src={src}
       width={width}
       height={height}
