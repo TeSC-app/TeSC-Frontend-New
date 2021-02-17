@@ -90,12 +90,23 @@ const FeaturesSplit = ({
                   How TeSC works
                 </h3>
                 <p className="m-0">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                  </p>
+                  1. Creates a SC conforming to the TeSC infterface by signing the Claim using TLS-certificate private key of example.com. We call it a TLS-endorsed Smart Contract, or TeSC for short.<br/><br/>
+                </p>
+                <p className="m-0">
+                  2. Deploy that TeSC to the Ethereum network<br/><br/>
+                </p>
+                <p className="m-0">
+                3. This is an optional step to register the TeSC to the TeSC Registry, which is another Smart Contract on the Ethereum network acting as a repository for all TeSCs in the network.<br/><br/>
+                </p>
+                <p className="m-0">
+                4. Serves the website containing the TeSC address. The website must use HTTPS with TLS-certificate containing the TLS public key<br/><br/>
+                </p>
+                <p className="m-0">
+                  5. The users visit the website and see TeSC address at 0x1234567890AbcDeF<br/><br/>
+                </p>
+                <p className="m-0">
+                  6. When the user wants to verifiy a TeSC, they will go to the Ethereum network and get contract data from at  e.g. domain, signature from<br/><br/>
+                </p>
               </div>
               <div className={
                 classNames(
