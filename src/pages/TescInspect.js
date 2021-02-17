@@ -31,10 +31,10 @@ const TeSCInspect = ({ location }) => {
     const [flags, setFlags] = useState(new BitSet('0x00'));
     const [isDomainHashed, setIsDomainHashed] = useState(null);
     const [originalDomain, setOriginalDomain] = useState('');
-    const [isOriginalDomainSubmitted, setIsOriginalDomainSubmitted] = useState(false);
     const [curVerifResult, setCurVerifResult] = useState(null);
     const [isFavourite, setIsFavourite] = useState(null);
     const [isTescUpdated, setIsTescUpdated] = useState(false);
+    const [isVerificationRunning, setIsVerificationRunning] = useState(false);
     const locationStateAddress = useRef(null);
     const localTescs = useRef({});
     const hasSentVerifReq = useRef(false);
@@ -77,25 +77,28 @@ const TeSCInspect = ({ location }) => {
 
     }, [account]);
 
-    const verifyTesc = useCallback(async (address) => {
-        console.log('address', address);
+    const verifyTesc = useCallback(async (address, originalDomain='', runManually = false) => {
         console.log('curVerifResult', curVerifResult);
-        const isRepeated = curVerifResult && (curVerifResult.target === address) && !curVerifResult.message.includes('Domain in TeSC is hashed');
+        const isRepeated = curVerifResult
+            && (curVerifResult.target === address)
+            && (curVerifResult.inputDomain === originalDomain)
+            && !curVerifResult.message.includes('Domain in TeSC is hashed');
         console.log('isRepeated', isRepeated);
-        console.log('isDomainHashed', isDomainHashed);
-        console.log('isOriginalDomainSubmitted', isOriginalDomainSubmitted);
-        console.log('!hasSentVerifReq.current', !hasSentVerifReq.current);
+        console.log('originalDomain', originalDomain);
         try {
-            if (!isRepeated &&
+            if (runManually || (!isRepeated &&
                 !hasSentVerifReq.current &&
-                (isDomainHashed ? isOriginalDomainSubmitted : true) &&
-                isValidContractAddress(address, true)
+                isValidContractAddress(address, true))
             ) {
                 let result;
                 let response;
+
                 if (!originalDomain) {
                     clearDisplayData();
                     setLoading(true);
+                    console.log('loading true');
+                } else {
+                    setIsVerificationRunning(true);
                 }
 
                 hasSentVerifReq.current = true;
@@ -110,7 +113,7 @@ const TeSCInspect = ({ location }) => {
                 result = response.data;
 
                 if (!response.data.message.includes('Domain in TeSC is hashed')) {
-                    setCurVerifResult({ target: address, ...result });
+                    setCurVerifResult({ target: address, inputDomain: `${originalDomain}`, ...result });
                 }
 
 
@@ -122,6 +125,11 @@ const TeSCInspect = ({ location }) => {
                 } else {
                     throw new Error(`Unknow result from backend server: ${result}`);
                 }
+
+                setLoading(false);
+                console.log('loading false');
+                hasSentVerifReq.current = false;
+                setIsVerificationRunning(false);
             }
         } catch (error) {
             console.log(error);
@@ -130,12 +138,11 @@ const TeSCInspect = ({ location }) => {
                 header: `Unable to verify contract ${address}`,
                 msg,
             }));
+            setIsVerificationRunning(false);
         }
         console.log('---------------------------------------------------------');
-        setIsOriginalDomainSubmitted(false);
-        hasSentVerifReq.current = false;
-        setLoading(false);
-    }, [isOriginalDomainSubmitted, originalDomain, curVerifResult, assignContractData, isDomainHashed]);
+            
+    }, [curVerifResult, assignContractData]);
 
     useEffect(() => {
         if (isValidContractAddress(contractAddress)) {
@@ -174,15 +181,16 @@ const TeSCInspect = ({ location }) => {
         setIsDomainHashed(null);
         setSignature('');
         setOriginalDomain('');
-        setIsOriginalDomainSubmitted(false);
         setEndorsers(null);
     };
 
     const handleSubmitAddress = async (e) => {
         e.preventDefault();
         try {
-            setCurVerifResult(null);
-            await verifyTesc(contractAddress, true);
+            curVerifResult ? setCurVerifResult(null) : await verifyTesc(contractAddress, originalDomain, true);
+            clearDisplayData();
+            setLoading(true);
+            
         } catch (err) {
             toast.error(negativeMsg({
                 header: 'Invalid smart contract address',
@@ -193,26 +201,26 @@ const TeSCInspect = ({ location }) => {
 
     const handleReceiveOriginalDomainFromModal = async (typedInDomain) => {
         setOriginalDomain(typedInDomain);
+        await verifyTesc(contractAddress, typedInDomain);
     };
 
     const handleSubmitOriginalDomain = async (e) => {
         e.preventDefault();
         if (originalDomain) {
             setCurVerifResult(null);
-            setIsOriginalDomainSubmitted(true);
-            await verifyTesc(contractAddress);
+            await verifyTesc(contractAddress, originalDomain, true);
         }
     };
 
     const handleCloseTescUpdateModal = async (e) => {
+        e.preventDefault();
         console.log('isTescUpdated', isTescUpdated);
         if (isTescUpdated) {
             setCurVerifResult(null);
             clearDisplayData();
             setLoading(true);
-            // await verifyTesc(contractAddress);
-        } else if (!isTescUpdated && isDomainHashed && !!originalDomain) {
-            setIsOriginalDomainSubmitted(true);
+        } else if (!isTescUpdated && isDomainHashed && originalDomain) {
+            await verifyTesc(contractAddress, originalDomain);
         }
         setIsTescUpdated(false);
     };
@@ -263,7 +271,7 @@ const TeSCInspect = ({ location }) => {
                                                                 signature,
                                                                 fingerprint,
                                                             }}
-                                                            innputOriginalDomain={originalDomain}
+                                                            inputOriginalDomain={originalDomain}
                                                             onMatchOriginalDomain={handleReceiveOriginalDomainFromModal}
                                                             onTescUpdated={setIsTescUpdated}
                                                         />
@@ -305,7 +313,7 @@ const TeSCInspect = ({ location }) => {
                                         <Card style={{ width: '100%' }}>
                                             <Card.Content header="Verification" />
                                             <Card.Content>
-                                                <Dimmer active={(isOriginalDomainSubmitted && !curVerifResult)
+                                                <Dimmer active={isVerificationRunning
                                                     || (!isDomainHashed && !curVerifResult)} inverted>
                                                     <Loader content='Verifying...' />
                                                 </Dimmer>

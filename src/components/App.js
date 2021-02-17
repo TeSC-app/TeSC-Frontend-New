@@ -124,7 +124,7 @@ const App = ({ web3 }) => {
                             {/* </Segment> */}
                         </div>
                     </div>
-                    <ToastContainer autoClose={20000}/>
+                    <ToastContainer autoClose={10000}/>
                 </div>
             }
             <Dimmer active={screenBlocked} style={{ zIndex: '9999' }}>

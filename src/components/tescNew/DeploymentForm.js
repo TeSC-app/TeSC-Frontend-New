@@ -75,7 +75,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
-const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomain='', onTescUpdated }) => {
+const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain='', onTescUpdated }) => {
     const { web3, handleBlockScreen, account } = useContext(AppContext);
     
     const [contractAddress, setContractAddress] = useState('');
@@ -100,7 +100,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
     const [costsPaid, setCostsPaid] = useState(null);
 
     const [isMetamaskOpen, setIsMetamaskOpen] = useState(false);
-    const [isMatchedOriginalDomain, setIsMatchedOriginalDomain] = useState(innputOriginalDomain ? true : false);
+    const [isMatchedOriginalDomain, setIsMatchedOriginalDomain] = useState(inputOriginalDomain ? true : false);
 
     const [sigInputType, setSigInputType] = useState(null);
     const [deploymentType, setDeploymentType] = useState(null);
@@ -127,14 +127,14 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
             console.log('>>>> initialize inputs')
             setContractAddress(contractAddress)
             setFutureContractAddress(contractAddress)
-            setDomain(flags.get(FLAGS.DOMAIN_HASHED)? innputOriginalDomain : domain);
+            setDomain(flags.get(FLAGS.DOMAIN_HASHED)? inputOriginalDomain : domain);
             setExpiry(parseInt(expiry));
             setFlags(new BitSet(flags.toString()));
             setCurrentDomain(domain);
             setFingerprint(fingerprint && parseInt(fingerprint, 16) !== 0 ? fingerprint : '')
         }
 
-    }, [initInputs, innputOriginalDomain])
+    }, [initInputs, inputOriginalDomain])
 
     
 
@@ -426,9 +426,16 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
         setAllParamsCorrectlyEntered(validateConstructorParameterInput(constructorParameters, constructorParameterValues));
     }
 
+    const isHashMatchedOriginalDomain = (hash, original) => {
+        console.log('hash', hash)
+        console.log('original', original)
+        console.log('web3.utils.sha3(original)', web3.utils.sha3(original))
+        return hash && original && web3.utils.sha3(original) === hash
+    }
+
     const handleEnterOriginalDomain = (originalDomain) => {
         setDomain(originalDomain);
-        if (originalDomain && web3.utils.sha3(originalDomain) === currentDomain) {
+        if (isHashMatchedOriginalDomain(currentDomain, originalDomain)) {
             setIsMatchedOriginalDomain(true);
             onMatchOriginalDomain(originalDomain);
         }
@@ -509,7 +516,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
     };
 
     const shouldDisplayOriginalDomainStep = () => {
-        return initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) && !innputOriginalDomain && !isMatchedOriginalDomain
+        return initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) && !isHashMatchedOriginalDomain(currentDomain, inputOriginalDomain) && !isMatchedOriginalDomain
     }
 
     const getSteps = () => {
