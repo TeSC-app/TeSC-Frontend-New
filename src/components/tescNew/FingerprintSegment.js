@@ -1,19 +1,20 @@
 import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
 import { Form, Dimmer, Loader, Segment, Label, Popup, Icon } from 'semantic-ui-react';
+import { toast } from 'react-toastify';
 
 import axios from 'axios';
 import { Certificate } from '@fidm/x509';
 
 import AppContext from '../../appContext';
 import FilePicker from '../FilePicker';
-import { buildNegativeMsg, buildWarningMsg } from "../FeedbackMessage";
+import { negativeMsg, warningMsg } from "../FeedbackMessage";
 
 import { predictContractAddress, formatClaim, flagsToBytes24Hex, FLAGS } from '../../utils/tesc';
 import { extractAxiosErrorMessage } from '../../utils/formatError';
 
 
 const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
-    const { web3, showMessage, account } = useContext(AppContext);
+    const { web3, account } = useContext(AppContext);
 
     const [isWaiting, setIsWaiting] = useState(false);
 
@@ -51,7 +52,6 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
             retrieveCertificate();
         } else {
             resetStates();
-            showMessage(null, 'fp');
         }
     };
 
@@ -83,14 +83,14 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
 
         } catch (error) {
             const msg = extractAxiosErrorMessage({ error, subject: domain.current });
-            showMessage(buildNegativeMsg({
+            toast(negativeMsg({
                 header: 'Unable to compute fingerprint',
                 msg,
                 closingCondition: 'fp'
             }));
             setFingerprint('');
         }
-    }, [showMessage]);
+    }, []);
 
     const updateClaim = useCallback(() => {
         const curDomain = !!flags.current.get(FLAGS.DOMAIN_HASHED) ? web3.utils.sha3(domain.current) : domain.current;
@@ -125,7 +125,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
 
         } catch (error) {
             const msg = extractAxiosErrorMessage({ error, subject: domain.current });
-            showMessage(buildWarningMsg({
+            toast(warningMsg({
                 header: 'Unable to automatically retrieve domain certificate to compute the fingerprint.',
                 msg: `${msg}${!!msg.match(/[.!]+$/i) ? '' : '.'} You can also upload your domain certificate manually.`,
                 closingCondition: 'fp'
@@ -133,7 +133,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
             setFilePickerDisplayed(true);
             setFingerprint('');
         }
-    }, [updateClaim, showMessage]);
+    }, [updateClaim]);
 
 
     useEffect(() => {
@@ -161,7 +161,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
                 }
             }
         })();
-    }, [inputs, sliderState, retrieveCertificate, certPEM, handlePickCert, resetStates, web3]);
+    }, [inputs, sliderState, retrieveCertificate, certPEM, handlePickCert, resetStates, web3, account]);
 
 
 

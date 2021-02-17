@@ -3,6 +3,7 @@ import { Segment, Dimmer, Image, Loader } from 'semantic-ui-react';
 import AppContext from '../appContext';
 import PageHeader from '../components/PageHeader';
 import TableOverview, { COL } from '../components/TableOverview';
+import { loadStorage } from '../utils/storage'
 import axios from 'axios';
 import moment from 'moment';
 import { extractDomainAndTopLevelDomain, isSha3 } from '../utils/tesc'
@@ -16,9 +17,8 @@ import BarChart from '../components/analytics/BarChart';
 import SearchBox from '../components/SearchBox';
 
 function RegistryInspect() {
-    const { loadStorage } = useContext(AppContext);
+    const { account } = useContext(AppContext);
     const [entriesRaw, setEntriesRaw] = useState([])
-    const [entriesOriginal, setEntriesOriginal] = useState([])
     const [tescsWithOccurances, setTescsWithOccurances] = useState([])
     const [loading, setLoading] = useState(false)
     const [isExploringDomain, setIsExploringDomain] = useState(false)
@@ -30,7 +30,7 @@ function RegistryInspect() {
 
     //add createdAt and isFavourite prop to objects retrieved from the backend - compares with localStorage values
     const updateCreatedAtAndFavouritesForRegistryInspectEntries = useCallback((newTesc) => {
-        const tescsLocalStorage = loadStorage() ? loadStorage() : [];
+        const tescsLocalStorage = loadStorage(account);
         let isIdentical = false;
         for (const tesc of tescsLocalStorage) {
             if (tesc.contractAddress === newTesc.contractAddress) {
@@ -39,7 +39,7 @@ function RegistryInspect() {
             }
         }
         if (!isIdentical) return { isFavourite: false, createdAt: moment().unix() }
-    }, [loadStorage])
+    }, [account])
 
     useEffect(() => {
         (async () => {
@@ -75,10 +75,9 @@ function RegistryInspect() {
                         }
                     }
                     setEntriesRaw(entriesRaw)
-                    setEntriesOriginal(entriesRaw)
                     setTescsWithOccurances(distinctTescsWithOccurances)
                 } else {
-                    setEntriesRaw([])
+                    setEntriesRaw([]);
                 }
                 setLoading(false);
             } catch (error) {
@@ -88,8 +87,8 @@ function RegistryInspect() {
     }, [updateCreatedAtAndFavouritesForRegistryInspectEntries]);
 
     const handleIsExploringDomain = (isExploringDomain) => {
-        setIsExploringDomain(isExploringDomain)
-    }
+        setIsExploringDomain(isExploringDomain);
+    };
 
     const renderTable = () => {
         if (entriesRaw && entriesRaw.length > 0 && !loading) {
@@ -104,13 +103,13 @@ function RegistryInspect() {
                         cols={isExploringDomain ? new Set([COL.ADDRESS, COL.DOMAIN, COL.EXPIRY, COL.VERIF, COL.FAV]) : new Set([COL.DOMAIN, COL.TSC, COL.VERIF])}
                     />
                 </div>
-            )
+            );
         } else if (entriesRaw && entriesRaw.length === 0 && !loading) {
             return (
                 <>
                 <SearchBox
                             onChange={handleDomainFilter}
-                            onSubmit={() => setEntriesRaw(entriesOriginal.filter(entry => entry.domain.includes(domainFilter)).sort((tescA, tescB) => tescB.expiry - tescA.expiry))}
+                            onSubmit={() => setEntriesRaw(entriesRaw.filter(entry => entry.domain.includes(domainFilter)).sort((tescA, tescB) => tescB.expiry - tescA.expiry))}
                             value={domainFilter}
                             placeholder='www.mysite.com'
                             label='Domain'
@@ -137,8 +136,8 @@ function RegistryInspect() {
     };
 
     const handleLoading = loading => {
-        setLoading(loading)
-    }
+        setLoading(loading);
+    };
 
     const dataValidContracts = [{
         'id': 'Valid',

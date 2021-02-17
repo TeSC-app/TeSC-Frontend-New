@@ -4,11 +4,17 @@ import PageHeader from '../components/PageHeader';
 import TableOverview, { COL } from '../components/TableOverview';
 import AppContext from '../appContext';
 
+import { loadStorage } from '../utils/storage';
 
 const Dashboard = () => {
-    const { loadStorage } = useContext(AppContext);
+    const { account } = useContext(AppContext);
+    const [rowData, setRowData] = useState(loadStorage(account));
 
-    const rowData = useRef(loadStorage() ? loadStorage() : []);
+    useEffect(() => {
+        const rows = loadStorage(account)
+        console.log('rowData', rows)
+        setRowData(rows);
+    }, [account]);
 
     return (
         <React.Fragment>
@@ -16,7 +22,7 @@ const Dashboard = () => {
             {rowData &&
                 <TableOverview
                     cols={new Set([COL.ADDRESS, COL.DOMAIN, COL.EXPIRY, COL.VERIF, COL.REG, COL.FAV, COL.CA])}
-                    rowData={rowData.current}
+                    rowData={rowData}
                 />
             }
         </React.Fragment>

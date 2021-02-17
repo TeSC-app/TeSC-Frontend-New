@@ -1,24 +1,26 @@
-import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
-import { Input, Loader, Icon, Label, Grid, Card, Form, Dimmer, Popup, Button, Modal, Segment, Header, Checkbox, Image } from 'semantic-ui-react';
-import BitSet from 'bitset';
 import axios from 'axios';
-import AppContext from '../appContext';
-import { FLAGS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc';
-import { extractAxiosErrorMessage } from '../utils/formatError';
-import TeSC from '../ethereum/build/contracts/ERCXXXImplementation.json';
-import { buildNegativeMsg } from "../components/FeedbackMessage";
-import SearchBox from "../components/SearchBox";
-import DeploymentForm from "../components/tescNew/DeploymentForm";
-import PageHeader from "../components/PageHeader";
-import TescDataTable from "../components/tesc/TescDataTable";
-import TableOverview, { COL } from "../components/TableOverview";
-import SubEndorsementAddition from "../components/tescInspect/SubEndorsementAddition";
+import BitSet from 'bitset';
 import moment from 'moment';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { Button, Card, Dimmer, Form, Grid, Header, Icon, Image, Input, Label, Loader, Modal, Popup, Segment } from 'semantic-ui-react';
+import { toast } from 'react-toastify';
 
+import AppContext from '../appContext';
+import ButtonRegistryAddRemove from "../components/ButtonRegistryAddRemove";
+import { negativeMsg } from "../components/FeedbackMessage";
+import PageHeader from "../components/PageHeader";
+import SearchBox from "../components/SearchBox";
+import TableOverview, { COL } from "../components/TableOverview";
+import TescDataTable from "../components/tesc/TescDataTable";
+import SubEndorsementAddition from "../components/tescInspect/SubEndorsementAddition";
+import DeploymentForm from "../components/tescNew/DeploymentForm";
+import { extractAxiosErrorMessage } from '../utils/formatError';
+import { getLocalTescs, save, toggleFavourite } from '../utils/storage';
+import { FLAGS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc';
 
 
 const TeSCInspect = ({ location }) => {
-    const { web3, account, showMessage, loadStorage } = useContext(AppContext);
+    const { web3, account } = useContext(AppContext);
     const [contractAddress, setContractAddress] = useState('');
     const [contractOwner, setContractOwner] = useState('');
     const [domainFromChain, setDomainFromChain] = useState('');
@@ -27,13 +29,14 @@ const TeSCInspect = ({ location }) => {
     const [fingerprint, setFingerprint] = useState('');
     const [flags, setFlags] = useState(new BitSet('0x00'));
     const [isDomainHashed, setIsDomainHashed] = useState(null);
-    const [typedInDomain, setTypedInDomain] = useState('');
-    const [isPlainDomainSubmitted, setIsPlainDomainSubmitted] = useState(false);
+    const [originalDomain, setOriginalDomain] = useState('');
     const [curVerifResult, setCurVerifResult] = useState(null);
-    const [isFavourite, setIsInFavourites] = useState(null);
+    const [isFavourite, setIsFavourite] = useState(null);
+    const [isTescUpdated, setIsTescUpdated] = useState(false);
+    const [isVerificationRunning, setIsVerificationRunning] = useState(false);
     const locationStateAddress = useRef(null);
     const localTescs = useRef({});
-    const hasSentVerif = useRef(false);
+    const hasSentVerifReq = useRef(false);
 
 
     const [endorsers, setEndorsers] = useState(null);
@@ -41,24 +44,10 @@ const TeSCInspect = ({ location }) => {
     const [loading, setLoading] = useState(false);
 
 
-    const toggleFavourite = () => {
-        let found = localTescs.current[contractAddress] && Object.keys(localTescs.current[contractAddress]).length > 0;
-        if (found) {
-            const isFav = !localTescs.current[contractAddress].isFavourite;
-            setIsInFavourites(isFav);
-            localTescs.current[contractAddress].isFavourite = isFav;
-            if (!localTescs.current[contractAddress].isFavourite && !localTescs.current[contractAddress].own) {
-                delete localTescs.current[contractAddress];
-            }
-        } else {
-            localTescs.current[contractAddress] = { domain: domainFromChain, expiry, isFavourite: true, own: false, createdAt: moment().unix() };
-            setIsInFavourites(true);
-        }
-        const tescArray = Object.entries(localTescs.current).map(entry => {
-            entry[1].contractAddress = entry[0];
-            return entry[1];
-        });
-        localStorage.setItem(account, JSON.stringify(tescArray));
+    const handleToggleFavourite = () => {
+        const updatedTescs = toggleFavourite({ account, contractAddress, domain: domainFromChain, expiry });
+        setIsFavourite(updatedTescs[contractAddress] ? updatedTescs[contractAddress].isFavourite : false);
+        localTescs.current = updatedTescs;
     };
 
     const assignContractData = useCallback((contract) => {
@@ -68,41 +57,61 @@ const TeSCInspect = ({ location }) => {
         setFlags(hexStringToBitSet(flagsHex));
 
         setDomainFromChain(contract.domain);
-        setExpiry(contract.expiry);
+        setExpiry(parseInt(contract.expiry));
         setSignature(contract.signature);
         setFingerprint(contract.fingerprint);
 
         setContractOwner(contract.owner);
+
+        if (!localTescs.current[contract.contractAddress]) {
+            const { subendorsements, ...rest } = contract;
+            localTescs.current[contract.contractAddress] = { ...rest, createdAt: moment().unix(), isFavourite: false };
+        }
+
         if (contract.owner.toLowerCase() === account.toLowerCase()) {
             localTescs.current[contract.contractAddress].own = true;
+            save(localTescs.current, account);
         }
+
     }, [account]);
 
-    const verifyTesc = useCallback(async (address) => {
-        console.log('address', address);
+    const verifyTesc = useCallback(async (address, originalDomain='', runManually = false) => {
         console.log('curVerifResult', curVerifResult);
-        const isRepeated = curVerifResult && (curVerifResult.target === address) && !curVerifResult.message.includes('Domain in TeSC is hashed');
-        if (!isRepeated &&
-            !hasSentVerif.current &&
-            (typedInDomain ? isPlainDomainSubmitted : true) &&
-            isValidContractAddress(address)
-        ) {
-            let result;
-            let response;
-            try {
-                hasSentVerif.current = true;
-                console.log('sending req...', typedInDomain);
+        const isRepeated = curVerifResult
+            && (curVerifResult.target === address)
+            && (curVerifResult.inputDomain === originalDomain)
+            && !curVerifResult.message.includes('Domain in TeSC is hashed');
+        console.log('isRepeated', isRepeated);
+        console.log('originalDomain', originalDomain);
+        try {
+            if (runManually || (!isRepeated &&
+                !hasSentVerifReq.current &&
+                isValidContractAddress(address, true))
+            ) {
+                let result;
+                let response;
+
+                if (!originalDomain) {
+                    clearDisplayData();
+                    setLoading(true);
+                    console.log('loading true');
+                } else {
+                    setIsVerificationRunning(true);
+                }
+
+                hasSentVerifReq.current = true;
+                console.log('sending req...', originalDomain);
                 response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/verify/${address}`, {
-                    params: { plainDomain: typedInDomain },
-                    timeout: 10000
+                    params: { plainDomain: originalDomain },
+                    timeout: 30000
                 });
 
-                
+
                 console.log('>>> VERIF_RESULT', response);
                 result = response.data;
-                
+
                 if (!response.data.message.includes('Domain in TeSC is hashed')) {
-                    setCurVerifResult({ target: address, ...result });
+                    setCurVerifResult({ target: address, inputDomain: `${originalDomain}`, ...result });
                 }
 
 
@@ -114,20 +123,24 @@ const TeSCInspect = ({ location }) => {
                 } else {
                     throw new Error(`Unknow result from backend server: ${result}`);
                 }
-            } catch (error) {
-                console.log(error);
-                const msg = extractAxiosErrorMessage({ error, subject: typedInDomain ? typedInDomain : '' });
-                showMessage(buildNegativeMsg({
-                    header: `Unable to verify contract ${address}`,
-                    msg,
-                }));
-            }
-            console.log('---------------------------------------------------------');
-            setIsPlainDomainSubmitted(false);
-            hasSentVerif.current = false;
 
+                setLoading(false);
+                console.log('loading false');
+                hasSentVerifReq.current = false;
+                setIsVerificationRunning(false);
+            }
+        } catch (error) {
+            console.log(error);
+            const msg = extractAxiosErrorMessage({ error, subject: originalDomain ? originalDomain : '' });
+            toast(negativeMsg({
+                header: `Unable to verify contract ${address}`,
+                msg,
+            }));
+            setIsVerificationRunning(false);
         }
-    }, [isPlainDomainSubmitted, typedInDomain, showMessage, curVerifResult, assignContractData]);
+        console.log('---------------------------------------------------------');
+            
+    }, [curVerifResult, assignContractData]);
 
     useEffect(() => {
         if (isValidContractAddress(contractAddress)) {
@@ -140,7 +153,7 @@ const TeSCInspect = ({ location }) => {
         setContractAddress(address);
         setLoading(true);
         if (isValidContractAddress(address)) {
-            setIsInFavourites(localTescs.current[address] ? localTescs.current[address].isFavourite : false);
+            setIsFavourite(localTescs.current[address] ? localTescs.current[address].isFavourite : false);
             console.log('handleChangeAddress');
             await verifyTesc(address);
         }
@@ -149,14 +162,7 @@ const TeSCInspect = ({ location }) => {
 
     useEffect(() => {
         if (Object.keys(localTescs.current).length === 0) {
-            const tescArray = loadStorage() ? loadStorage() : [];
-            //console.log('tescArray', tescArray);
-            for (const tesc of tescArray) {
-                const { contractAddress, ...rest } = tesc;
-                localTescs.current[contractAddress] = rest;
-            }
-            showMessage(null);
-
+            localTescs.current = getLocalTescs(account);
         }
 
         if (location.state && location.state.contractAddress !== locationStateAddress.current) {
@@ -164,46 +170,59 @@ const TeSCInspect = ({ location }) => {
             locationStateAddress.current = location.state.contractAddress;
         }
 
-    }, [loadStorage, showMessage, location.state, handleChangeAddress, locationStateAddress]);
+    }, [account, location.state, handleChangeAddress, locationStateAddress, web3]);
 
     const clearDisplayData = () => {
         setDomainFromChain('');
         setExpiry('');
         setFlags(new BitSet('0x00'));
+        setIsDomainHashed(null);
         setSignature('');
-        setTypedInDomain('');
-        setIsPlainDomainSubmitted(false);
+        setOriginalDomain('');
         setEndorsers(null);
     };
 
     const handleSubmitAddress = async (e) => {
         e.preventDefault();
-        setLoading(true);
-        clearDisplayData();
         try {
-            console.log('submit with ', contractAddress);
-            isValidContractAddress(contractAddress, true);
-            await verifyTesc(contractAddress);
+            if(isValidContractAddress(contractAddress, true)){
+                curVerifResult ? setCurVerifResult(null) : await verifyTesc(contractAddress, originalDomain, true);
+                clearDisplayData();
+                setLoading(true);
+            }
         } catch (err) {
-            showMessage(buildNegativeMsg({
+            toast.error(negativeMsg({
                 header: 'Invalid smart contract address',
                 msg: err.message
             }));
         }
-        setLoading(false);
     };
 
-    const handleEnterOriginalDomain = async (e) => {
+    const handleReceiveOriginalDomainFromModal = async (typedInDomain) => {
+        setOriginalDomain(typedInDomain);
+        await verifyTesc(contractAddress, typedInDomain);
+    };
+
+    const handleSubmitOriginalDomain = async (e) => {
         e.preventDefault();
-        setIsPlainDomainSubmitted(true);
-        verifyTesc(contractAddress);
+        if (originalDomain) {
+            setCurVerifResult(null);
+            await verifyTesc(contractAddress, originalDomain, true);
+        }
     };
 
-    const handleCloseTescUpdate = async (e) => {
-        showMessage(null);
-        await verifyTesc(contractAddress);
+    const handleCloseTescUpdateModal = async (e) => {
+        e.preventDefault();
+        console.log('isTescUpdated', isTescUpdated);
+        if (isTescUpdated) {
+            setCurVerifResult(null);
+            clearDisplayData();
+            setLoading(true);
+        } else if (!isTescUpdated && isDomainHashed && originalDomain) {
+            await verifyTesc(contractAddress, originalDomain);
+        }
+        setIsTescUpdated(false);
     };
-
 
     return (
         <div>
@@ -230,44 +249,58 @@ const TeSCInspect = ({ location }) => {
                                         <TescDataTable
                                             data={{ contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint }}
                                         />
-                                        <div style={{ marginTop: '0.5em' }}>
+                                        <div style={{ marginTop: '2em' }}>
                                             {account === contractOwner && (
                                                 <Modal
                                                     closeIcon
                                                     trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
-                                                    onClose={handleCloseTescUpdate}
+                                                    onClose={handleCloseTescUpdateModal}
                                                     style={{ borderRadius: '20px', height: '80%', width: '75%' }}
                                                 >
                                                     <Modal.Header style={{ borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
                                                         Update TLS-endorsed Smart Contract
-                                            </Modal.Header>
+                                                    </Modal.Header>
                                                     <Modal.Content style={{ borderBottomLeftRadius: '15px', borderBottomRightRadius: '15px' }}>
                                                         <DeploymentForm
                                                             initInputs={{
                                                                 contractAddress,
                                                                 domain: domainFromChain,
-                                                                expiry, flags,
+                                                                expiry,
+                                                                flags,
                                                                 signature,
-                                                                fingerprint: fingerprint,
+                                                                fingerprint,
                                                             }}
-                                                            typedInDomain={typedInDomain}
-                                                            onMatchOriginalDomain={setTypedInDomain}
+                                                            inputOriginalDomain={originalDomain}
+                                                            onMatchOriginalDomain={handleReceiveOriginalDomainFromModal}
+                                                            onTescUpdated={setIsTescUpdated}
                                                         />
                                                     </Modal.Content>
                                                 </Modal>
                                             )}
-                                            <Popup content={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
+
+                                            <ButtonRegistryAddRemove
+                                                verbose
+                                                contractAddress={contractAddress}
+                                                domain={domainFromChain}
+                                                isOwner={account === contractOwner}
+                                                style={{ float: 'left' }}
+                                            />
+
+                                            <Popup inverted
+                                                content={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
                                                 trigger={
                                                     <Button
                                                         basic
                                                         color='pink'
                                                         icon={isFavourite ? 'heart' : 'heart outline'}
                                                         className={isFavourite ? "favourite" : "notFavourite"}
-                                                        onClick={toggleFavourite}
+                                                        onClick={() => handleToggleFavourite()}
                                                         content={isFavourite ? 'Unfavourite' : 'Favourite'}
-                                                        style={{ float: 'right' }}
-                                                    />}
+                                                        style={{ float: 'left' }}
+                                                    />
+                                                }
                                             />
+
                                         </div>
                                     </Segment>
                                 </Grid.Column>
@@ -279,25 +312,24 @@ const TeSCInspect = ({ location }) => {
                                         <Card style={{ width: '100%' }}>
                                             <Card.Content header="Verification" />
                                             <Card.Content>
-                                                <Dimmer active={(isPlainDomainSubmitted && !curVerifResult)
+                                                <Dimmer active={isVerificationRunning
                                                     || (!isDomainHashed && !curVerifResult)} inverted>
                                                     <Loader content='Verifying...' />
                                                 </Dimmer>
                                                 {isDomainHashed &&
                                                     (
-                                                        <Form onSubmit={handleEnterOriginalDomain}>
+                                                        <Form onSubmit={handleSubmitOriginalDomain}>
                                                             <Form.Field>
                                                                 <label>Original domain</label>
                                                                 <Input
-                                                                    value={typedInDomain}
+                                                                    value={originalDomain}
                                                                     placeholder='www.mysite.com'
-                                                                    onChange={e => setTypedInDomain(e.target.value)}
+                                                                    onChange={e => setOriginalDomain(e.target.value)}
                                                                     size='large'
                                                                     style={{ width: '100%' }}
                                                                 />
                                                             </Form.Field>
                                                         </Form>
-
                                                     )
                                                 }
                                                 {curVerifResult && (
@@ -347,7 +379,7 @@ const TeSCInspect = ({ location }) => {
                 {endorsers && !loading &&
                     <>
                         <p>The contract <b>{contractAddress}</b> is not a TLS-endorsed Smart Contract (TeSC) but is subendorsed by <b className='main-color'>{endorsers.length}</b> TeSCs</p>
-       
+
                         <TableOverview
                             cols={new Set([COL.DOMAIN, COL.ADDRESS, COL.EXPIRY, COL.VERIF, COL.FAV])}
                             rowData={endorsers.map(({contract}) => ({contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, flags: contract.flags}))}

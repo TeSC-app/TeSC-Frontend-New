@@ -11,6 +11,8 @@ import SearchBox from './SearchBox';
 import { convertToUnix, extractSubdomainFromDomain } from '../utils/tesc'
 import { forEach } from 'lodash';
 
+import { loadStorage } from '../utils/storage';
+
 const ENTRIES_PER_PAGE = 5;
 
 export const COL = {
@@ -39,7 +41,8 @@ function TableOverview(props) {
         cols
     } = props;
 
-    const { web3, account, loadStorage } = useContext(AppContext);
+    const { web3, account } = useContext(AppContext);
+
     const [tescs, setTescs] = useState(rowData);
     const [tescsWithOccurancesNew, setTescsWithOccurancesNew] = useState(tescsWithOccurances)
     const [currentPage, setCurrentPage] = useState(1);
@@ -83,17 +86,15 @@ function TableOverview(props) {
     useEffect(() => {
         const init = async () => {
             try {
-                // setTescs(account ? (isDashboard? loadStorage() : []) : []);
                 if (cols.has(COL.TSC)) setDisplayedEntries(account && tescsWithOccurances ? tescsWithOccurances.slice(0, ENTRIES_PER_PAGE) : [])
                 else setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRIES_PER_PAGE) : []);
 
                 setTotalPages(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / ENTRIES_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRIES_PER_PAGE : 0));
                 window.ethereum.on('accountsChanged', (accounts) => {
-                    const account = web3.utils.toChecksumAddress(accounts[0]);
-                    setTescs(accounts[0] && localStorage.getItem(account) ?
-                        JSON.parse(localStorage.getItem(account)) : []);
-                    setDisplayedEntries(account && localStorage.getItem(account) ?
-                        JSON.parse(localStorage.getItem(account)).slice(0, ENTRIES_PER_PAGE) : []);
+                    console.log('accounts changed');
+                    const tescs = loadStorage(accounts[0]);
+                    setTescs(tescs);
+                    setDisplayedEntries(tescs.slice(0, ENTRIES_PER_PAGE));
                 });
             }
             catch (error) {
@@ -104,6 +105,7 @@ function TableOverview(props) {
     }, [tescs, account, web3, cols, tescsWithOccurancesNew, tescsWithOccurances]);
 
     useEffect(() => {
+        setTescs(rowData);
         const subdomainList = rowData.filter(entry => extractSubdomainFromDomain(entry.domain) !== '').map(entry => extractSubdomainFromDomain(entry.domain))
         const subdomainFilterState = []
         const map = new Map();
@@ -115,33 +117,9 @@ function TableOverview(props) {
         }
         setSubdomainFilter(subdomainFilterState)
     }, [rowData])
+    
     const handleChangeTescs = (tesc) => {
-        const updatedTescs = [...(tescs.filter(tesc_ => tesc_.contractAddress !== tesc.contractAddress)), tesc];
-        if (!cols.has(COL.REG)) {
-            let tescsNew = loadStorage() ? loadStorage() : [];
-            let found = false;
-            for (const tescNew of tescsNew) {
-                if (tescNew.contractAddress === tesc.contractAddress) {
-                    found = true;
-                    if (tescNew.isFavourite) {
-                        tescNew.isFavourite = false;
-                    } else {
-                        tescNew.isFavourite = true;
-                    }
-                    localStorage.setItem(account, JSON.stringify(tescsNew));
-                    break;
-                }
-            }
-            if (!found) {
-                tescsNew.push({ contractAddress: tesc.contractAddress, domain: tesc.domain, expiry: tesc.expiry, isFavourite: true, own: false, createdAt: moment().unix(), verified: tesc.verified });
-                localStorage.setItem(account, JSON.stringify(tescsNew));
-            }
-
-            setTescs(updatedTescs.sort((tescA, tescB) => tescB.expiry - tescA.expiry));
-        } else {
-            setTescs(updatedTescs.sort((tescA, tescB) => tescA.createdAt.toString().localeCompare(tescB.createdAt)));
-            localStorage.setItem(account, JSON.stringify(updatedTescs));
-        }
+        setTescs(loadStorage(account));
     };
 
     const changePage = (event, { activePage }) => {
@@ -157,7 +135,7 @@ function TableOverview(props) {
 
     const renderRows = () => {
         if (displayedEntries && !cols.has(COL.TSC)) {
-            return displayedEntries.map((tesc) => (
+            return displayedEntries.filter(tesc => tesc.isFavourite || tesc.own).map((tesc) => (
                 <TableEntry key={tesc.contractAddress}
                     tesc={tesc}
                     onTescsChange={handleChangeTescs}
@@ -166,7 +144,7 @@ function TableOverview(props) {
                 />
             ));
         } else if (displayedEntries && cols.has(COL.TSC)) {
-            return tescsWithOccurancesNew.map((entry) => (
+            return tescsWithOccurancesNew.filter(tesc => tesc.isFavourite || tesc.own).map((entry) => (
                 <TableEntry key={entry.domain}
                     tesc={entry}
                     handleSearchInput={handleSearchInput}
@@ -190,7 +168,7 @@ function TableOverview(props) {
             handleIsExploringDomain(true);
             //for showing domain-specific analytics
             handleDomainFilter(domain)
-            const filteredRowData = rowData.filter(entry => entry.domain.includes(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry)
+            const filteredRowData = loadStorage(account).filter(entry => entry.domain.includes(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry)
             setTescs(filteredRowData);
         }
         handleLoading(false);
@@ -631,7 +609,7 @@ function TableOverview(props) {
                         }
                     </Table.Row>
                 </Table.Header>
-                {(
+                {tescs && tescs.length > 0 &&  (
                     <Table.Body>
                         {renderRows()}
                     </Table.Body>

@@ -5,19 +5,21 @@ import AppContext from '../appContext';
 import {
     isSha3
 } from '../utils/tesc';
+import { loadStorage } from '../utils/storage';
+
 import { Table, Popup, Loader, Icon } from 'semantic-ui-react';
 import LinkTescInspect from './InternalLink';
 
 
-function TableCellVerification({ domain, contractAddress, verified, handleChangeVerified, loadStorage }) {
+function TableCellVerification({ domain, contractAddress, verified, handleChangeVerified }) {
     const { web3, account } = useContext(AppContext);
     const [isVerified, setIsVerified] = useState(verified);
     const contractAddress_ = useRef(contractAddress);
 
     const updateLocalStorageWithVerified = useCallback((verified) => {
-        if (account && loadStorage())
-            localStorage.setItem(account, JSON.stringify(loadStorage().map((tesc) => tesc.contractAddress === contractAddress ? ({ ...tesc, verified: verified }) : tesc)))
-    }, [loadStorage, account, contractAddress])
+        if (account)
+            localStorage.setItem(account, JSON.stringify(loadStorage(account).map((tesc) => tesc.contractAddress === contractAddress ? ({ ...tesc, verified: verified }) : tesc)))
+    }, [account, contractAddress])
 
     const renderVerifResult = () => {
         if (domain && isSha3(domain)) {

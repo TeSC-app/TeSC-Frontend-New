@@ -1,5 +1,7 @@
 import React, { Fragment, useState, useContext, useCallback, useEffect, useRef } from 'react';
 import { Input, Form, Label, Button as BtnSuir, Segment, Popup, Radio, Header, TextArea, Divider, Icon, Grid, Dropdown } from 'semantic-ui-react';
+import { toast } from 'react-toastify';
+
 import Highlight from 'react-highlight.js';
 import hljs from 'highlight.js';
 import hljsSolidity from 'highlightjs-solidity';
@@ -20,7 +22,7 @@ import StepButton from '@material-ui/core/StepButton';
 
 
 import AppContext from '../../appContext';
-import { buildNegativeMsg, buildPositiveMsg } from "../FeedbackMessage";
+import { negativeMsg, positiveMsg } from "../FeedbackMessage";
 import FilePicker from '../FilePicker';
 import FingerprintSegment from './FingerprintSegment';
 import DeploymentOutput from './DeploymentOutput';
@@ -42,9 +44,13 @@ import {
     isEmptyValidInputForType,
     validateConstructorParameterInput
 } from '../../utils/constructorInput';
+import {
+    getEthRates
+} from '../../utils/conversionRate';
 
 import { extractAxiosErrorMessage } from '../../utils/formatError';
 import axios from 'axios';
+import { PrivateKey } from '@fidm/x509';
 
 hljsSolidity(hljs);
 hljs.initHighlightingOnLoad();
@@ -69,23 +75,19 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
-
-
-const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' }) => {
-    const { web3, showMessage, handleBlockScreen, account } = useContext(AppContext);
-
-    const defaultFingerprint = !initInputs || parseInt(initInputs.fisngerprint, 16) === 0 ? '' : initInputs.fingerprint;
-
-    const [contractAddress, setContractAddress] = useState(initInputs ? initInputs.contractAddress : '');
-    const [futureContractAddress, setFutureContractAddress] = useState(initInputs ? initInputs.contractAddress : '');
-
-    const [domain, setDomain] = useState(initInputs && !initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : typedInDomain);
-    const [expiry, setExpiry] = useState(initInputs ? initInputs.expiry : null);
+const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain='', onTescUpdated }) => {
+    const { web3, handleBlockScreen, account } = useContext(AppContext);
+    
+    const [contractAddress, setContractAddress] = useState('');
+    const [futureContractAddress, setFutureContractAddress] = useState('');
+    
+    const [domain, setDomain] = useState('');
+    const [expiry, setExpiry] = useState(null);
     const [signature, setSignature] = useState('');
-    const [flags, setFlags] = useState(initInputs ? initInputs.flags : new BitSet('0x00'));
-    const [currentDomain, setCurrentDomain] = useState(initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) ? initInputs.domain : domain);
-    const [fingerprint, setFingerprint] = useState(defaultFingerprint);
+    const [flags, setFlags] = useState(new BitSet('0x00'));
+    const [currentDomain, setCurrentDomain] = useState('');
 
+    const [fingerprint, setFingerprint] = useState('');
 
     const [privateKeyPEM, setPrivateKeyPEM] = useState('');
     const [privateKeyFileName, setPrivateKeyFileName] = useState('');
@@ -94,11 +96,11 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const [endorsedSolidityCode, setEndorsedSolidityCode] = useState(null);
     const [solidityFileName, setSolidityFileName] = useState(null);
 
-    const [costEstimated, setCostEstimated] = useState(null);
-    const [costPaid, setCostPaid] = useState(null);
+    const [costsEstimated, setCostsEstimated] = useState(null);
+    const [costsPaid, setCostsPaid] = useState(null);
 
     const [isMetamaskOpen, setIsMetamaskOpen] = useState(false);
-    const [isMatchedOriginalDomain, setIsMatchedOriginalDomain] = useState(typedInDomain ? true : false);
+    const [isMatchedOriginalDomain, setIsMatchedOriginalDomain] = useState(inputOriginalDomain ? true : false);
 
     const [sigInputType, setSigInputType] = useState(null);
     const [deploymentType, setDeploymentType] = useState(null);
@@ -119,6 +121,21 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const prevFingerprint = useRef(fingerprint);
     const prevPrivateKeyPEM = useRef(privateKeyPEM);
 
+    useEffect(() => {
+        if(initInputs && !prevExpiry.current) {
+            const {contractAddress, domain, expiry, flags, fingerprint} = initInputs;
+            console.log('>>>> initialize inputs')
+            setContractAddress(contractAddress)
+            setFutureContractAddress(contractAddress)
+            setDomain(flags.get(FLAGS.DOMAIN_HASHED)? inputOriginalDomain : domain);
+            setExpiry(parseInt(expiry));
+            setFlags(new BitSet(flags.toString()));
+            setCurrentDomain(domain);
+            setFingerprint(fingerprint && parseInt(fingerprint, 16) !== 0 ? fingerprint : '')
+        }
+
+    }, [initInputs, inputOriginalDomain])
+
     
 
     const getClaimString = () => {
@@ -137,7 +154,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                 const payload = { address, domain: currentDomain, expiry: prevExpiry.current, flagsHex };
                 setSignature(await generateSignature(payload, prevPrivateKeyPEM.current));
             } catch (err) {
-                showMessage(buildNegativeMsg({
+                toast(negativeMsg({
                     code: err.code,
                     header: 'Unable to compute signature',
                     msg: err.message
@@ -146,11 +163,11 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         } else if (!currentDomain || !prevExpiry.current) {
             setSignature('');
         }
-    }, [futureContractAddress, showMessage, web3]);
+    }, [futureContractAddress, web3]);
 
     const handleLoseDomainInputFocus = () => {
         if (fingerprint) {
-            setFingerprint(defaultFingerprint)
+            setFingerprint(!initInputs || parseInt(initInputs.fingerprint, 16) === 0 ? '' : initInputs.fingerprint)
         }
         computeSignature(currentDomain);
         
@@ -176,6 +193,14 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
     const handlePickPrivateKey = (filename, content) => {
         setPrivateKeyFileName(filename);
+
+        // const privateKey = PrivateKey.fromPEM(content);
+        // if (!privateKey.dnsNames.includes(domain) && !privateKey.ipAddresses.includes(domain)) {
+            // throw new Error(`The selected certificate is not issued to domain ${domain.current}`);
+        // }
+        // console.log('privateKey', privateKey)
+        // console.log('privateKey.dnsNames', privateKey.dnsNames)
+        // console.log('privateKey.ipAddresses', privateKey.ipAddresses)
         setPrivateKeyPEM(content);
     };
 
@@ -188,7 +213,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                 }
             });
         }catch(error){
-            showMessage(buildNegativeMsg({
+            toast(negativeMsg({
                 header: 'Unable to compile your file',
                 msg: "Please make sure to upload a valid file"
             }));
@@ -235,7 +260,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
     useEffect(() => {
         (async () => {
-            if (!futureContractAddress) {
+            if (!futureContractAddress && !initInputs) {
                 setFutureContractAddress(await predictContractAddress(web3));
                 console.log(1)
             }
@@ -267,9 +292,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                     if (!initInputs || contractAddress) {
                         try{
                             const estCost = await estimateDeploymentCost(web3, tx);
-                            setCostEstimated(estCost);
+                            setCostsEstimated(getEthRates(estCost));
+                            
                         }catch(error){
-                            showMessage(buildNegativeMsg({
+                            toast(negativeMsg({
                                 header: 'Unable to estimate transaction cost',
                                 msg: "You probably entered invalid constructor parameters in the first step"
                             }));
@@ -280,31 +306,32 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
             } 
         })();
     }, [currentDomain, expiry, contractAddress, futureContractAddress, flags, signature, privateKeyPEM, computeSignature,
-        fingerprint, makeDeploymentTx, initInputs, makeUpdateTx, web3, constructorParameterValues, deploymentJson, showMessage]);
+        fingerprint, makeDeploymentTx, initInputs, makeUpdateTx, web3, constructorParameterValues, deploymentJson]);
 
 
     const validateEndorsement = async () => {
-        try {
-            const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/predeploy/validate`, {
-                params: { 
-                    domain,
-                    claim: getClaimString(), 
-                    signature
-                }
-            });
-
-            console.log(res.status);
-        } catch (err) {
-            throw err;
+        if(domain && expiry && signature) {
+            try {
+                const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/predeploy/validate`, {
+                    params: { 
+                        domain,
+                        claim: getClaimString(), 
+                        signature
+                    }
+                });
+    
+                console.log(res.status);
+            } catch (err) {
+                throw err;
+            }
         }
+        
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         handleBlockScreen(true);
         setIsMetamaskOpen(true);
-
-        showMessage(null);
 
         let success = false;
         if (currentDomain && expiry && signature) {
@@ -314,14 +341,15 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                 console.log("tx", tx)
                 await tx.send({ from: account, gas: '3000000' })
                     .on('receipt', async (txReceipt) => {
-                        setCostPaid(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether'));
+                        const costPaid = txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether');
+                        setCostsPaid(getEthRates(costPaid));
                         if(txReceipt.contractAddress) {
                             setContractAddress(txReceipt.contractAddress);
                         }
                         setActiveStep(activeStep + 1);
                         success = true;
 
-                        showMessage(buildPositiveMsg({
+                        toast(positiveMsg({
                             header: 'Smart Contract successfully deployed',
                             msg: `TLS-endorsed Smart Contract deployed successully at address ${txReceipt.contractAddress}`
                         }));
@@ -331,13 +359,19 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                             claim: { 
                                 contractAddress: initInputs? contractAddress : txReceipt.contractAddress, 
                                 domain: currentDomain, 
-                                expiry 
+                                expiry,
+                                isFavourite: false,
+                                isInRegistry: false
                             }
                         });
+
+                        if (onTescUpdated){
+                            onTescUpdated(true)
+                        }
                     });
 
             } catch (error) {
-                showMessage(buildNegativeMsg({
+                toast(negativeMsg({
                     code: error.code,
                     header: 'Unable to deploy Smart Contract',
                     msg: extractAxiosErrorMessage({ error, subject: domain })
@@ -345,7 +379,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                 console.log(error);
             }
         } else {
-            showMessage(buildNegativeMsg({
+            toast(negativeMsg({
                 header: 'Unable to deploy Smart Contract',
                 msg: `${!currentDomain ? 'Domain' : !expiry ? 'Expiry' : !signature ? 'Signature' : 'Some required input'} is empty`
             }));
@@ -394,9 +428,16 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         setAllParamsCorrectlyEntered(validateConstructorParameterInput(constructorParameters, constructorParameterValues));
     }
 
+    const isHashMatchedOriginalDomain = (hash, original) => {
+        console.log('hash', hash)
+        console.log('original', original)
+        console.log('web3.utils.sha3(original)', web3.utils.sha3(original))
+        return hash && original && web3.utils.sha3(original) === hash
+    }
+
     const handleEnterOriginalDomain = (originalDomain) => {
         setDomain(originalDomain);
-        if (originalDomain && web3.utils.sha3(originalDomain) === currentDomain) {
+        if (isHashMatchedOriginalDomain(currentDomain, originalDomain)) {
             setIsMatchedOriginalDomain(true);
             onMatchOriginalDomain(originalDomain);
         }
@@ -477,7 +518,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     };
 
     const shouldDisplayOriginalDomainStep = () => {
-        return initInputs && flags.get(FLAGS.DOMAIN_HASHED) && !typedInDomain && !isMatchedOriginalDomain
+        return initInputs && !!initInputs.flags.get(FLAGS.DOMAIN_HASHED) && !isHashMatchedOriginalDomain(currentDomain, inputOriginalDomain) && !isMatchedOriginalDomain
     }
 
     const getSteps = () => {
@@ -498,21 +539,16 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     const handleFlagsChange = (i, selected) => {
         const newFlags = new BitSet(flags.flip(i).toString());
         setFlags(newFlags);
-        if (i === FLAGS.DOMAIN_HASHED) {
-            if (domain && !selected) {
-                setCurrentDomain(web3.utils.sha3(domain));
-            } else {
-                setCurrentDomain(domain)
-            }
+        if(i ===  FLAGS.DOMAIN_HASHED) {
+            setCurrentDomain(domain && !selected ? web3.utils.sha3(domain) : domain)
         }
-        console.log('newFlags', flagsToBytes24Hex(flags))
     };
 
     const renderFlagCheckboxes = () => {
         const FLAGNAME_LABEL_MAPPING = {
             'ALLOW_SUBENDORSEMENT': 'Allow Subendorsement'
         }
-        return Object.entries(FLAGS).filter(([flagName, i]) => i=== FLAGS.ALLOW_SUBENDORSEMENT).map(([flagName, i]) =>
+        return Object.entries(FLAGS).filter(([flagName, i]) => i === FLAGS.ALLOW_SUBENDORSEMENT).map(([flagName, i]) =>
                 <Form.Checkbox
                     key={i}
                     checked={!!flags.get(i)}
@@ -550,12 +586,9 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         )
     }
 
+
     const getStepContent = (step) => {
-        let actualStep = step;
-        if(initInputs){
-            actualStep ++;
-        }
-        switch (actualStep) {
+        switch (initInputs? step + 1 : step) {
             case 0:
                 return {
                     component: (
@@ -691,7 +724,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                     checked={!!flags.get(FLAGS.DOMAIN_HASHED)}
                                     label='Hash Domain'
                                     onClick={() => handleFlagsChange(FLAGS.DOMAIN_HASHED, !!flags.get(FLAGS.DOMAIN_HASHED))}
-                                    disabled={(!initInputs && (!domain)) || (initInputs && !isMatchedOriginalDomain)}
+                                    disabled={!domain}
                                     slider
                                 />
                             </Form.Field>
@@ -730,7 +763,9 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                             </Form.Field>
                         </>
                     ),
-                    completed: initInputs? (currentDomain !== initInputs.domain) || (expiry !== initInputs.expiry) : !!currentDomain && !!expiry ,
+                    completed: initInputs ? 
+                        (currentDomain !== initInputs.domain) || (expiry !== initInputs.expiry) || (flags.toString() !==  initInputs.flags.toString()) : 
+                        !!currentDomain && !!expiry ,
                     reachable: initInputs && currentDomain? isMatchedOriginalDomain: true
                 };
             case 2:
@@ -816,7 +851,6 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
 
                                     <TextArea
                                         style={{ wordBreak: 'break-all', minHeight: '7em' }}
-                                        placeholder
                                         value={signature}
                                         onChange={(e) => setSignature(e.target.value)}
                                     />
@@ -849,28 +883,27 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                             <TescDataTable
                                 data={{ contractAddress, domain: currentDomain, expiry, flags, signature, fingerprint }}
                             />
-                            {!!costEstimated && !!signature && (
+                            {!!costsEstimated && !!signature && (
                                 <div style={{ float: 'right'}}>
                                     <span>Cost estimation:  </span>
                                     <Label tag style={{ color: 'royalblue', }}>
-                                        {costEstimated.toFixed(5)} <span style={{ fontSize: '0.75em' }}>ETH</span>
+                                        {costsEstimated.eth} <span style={{ fontSize: '0.75em' }}>ETH </span>
+                                        {costsEstimated.usd > 0 && `(~ ${costsEstimated.usd}`} <span style={{ fontSize: '0.75em' }}>USD</span>)
                                     </Label>
                                 </div>
                             )}
                         </Fragment>
                     ),
-                    completed: !!costPaid,
-                    reachable: getStepContent(step - 2).completed || !!costPaid  
+                    completed: !!costsPaid,
+                    reachable: getStepContent(step - 2).completed || !!costsPaid  
                 };
             case 5:
                 return {
                     component: (
                         <Fragment>
                             <Header as='h3' content='Receipt' style={{marginBottom: '30px'}} color='purple'/>
-                            {costPaid && 
-                                <Grid.Row style={{ minWidth: 'max-content', paddingTop: '2%' }}>
-                                    <DeploymentOutput contractAddress={contractAddress} costPaid={costPaid} />
-                                </Grid.Row>
+                            {costsPaid && 
+                                <DeploymentOutput contractAddress={contractAddress} domain={domain} costsPaid={costsPaid}/>
                             }
                             
 
@@ -886,7 +919,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
     }
 
     const isStepOptional = (step) => {
-        return step === 3;
+        return initInputs? step === 2 : step === 3;
     };
 
     const allStepsCompleted = () => {
@@ -929,13 +962,15 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
         setFingerprint('');
         setPrivateKeyPEM('');
         setPrivateKeyFileName('');
-        setCostEstimated(null);
-        setCostPaid(null);
+        setCostsEstimated(null);
+        setCostsPaid(null);
         setSigInputType(null);
-
-        showMessage(null);
     };
 
+    const getCurrentStep = useCallback(() => {
+        console.log('getCurrentStep')
+        return initInputs? activeStep + 1 : activeStep
+    }, [activeStep, initInputs]);
 
     return (
         <React.Fragment>
@@ -972,7 +1007,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                 </Form>
 
                                 <div className={classes.actionsContainer} style={{ float: 'right', height: 'min-content', padding: '1.5% 0' }}>
-                                    {costPaid && !initInputs && (
+                                    {costsPaid && !initInputs && (
                                         <BtnSuir
                                             basic
                                             onClick={handleReset}
@@ -989,27 +1024,26 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, typedInDomain='' })
                                         Back
                                 </BtnSuir>
 
-                                    {((activeStep < 4 && !costPaid) || (activeStep <= 4 && costPaid)) && (
-                                        <BtnSuir
-                                            basic
-                                            color="purple"
-                                            disabled={!getStepContent(activeStep).completed}
-                                            onClick={handleNext}
-                                        >
-                                            Next
-                                        </BtnSuir>
-                                    )}
-                                    {activeStep === 4 && !costPaid && (
-                                        <BtnSuir
-                                            icon='play circle'
-                                            basic
-                                            onClick={handleSubmit}
-                                            disabled={!signature || !privateKeyPEM}
-                                            positive
-                                            content={!initInputs ? 'Deploy' : 'Update'}
-                                        />
-                                    )
-                                    }
+                                {((getCurrentStep() < 4 && !costsPaid) || (getCurrentStep() <= 4 && costsPaid)) && (
+                                    <BtnSuir
+                                        basic
+                                        color="purple"
+                                        disabled={!getStepContent(activeStep).completed}
+                                        onClick={handleNext}
+                                    >
+                                        Next
+                                    </BtnSuir>
+                                )}
+                                {getCurrentStep() === 4 && !costsPaid && (
+                                    <BtnSuir
+                                        icon='play circle'
+                                        basic
+                                        onClick={handleSubmit}
+                                        disabled={!signature}
+                                        positive
+                                        content={!initInputs ? 'Deploy' : 'Update'}
+                                    />
+                                )}
                                 </div>
                             </Grid.Row>
 
