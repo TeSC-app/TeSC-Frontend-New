@@ -61,7 +61,7 @@ const FeaturesSplit = ({
   useEffect(() => {
     (async () => {
       const imgs = [];
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 4; i++) {
         imgs[i] = (await import(`./../../assets/images/features-split-image-0${i + 1}.png`)).default;
         console.log(i, imgs[i]);
       }
@@ -171,6 +171,101 @@ const FeaturesSplit = ({
                 <Image
                   src={images[2]}
                   alt="Features split 03"
+                  width={528}
+                  height={396} />
+              </div>
+            </div>
+
+            <div className="split-item">
+              <div className="split-item-content center-content-mobile reveal-from-right" data-reveal-container=".split-item">
+                <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
+                  Inspect TeSC
+                  </div>
+                <h3 className="mt-0 mb-12">
+                  Verification of TeSCs
+                  </h3>
+                <p className="m-0">
+                  Before making a payment to a contract, you can verify that it belongs to the given domain. 
+                  Just enter the <b>address of the contract</b> in question.<br/>
+                  If you are the owner of the TeSC, you can also update it here.
+                  <br/><br/>
+               
+                  <Link to="/tesc/inspect">
+                    <span className="text-color-primary"><b>Inspect</b></span> 🔍         
+                  </Link>  
+                </p>
+              </div>
+              <div className={
+                classNames(
+                  'split-item-image center-content-mobile reveal-from-bottom',
+                  imageFill && 'split-item-image-fill'
+                )}
+                data-reveal-container=".split-item">
+                <Image
+                  src={images[3]}
+                  alt="Features split 02"
+                  width={528}
+                  height={396} />
+              </div>
+            </div>
+
+            <div className="split-item">
+              <div className="split-item-content center-content-mobile reveal-from-left" data-reveal-container=".split-item">
+                <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
+                  Explore TeSC Registry
+                  </div>
+                <h3 className="mt-0 mb-12">
+                  Contracts in TeSC Registry
+                  </h3>
+                <p className="m-0">  
+                  Browse the TeSC registry in a convenient way. Included contracts are grouped by domain name and can be filtered with various options.
+                  <br/><br/>
+               
+                  <Link to="/registry/inspect">
+                    <span className="text-color-primary"><b>Explore</b></span> 🗺️         
+                  </Link>            
+                  </p>
+              </div>
+              <div className={
+                classNames(
+                  'split-item-image center-content-mobile reveal-from-bottom',
+                  imageFill && 'split-item-image-fill'
+                )}
+                data-reveal-container=".split-item">
+                <Image
+                  src={images[2]}
+                  alt="Features split 03"
+                  width={528}
+                  height={396} />
+              </div>
+            </div>
+
+            <div className="split-item">
+              <div className="split-item-content center-content-mobile reveal-from-right" data-reveal-container=".split-item">
+                <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
+                  TeSC Registry Analytics
+                  </div>
+                <h3 className="mt-0 mb-12">
+                  Statistics for TeSC Registry
+                  </h3>
+                <p className="m-0">
+                  View current numbers from the TeSC Registry, e.g. the number of deployed contracts, used flags, and domains.
+                  <br/><br/>
+               
+                  <Link to="/registry/analytics">
+                    <span className="text-color-primary"><b>Graphs and pie charts</b></span> 🥧         
+                  </Link>  
+                </p>
+              </div>
+              <div className={
+                classNames(
+                  'split-item-image center-content-mobile reveal-from-bottom',
+                  imageFill && 'split-item-image-fill'
+                )}
+                data-reveal-container=".split-item">
+                <Image
+                  src={images[3]}
+                  alt="Features split 02"
                   width={528}
                   height={396} />
               </div>
