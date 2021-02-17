@@ -29,7 +29,7 @@ export const predictContractAddress = async (web3) => {
     const futureAddress = "0x" + web3.utils.sha3(RLP.encode([senderAddress, nonce])).substring(26);
     console.log("Faddress:", futureAddress);
 
-    return  web3.utils.toChecksumAddress(futureAddress);
+    return web3.utils.toChecksumAddress(futureAddress);
 };
 
 export const generateSignature = async ({ address, domain, expiry, flagsHex }, privateKeyPem) => {
@@ -128,3 +128,25 @@ export const convertToUnix = date => {
     mDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
     return mDate.unix()
 }
+
+export const extractDomainAndTopLevelDomain = domain => {
+    const domainParts = domain.split('.')
+    let domainName = ''
+    let topLevelDomain = ''
+    if (domainParts.length > 1) {
+        domainName = domainParts[domainParts.length - 2]
+        topLevelDomain = domainParts[domainParts.length - 1]
+    }
+    const domainNameAndTopLevelDomain = domainName.concat(`.${topLevelDomain}`) !== '.' ? domainName.concat(`.${topLevelDomain}`) : domain
+    return domainNameAndTopLevelDomain
+}
+
+export const extractSubdomainFromDomain = domain => {
+    const domainParts = domain.split('.')
+    let subDomain = ''
+    if (domainParts.length > 2) {
+        const subDomainParts = domainParts.slice(0, domainParts.length - 2)
+        subDomain = subDomainParts.join('.')
+    }
+    return subDomain
+} 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import moment from 'moment';
-import { Table, Icon, Popup, Button, Image } from 'semantic-ui-react';
+import { Table, Icon, Popup, Button, Image, Label } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
 import AppContext from '../appContext';
 import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
@@ -226,12 +226,17 @@ function TableEntry(props) {
     }
 
     const renderPieChartForVerified = () => {
-        const data = [{ id: 'Valid', value: tesc.verifiedCount }, { id: 'Invalid', value: tesc.contractCount - tesc.verifiedCount }]
-        return <PieChart loading={false} data={data} isRegistryInspect={true} />
+        if (!isSha3(domain)) {
+            const data = [{ id: 'Valid', value: tesc.verifiedCount }, { id: 'Invalid', value: tesc.contractCount - tesc.verifiedCount }]
+            return <PieChart loading={false} data={data} isRegistryInspect={true} />
+        }
     }
 
     const renderTescContractCount = () => {
-        return (<div className='smart-contracts'>{tesc.contractAddresses.map((contractAddress) => (<Popup key={contractAddress} content={contractAddress} trigger={<Image src='../images/smart-contract-icon.png' className='smart-contracts__icon' alt='Smart Contract' size='mini' />} />))}</div>)
+        return (<div className='smart-contracts'>{tesc.contractAddresses.map((entry, index, contractAddresses) =>
+        (index <= 10 ? <Popup key={entry.contractAddress} content={entry.contractAddress} trigger={
+            <Image src={!entry.verified && !isSha3(domain) ? '../images/smart-contract-icon-invalid.png' : entry.verified ?
+                '../images/smart-contract-icon-valid.png' : '../images/smart-contract-icon.png'} className='smart-contracts__icon' alt='Smart Contract' size='mini' />} /> : index === 11 ? `...and ${contractAddresses.length - index} more` : null))}</div>)
     }
 
     const renderOwnIcon = () => {

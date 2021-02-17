@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
-import { FLAGS } from '../utils/tesc'
-import BitSet from 'bitset';
 import PieChart from '../components/analytics/PieChart'
 import BarChart from '../components/analytics/BarChart';
-import { isSha3 } from '../utils/tesc';
+import {
+    computeTopDomains,
+    countFlags,
+    computeValidContracts,
+    checkExpirationDates
+} from '../utils/analytics';
+import PageHeader from '../components/PageHeader';
 
 function RegistryAnalytics() {
     const [loading, setLoading] = useState(false)
@@ -34,67 +38,34 @@ function RegistryAnalytics() {
         })();
     }, [])
 
-    const feedData = (verified) => {
-        return entries.reduce((count, entry) => count + (entry.verified === verified), 0)
-    }
-
-    const dataPie = [{ 'id': 'Valid', 'value': feedData(true) }, { 'id': 'Invalid', 'value': feedData(false) }]
-    const colorsBar = ['#E8C1A0', '#F47560', '#F1E15B', '#E8A838', '#61CDBB']
-    const mode = (entries) => {
-        const tescsWithOccurances = entries.map(entry => ({
-            domain: isSha3(entry.domain)
-                ? `${entry.domain.substring(0, 4)}...${entry.domain.substring(entry.domain.length - 2, entry.domain.length)}` : entry.domain, count: entries.reduce((counter, entry_) =>
-                    entry_.domain === entry.domain ? counter += 1 : counter, 0)
-        }))
-        const distinctTescsWithOccurances = [];
-        const map = new Map();
-        let index = 0;
-        for (const entry of tescsWithOccurances) {
-            if (!map.has(entry.domain)) {
-                map.set(entry.domain, true);    // set any value to Map
-                distinctTescsWithOccurances.push({
-                    domain: entry.domain,
-                    count: entry.count,
-                    color: colorsBar[index++]
-                });
-            }
-        }
-        return distinctTescsWithOccurances.slice(0, 5)
-    }
-
-    const countFlags = (entries) => {
-        let counterDomainHashed = 0;
-        let counterAllowSubdomain = 0;
-        let counterAllowSubendorsement = 0;
-        let counterExclusive = 0;
-        let counterPayable = 0;
-        let counterAllowAlternativeDomain = 0;
-        const allFlags = entries.map(entry => ({ flag: new BitSet(entry.flags).data[0] }))
-        for (const flag of allFlags) {
-            switch (flag.flag) {
-                case 3: counterDomainHashed++
-                    break
-                default: break
-            }
-        }
-        const result = [{ id: Object.keys(FLAGS)[0], value: counterDomainHashed }, { id: Object.keys(FLAGS)[1], value: counterAllowSubendorsement },
-        { id: Object.keys(FLAGS)[2], value: counterExclusive }, { id: Object.keys(FLAGS)[3], value: counterPayable },
-        { id: Object.keys(FLAGS)[4], value: counterAllowAlternativeDomain }, { id: Object.keys(FLAGS)[5], value: counterAllowSubdomain }]
-        return result
-    }
-
+    const dataValidContracts = [{ 'id': 'Valid', 'value': computeValidContracts(entries, true) }, { 'id': 'Invalid', 'value': computeValidContracts(entries, false) }]
     return (
-        <section style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gridTemplateRows: 'auto auto',
-            gridGap: '10px',
-            height: '300px'
-        }}>
-            <PieChart data={dataPie} loading={loading} />
-            <BarChart data={mode(entries)} loading={loading} />
-            <PieChart data={countFlags(entries)} isFlags={true} loading={loading} />
-        </section>
+        <div>
+            <PageHeader title='Registry-wide Analytics' />
+            <section style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gridTemplateRows: 'auto auto',
+                gridGap: '10px',
+                height: '300px',
+                marginTop: '50px'
+            }}>
+                <PieChart data={dataValidContracts}
+                    loading={loading}
+                    infoText='Shows the number of valid and invalid smart contracts in the registry' />
+                <BarChart data={computeTopDomains(entries)}
+                    loading={loading}
+                    infoText='Shows the top 5 domains which have the most smart contracts associated to them' />
+                <PieChart data={countFlags(entries)}
+                    isFlags={true}
+                    loading={loading}
+                    infoText='Shows the number of the flags that are used in all smart contracts in the registry' />
+                <BarChart data={checkExpirationDates(entries)}
+                    loading={loading}
+                    isExpiration={true}
+                    infoText='Shows a distribution of the expiry dates of all entries in the registry' />
+            </section>
+        </div>
     )
 }
 

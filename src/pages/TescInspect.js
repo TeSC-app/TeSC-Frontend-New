@@ -349,8 +349,8 @@ const TeSCInspect = ({ location }) => {
                         <p>The contract <b>{contractAddress}</b> is not a TLS-endorsed Smart Contract (TeSC) but is subendorsed by <b className='main-color'>{endorsers.length}</b> TeSCs</p>
        
                         <TableOverview
-                            cols={new Set([COL.VERIF, COL.FAV])}
-                            rowData={endorsers}
+                            cols={new Set([COL.DOMAIN, COL.ADDRESS, COL.EXPIRY, COL.VERIF, COL.FAV])}
+                            rowData={endorsers.map(({contract}) => ({contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, flags: contract.flags}))}
                         />
                     </>
                 }
