@@ -182,7 +182,7 @@ function RegistryInspect() {
             {/* Smart Contracts associated with Domain */}
             {renderTable()}
             {isExploringDomain && entriesRaw.length > 0 && (<div style={{ backgroundColor: '#eff2f5' }}>
-                <PageHeader isRegistryInspect={true} title='Domain-specific Analytics' />
+                <PageHeader isRegistryInspect={true} as='h2' title='Domain-specific Analytics' />
                 <section style={{
                     display: 'grid',
                     gridTemplateColumns: isSha3(domainFilter) ? '1fr 1fr' : '1fr 1fr 1fr',
