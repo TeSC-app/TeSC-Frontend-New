@@ -51,7 +51,7 @@ const TeSCInspect = ({ location }) => {
                 delete localTescs.current[contractAddress];
             }
         } else {
-            localTescs.current[contractAddress] = { domain: domainFromChain, expiry, isFavourite: true, own: false, createdAt: moment().format('DD/MM/YYYY HH:mm') };
+            localTescs.current[contractAddress] = { domain: domainFromChain, expiry, isFavourite: true, own: false, createdAt: moment().unix() };
             setIsInFavourites(true);
         }
         const tescArray = Object.entries(localTescs.current).map(entry => {
@@ -114,7 +114,6 @@ const TeSCInspect = ({ location }) => {
                 } else {
                     throw new Error(`Unknow result from backend server: ${result}`);
                 }
-
             } catch (error) {
                 console.log(error);
                 const msg = extractAxiosErrorMessage({ error, subject: typedInDomain ? typedInDomain : '' });

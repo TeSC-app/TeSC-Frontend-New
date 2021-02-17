@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import moment from 'moment';
 import { Table, Icon, Popup, Button, Image } from 'semantic-ui-react';
 import 'react-day-picker/lib/style.css';
@@ -23,7 +23,7 @@ function TableEntry(props) {
         handleSearchSubmit,
         cols
     } = props;
-    const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged } = useContext(AppContext);
+    const { web3, showMessage, account, handleBlockScreen, registryContract, hasAccountChanged, handleAccountChanged, loadStorage } = useContext(AppContext);
     const { contractAddress, domain, expiry, isFavourite, own, createdAt } = tesc;
     const [tescIsInFavourites, setTescIsInFavourites] = useState(false);
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0);
@@ -33,13 +33,21 @@ function TableEntry(props) {
     const [isInRegistry, setIsInRegistry] = useState(false)
     const [loading, setLoading] = useState(true)
 
+    const updateLocalStorageWithIsInRegistry = useCallback((isInRegistry) => {
+        if (account)
+            localStorage.setItem(account, JSON.stringify(loadStorage().map((tesc) => tesc.contractAddress === contractAddress ? ({ ...tesc, isInRegistry: isInRegistry }) : tesc)))
+    }, [loadStorage, account, contractAddress])
+
     useEffect(() => {
         if (!cols.has(COL.TSC)) {
             const checkRegistry = async () => {
                 try {
-                    const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call()
-                    setIsInRegistry(isInRegistry)
-                    setLoading(false)
+                    if (contractAddress) {
+                        const isInRegistry = await registryContract.methods.isContractRegistered(contractAddress).call()
+                        setIsInRegistry(isInRegistry)
+                        updateLocalStorageWithIsInRegistry(isInRegistry)
+                        setLoading(false)
+                    }
                 } catch (error) {
                     console.log(error)
                     setLoading(false)
@@ -47,7 +55,7 @@ function TableEntry(props) {
             }
             checkRegistry()
         }
-    }, [contractAddress, registryContract, cols])
+    }, [contractAddress, registryContract, cols, updateLocalStorageWithIsInRegistry])
 
     useEffect(() => {
         if (hasAllColumns(cols)) handleAccountChanged(false); //???
@@ -75,9 +83,11 @@ function TableEntry(props) {
         handleBlockScreen(true);
         if (domain && contractAddress) {
             try {
+                console.log(contractAddress)
                 const isContractRegistered = await registryContract.methods.isContractRegistered(contractAddress).call();
+                console.log(isContractRegistered)
                 if (!isContractRegistered) {
-                    await registryContract.methods.add(contractAddress).send({ from: account, gas: '2000000' })
+                    await registryContract.methods.add(contractAddress).send({ from: account, gas: '3000000' })
                         .on('receipt', async (txReceipt) => {
                             showMessage(buildPositiveMsg({
                                 header: 'Entry added to the registry',
@@ -152,7 +162,7 @@ function TableEntry(props) {
             isFavourite = true;
             setTescIsInFavourites(true);
         }
-        onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt })
+        onTescsChange({ contractAddress, domain, expiry, isFavourite, own, createdAt, verified: tesc.verified })
     };
 
     const renderRegistryButtons = () => {
@@ -163,7 +173,7 @@ function TableEntry(props) {
                         trigger={<Button basic color='red' onClick={removeFromRegistry} content='Remove' icon='delete' className='button-remove' />} />
                     :
                     <Popup inverted content={`Add entry to the TeSC registry. This would cost around ${costEstimatedAdd.toFixed(5)} ETH.`}
-                        trigger={<Button basic disabled={!verified && !(domain.length === 64 && domain.split('.').length === 1)} color='blue' onClick={addToRegistry} content='Add' icon='plus' className='button-add' />}
+                        trigger={<Button basic disabled={!verified && !(isSha3(domain))} color='blue' onClick={addToRegistry} content='Add' icon='plus' className='button-add' />}
                     />
             );
         } else {
@@ -186,7 +196,7 @@ function TableEntry(props) {
         }
     };
 
-    const tableCellVerifProps = { domain, contractAddress, verified, handleChangeVerified };
+    const tableCellVerifProps = { domain, contractAddress, verified, handleChangeVerified, loadStorage };
 
     const renderFavourites = () => {
         return (
@@ -198,7 +208,7 @@ function TableEntry(props) {
     };
 
     const renderCreatedAt = () => {
-        return typeof createdAt === 'undefined' ? moment().format('DD/MM/YYYY HH:mm') : createdAt
+        return typeof createdAt === 'undefined' ? moment.format('DD/MM/YYYY HH:mm') : moment.unix(parseInt(createdAt)).format('DD/MM/YYYY HH:mm')
     }
 
     const exploreDomain = () => {
@@ -207,16 +217,16 @@ function TableEntry(props) {
     }
 
     const renderDomainForRegistryInspect = () => {
-        return (domain.length === 64 && domain.split('.').length === 1) ?
-            <Popup content={`0x${domain}`} trigger={
+        return (isSha3(domain)) ?
+            <Popup content={`${domain}`} trigger={
                 cols.has(COL.TSC) ?
-                    <Button basic size='medium' onClick={exploreDomain}>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
-                    <i>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
+                    <Button basic size='medium' onClick={exploreDomain}>{`${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
+                    <i>{`${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
             : cols.has(COL.TSC) ? <Button basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain
     }
 
     const renderPieChartForVerified = () => {
-        const data = [{id: 'Valid', value: tesc.verifiedCount}, {id: 'Invalid', value: tesc.contractCount - tesc.verifiedCount}]
+        const data = [{ id: 'Valid', value: tesc.verifiedCount }, { id: 'Invalid', value: tesc.contractCount - tesc.verifiedCount }]
         return <PieChart loading={false} data={data} isRegistryInspect={true} />
     }
 
@@ -224,27 +234,36 @@ function TableEntry(props) {
         return (<div className='smart-contracts'>{tesc.contractAddresses.map((contractAddress) => (<Popup key={contractAddress} content={contractAddress} trigger={<Image src='../images/smart-contract-icon.png' className='smart-contracts__icon' alt='Smart Contract' size='mini' />} />))}</div>)
     }
 
+    const renderOwnIcon = () => {
+        return (own && hasAllColumns(cols) ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null)
+    }
+
+    const renderContractAddress = () => {
+        return (<LinkTescInspect contractAddress={contractAddress} />)
+    }
+
     return (
         <Table.Row key={contractAddress}>
-            <Table.Cell>
-                {!cols.has(COL.TSC) ?
-                    <span className='contract-address-column'>
-                        {
-                            own && hasAllColumns(cols) ? <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="blue" circular />} /> : null
-                        }
-                        <LinkTescInspect contractAddress={contractAddress} />
-                    </span> : renderDomainForRegistryInspect()
-                }
-            </Table.Cell>
-            <Table.Cell textAlign='center'>{hasAllColumns(cols) ? renderDomain() : !cols.has(COL.TSC) && !hasAllColumns(cols) ? renderDomainForRegistryInspect() : renderTescContractCount()}</Table.Cell>
-            <Table.Cell textAlign='center'>{!cols.has(COL.TSC)? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
-            {!cols.has(COL.TSC) && <TableCellVerification {...tableCellVerifProps} />}
+            {cols.has(COL.ADDRESS) ? <Table.Cell>
+                <span className='contract-address-column'>
+                    {renderOwnIcon()}
+                    {renderContractAddress()}
+                </span>
+            </Table.Cell> : cols.has(COL.TSC) ? <Table.Cell>
+                <span className='contract-address-column'>{renderDomainForRegistryInspect()}</span></Table.Cell> : null}
+            {hasAllColumns(cols) ? <Table.Cell textAlign='center'>{renderDomain()}</Table.Cell> :
+                !cols.has(COL.TSC) && !hasAllColumns(cols) && cols.has(COL.DOMAIN) ?
+                    <Table.Cell textAlign='center'>{renderDomainForRegistryInspect()}</Table.Cell> :
+                    cols.has(COL.TSC) ? <Table.Cell textAlign='center'>{renderTescContractCount()}</Table.Cell> : null}
+            {cols.has(COL.EXPIRY) ? <Table.Cell textAlign='center'>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell> :
+                cols.has(COL.TSC) ? <Table.Cell textAlign='center'>{renderPieChartForVerified()}</Table.Cell> : null}
+            {cols.has(COL.VERIF) && !cols.has(COL.TSC) && <TableCellVerification {...tableCellVerifProps} />}
             {cols.has(COL.REG) &&
                 <Table.Cell textAlign="center">
                     {renderRegistryButtons()}
                 </Table.Cell>
             }
-            {!cols.has(COL.TSC) &&
+            {cols.has(COL.FAV) &&
                 <Table.Cell textAlign="center">
                     {renderFavourites()}
                 </Table.Cell>
@@ -252,7 +271,6 @@ function TableEntry(props) {
             {cols.has(COL.CA) &&
                 <Table.Cell>{renderCreatedAt()}</Table.Cell>
             }
-
         </Table.Row>
     );
 }

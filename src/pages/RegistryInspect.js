@@ -6,11 +6,11 @@ import TableOverview, { COL } from '../components/TableOverview';
 import axios from 'axios';
 import moment from 'moment';
 
-function RegistryInspect(props) {
+function RegistryInspect() {
     const { loadStorage } = useContext(AppContext);
     const [entriesRaw, setEntriesRaw] = useState([])
-    const [entriesWithOccurances, setEntriesWithOccurances] = useState([])
-    const [loading, setLoading] = useState(false);
+    const [tescsWithOccurances, setTescsWithOccurances] = useState([])
+    const [loading, setLoading] = useState(false)
     const [isExploringDomain, setIsExploringDomain] = useState(false)
 
     //add createdAt and isFavourite prop to objects retrieved from the backend - compares with localStorage values
@@ -23,8 +23,8 @@ function RegistryInspect(props) {
                 return { isFavourite: tesc.isFavourite, createdAt: tesc.createdAt };
             }
         }
-        if (!isIdentical) return { isFavourite: false, createdAt: moment().format('DD/MM/YYYY HH:mm') };
-    }, [loadStorage]);
+        if (!isIdentical) return { isFavourite: false, createdAt: moment().unix() }
+    }, [loadStorage])
 
     useEffect(() => {
         (async () => {
@@ -34,24 +34,24 @@ function RegistryInspect(props) {
                 //for each object key that is an array get the values associated to that key and out of these values build an array of objects
                 const registryEntries = Object.keys(response.data['registryEntries'])
                     .map(domain => Object.values(response.data['registryEntries'][domain])
-                        .map(({ contract, verified }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, createdAt: moment().format('DD/MM/YYYY HH:mm'), verified: verified })))
+                        .map(({ contract, verified }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, createdAt: moment().unix(), verified: verified })))
                     .flat()
                 if (response.status === 200) {
                     //console.log(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })))
                     const entriesRaw = registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })).sort((entryA, entryB) => entryB.expiry - entryA.expiry)
-                    const entriesWithOccurances = entriesRaw.map(entry => ({
+                    const tescsWithOccurances = entriesRaw.map(entry => ({
                         domain: entry.domain, contractAddresses: entriesRaw.filter((entry_) => entry_.domain === entry.domain).map(({contractAddress}) => contractAddress), contractCount: entriesRaw.reduce((counter, entry_) =>
                                 entry_.domain === entry.domain ? counter += 1 : counter, 0),
                         verifiedCount: entriesRaw.reduce((counter, entry_) =>
                             entry_.verified === true && entry_.domain === entry.domain ? counter += 1 : counter, 0)
                     }))
-                    let distinctEntriesWithOccurances = []
+                    let distinctTescsWithOccurances = []
                     const map = new Map(); 
                     //array of contract addresses used for the smart contract images in the exploration page
-                    for (const entry of entriesWithOccurances) {
+                    for (const entry of tescsWithOccurances) {
                         if (!map.has(entry.domain)) {
                             map.set(entry.domain, true);    // set any value to Map
-                            distinctEntriesWithOccurances.push({
+                            distinctTescsWithOccurances.push({
                                 domain: entry.domain,
                                 contractAddresses: entry.contractAddresses,
                                 contractCount: entry.contractCount,
@@ -60,7 +60,7 @@ function RegistryInspect(props) {
                         }
                     }
                     setEntriesRaw(entriesRaw)
-                    setEntriesWithOccurances(distinctEntriesWithOccurances)
+                    setTescsWithOccurances(distinctTescsWithOccurances)
                 } else {
                     setEntriesRaw([])
                 }
@@ -81,7 +81,7 @@ function RegistryInspect(props) {
                 <div style={{ justifyContent: 'center' }}>
                     <TableOverview
                         rowData={entriesRaw}
-                        entriesWithOccurances={entriesWithOccurances}
+                        tescsWithOccurances={tescsWithOccurances}
                         handleLoading={handleLoading}
                         handleIsExploringDomain={handleIsExploringDomain}
                         cols={isExploringDomain ? new Set([COL.ADDRESS, COL.DOMAIN, COL.EXPIRY, COL.VERIF, COL.FAV]) : new Set([COL.DOMAIN, COL.TSC, COL.VERIF])}

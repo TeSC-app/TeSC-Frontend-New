@@ -43,8 +43,8 @@ function RegistryAdd(props) {
                 setTescDomain(tescDomain)
                 const tescExpiry = await tescContract.methods.getExpiry().call()
                 setExpiry(tescExpiry)
-                setInconsistentAddress(tescContractOwner.toLowerCase() !== account)
-                if (tescDomain && tescContractOwner && tescContractOwner.toLowerCase() === account && !isContractRegistered) {
+                setInconsistentAddress(tescContractOwner !== account)
+                if (tescDomain && tescContractOwner && tescContractOwner === account && !isContractRegistered) {
                     setValidInput(true)
                     const estCostAdd = await estimateRegistryAddCost(web3, account, contractRegistry, contractAddress);
                     setCostEstimatedAdd(estCostAdd);
@@ -88,7 +88,7 @@ function RegistryAdd(props) {
                 const isContractRegistered = await contractRegistry.methods.isContractRegistered(contractAddress).call()
                 setIsContractRegistered(isContractRegistered)
                 if (!isContractRegistered) {
-                    if (tescContractOwner && tescContractOwner.toLowerCase() === selectedAccount) {
+                    if (tescContractOwner && tescContractOwner === selectedAccount) {
                         await contractRegistry.methods.add(tescDomain, contractAddress).send({ from: selectedAccount, gas: '2000000' })
                             .on('receipt', async (txReceipt) => {
                                 showMessage(buildPositiveMsg({

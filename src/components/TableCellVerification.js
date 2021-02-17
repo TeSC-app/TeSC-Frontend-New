@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useContext } from 'react'
 import axios from 'axios'
 
 import AppContext from '../appContext';
@@ -9,11 +9,15 @@ import { Table, Popup, Loader, Icon } from 'semantic-ui-react';
 import LinkTescInspect from './InternalLink';
 
 
-function TableCellVerification({ domain, contractAddress, verified, handleChangeVerified }) {
-    const { web3 } = useContext(AppContext);
+function TableCellVerification({ domain, contractAddress, verified, handleChangeVerified, loadStorage }) {
+    const { web3, account } = useContext(AppContext);
     const [isVerified, setIsVerified] = useState(verified);
     const contractAddress_ = useRef(contractAddress);
 
+    const updateLocalStorageWithVerified = useCallback((verified) => {
+        if (account && loadStorage())
+            localStorage.setItem(account, JSON.stringify(loadStorage().map((tesc) => tesc.contractAddress === contractAddress ? ({ ...tesc, verified: verified }) : tesc)))
+    }, [loadStorage, account, contractAddress])
 
     const renderVerifResult = () => {
         if (domain && isSha3(domain)) {
@@ -26,8 +30,10 @@ function TableCellVerification({ domain, contractAddress, verified, handleChange
         if (isVerified === null || isVerified === undefined) {
             return <Loader active inline />;
         }
+        //update local storage with verification status only for dashboard elements
+        updateLocalStorageWithVerified(isVerified)
         return isVerified ? <Icon name="check" color="green" circular /> : <Icon name="delete" color="red" circular />;
-        
+
     };
 
     useEffect(() => {
@@ -37,20 +43,22 @@ function TableCellVerification({ domain, contractAddress, verified, handleChange
                     console.log("verified", verified);
                     const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/verify/${web3.utils.toChecksumAddress(contractAddress_.current)}`);
                     setIsVerified(response.data.verified)
+                    updateLocalStorageWithVerified(response.data.verified)
                 }
             } catch (error) {
                 console.log(error);
             }
         })();
-    }, [verified, web3.utils]);
+    }, [verified, web3.utils, updateLocalStorageWithVerified]);
 
 
     useEffect(() => {
         (async () => {
             if(typeof isVerified === 'boolean')
-                handleChangeVerified(isVerified)    
+                handleChangeVerified(isVerified)   
+            updateLocalStorageWithVerified(isVerified)
         })();
-    }, [isVerified, handleChangeVerified]);
+    }, [isVerified, handleChangeVerified, updateLocalStorageWithVerified]);
 
     return (
         <Table.Cell textAlign="center">

@@ -89,7 +89,7 @@ export const storeTesc = ({ account, claim }) => {
     if (!tescs) {
         tescs = [];
     }
-    tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, createdAt: moment().format('DD/MM/YYYY HH:mm') });
+    tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, verified: false, createdAt: moment().unix() });
     localStorage.setItem(account, JSON.stringify(tescs));
 };
 
@@ -122,3 +122,9 @@ export const isSha3 = (str) => {
 export const formatClaim = ({ contractAddress, domain, expiry, flags }) => {
     return `${contractAddress}.${domain}.${expiry}.${flags}`;
 };
+
+export const convertToUnix = date => {
+    const mDate = moment.utc(date);
+    mDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+    return mDate.unix()
+}

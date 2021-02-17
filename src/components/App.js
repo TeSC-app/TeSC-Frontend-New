@@ -36,7 +36,7 @@ const App = ({ web3 }) => {
         if (walletAddress === null) {
             return [];
         }
-        console.log('loadStorage of ', walletAddress);
+        //console.log('loadStorage of ', walletAddress);
         return JSON.parse(localStorage.getItem(web3.utils.toChecksumAddress(walletAddress)));
     };
 
@@ -62,7 +62,6 @@ const App = ({ web3 }) => {
                 const networkId = await web3.eth.net.getId()
                 setNetworkId(networkId)
                 const [selectedAccount] = await web3.eth.getAccounts();
-                // setAccount(selectedAccount ? selectedAccount.toLowerCase() : '');
                 setAccount(web3.utils.toChecksumAddress(selectedAccount));
                 window.ethereum.on('accountsChanged', function (accounts) {
                     setHasAccountChanged(true);

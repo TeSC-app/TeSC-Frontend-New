@@ -8,7 +8,7 @@ import AppContext from '../appContext';
 const Dashboard = () => {
     const { loadStorage } = useContext(AppContext);
 
-    const rowData = useRef(loadStorage());
+    const rowData = useRef(loadStorage() ? loadStorage() : []);
 
     return (
         <React.Fragment>

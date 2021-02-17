@@ -47,6 +47,7 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
     };
 
     const renderNetworkLabel = () => {
+        console.log(networkId)
         let network = '';
         switch (networkId) {
             case 1:
@@ -71,7 +72,7 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
                 network = 'TeSC Test Net';
                 break;
             default:
-                network = 'TeSC Test Net';
+                network = 'Unidentified Network'
         }
         if (window.ethereum) {
             return network;
