@@ -37,6 +37,7 @@ function BarChart(props) {
                 }}
                 axisLeft={{
                     tickSize: 5,
+                    format: e => Math.floor(e) === e && e,
                     tickPadding: 5,
                     tickRotation: 0,
                     legend: 'Number of Smart Contracts',
