@@ -273,8 +273,8 @@ function TableOverview(props) {
         setSubdomainFilter(subdomainFilter.map(subdomainFilter => ({...subdomainFilter, isFiltered: false})))
 
         if (cols.has(COL.VERIF) && cols.has(COL.FAV) && !cols.has(COL.TSC)) {
-            setDisplayedEntries(loadStorage().slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(loadStorage())
+            setDisplayedEntries(loadStorage(account).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+            setTescs(loadStorage(account))
             if (cols.has(COL.DOMAIN) && !hasAllColumns(cols)) {
                 handleIsExploringDomain(false)
             }
