@@ -3,9 +3,11 @@ import BitSet from 'bitset';
 import moment from 'moment';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Button, Card, Dimmer, Form, Grid, Header, Icon, Image, Input, Label, Loader, Modal, Popup, Segment } from 'semantic-ui-react';
+import { toast } from 'react-toastify';
+
 import AppContext from '../appContext';
 import ButtonRegistryAddRemove from "../components/ButtonRegistryAddRemove";
-import { buildNegativeMsg } from "../components/FeedbackMessage";
+import { negativeMsg } from "../components/FeedbackMessage";
 import PageHeader from "../components/PageHeader";
 import SearchBox from "../components/SearchBox";
 import TableOverview, { COL } from "../components/TableOverview";
@@ -18,7 +20,7 @@ import { FLAGS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc'
 
 
 const TeSCInspect = ({ location }) => {
-    const { web3, account, showMessage } = useContext(AppContext);
+    const { web3, account } = useContext(AppContext);
     window.web3 = web3;
     const [contractAddress, setContractAddress] = useState('');
     const [contractOwner, setContractOwner] = useState('');
@@ -83,14 +85,14 @@ const TeSCInspect = ({ location }) => {
         console.log('isDomainHashed', isDomainHashed);
         console.log('isOriginalDomainSubmitted', isOriginalDomainSubmitted);
         console.log('!hasSentVerifReq.current', !hasSentVerifReq.current);
-        if (!isRepeated &&
-            !hasSentVerifReq.current &&
-            (isDomainHashed ? isOriginalDomainSubmitted : true) &&
-            isValidContractAddress(address)
-        ) {
-            let result;
-            let response;
-            try {
+        try {
+            if (!isRepeated &&
+                !hasSentVerifReq.current &&
+                (isDomainHashed ? isOriginalDomainSubmitted : true) &&
+                isValidContractAddress(address, true)
+            ) {
+                let result;
+                let response;
                 if (!originalDomain) {
                     clearDisplayData();
                     setLoading(true);
@@ -100,7 +102,7 @@ const TeSCInspect = ({ location }) => {
                 console.log('sending req...', originalDomain);
                 response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/verify/${address}`, {
                     params: { plainDomain: originalDomain },
-                    timeout: 10000
+                    timeout: 30000
                 });
 
 
@@ -120,21 +122,20 @@ const TeSCInspect = ({ location }) => {
                 } else {
                     throw new Error(`Unknow result from backend server: ${result}`);
                 }
-
-            } catch (error) {
-                console.log(error);
-                const msg = extractAxiosErrorMessage({ error, subject: originalDomain ? originalDomain : '' });
-                showMessage(buildNegativeMsg({
-                    header: `Unable to verify contract ${address}`,
-                    msg,
-                }));
             }
-            console.log('---------------------------------------------------------');
-            setIsOriginalDomainSubmitted(false);
-            hasSentVerifReq.current = false;
-            setLoading(false);
+        } catch (error) {
+            console.log(error);
+            const msg = extractAxiosErrorMessage({ error, subject: originalDomain ? originalDomain : '' });
+            toast(negativeMsg({
+                header: `Unable to verify contract ${address}`,
+                msg,
+            }));
         }
-    }, [isOriginalDomainSubmitted, originalDomain, showMessage, curVerifResult, assignContractData, isDomainHashed]);
+        console.log('---------------------------------------------------------');
+        setIsOriginalDomainSubmitted(false);
+        hasSentVerifReq.current = false;
+        setLoading(false);
+    }, [isOriginalDomainSubmitted, originalDomain, curVerifResult, assignContractData, isDomainHashed]);
 
     useEffect(() => {
         if (isValidContractAddress(contractAddress)) {
@@ -157,7 +158,6 @@ const TeSCInspect = ({ location }) => {
     useEffect(() => {
         if (Object.keys(localTescs.current).length === 0) {
             localTescs.current = getLocalTescs(account);
-            showMessage(null);
         }
 
         if (location.state && location.state.contractAddress !== locationStateAddress.current) {
@@ -165,7 +165,7 @@ const TeSCInspect = ({ location }) => {
             locationStateAddress.current = location.state.contractAddress;
         }
 
-    }, [account, showMessage, location.state, handleChangeAddress, locationStateAddress, web3]);
+    }, [account, location.state, handleChangeAddress, locationStateAddress, web3]);
 
     const clearDisplayData = () => {
         setDomainFromChain('');
@@ -182,9 +182,9 @@ const TeSCInspect = ({ location }) => {
         e.preventDefault();
         try {
             setCurVerifResult(null);
-            await verifyTesc(contractAddress);
+            await verifyTesc(contractAddress, true);
         } catch (err) {
-            showMessage(buildNegativeMsg({
+            toast.error(negativeMsg({
                 header: 'Invalid smart contract address',
                 msg: err.message
             }));
@@ -205,7 +205,6 @@ const TeSCInspect = ({ location }) => {
     };
 
     const handleCloseTescUpdateModal = async (e) => {
-        showMessage(null);
         console.log('isTescUpdated', isTescUpdated);
         if (isTescUpdated) {
             setCurVerifResult(null);

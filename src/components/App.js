@@ -1,8 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { BrowserRouter, Route, useLocation } from 'react-router-dom';
 import { Container, Loader, Dimmer, Segment } from 'semantic-ui-react';
+import { ToastContainer, toast } from 'react-toastify';
+
 import web3 from 'web3';
 import 'semantic-ui-css/semantic.min.css';
+import 'react-toastify/dist/ReactToastify.css';
 
 import AppContext from '../appContext';
 import Sidebar from './Sidebar';
@@ -61,14 +64,6 @@ const App = ({ web3 }) => {
         setSysMsg(null);
     };
 
-    const showMessage = (msg, closingCondition = null) => {
-        if (msg === null && sysMsg !== null && sysMsg.closingCondition === closingCondition) {
-            setSysMsg(null);
-        } else if (msg !== null) {
-            setSysMsg(msg);
-        }
-    };
-
     const handleBlockScreen = (blocked) => {
         setScreenBlocked(blocked);
     };
@@ -82,13 +77,11 @@ const App = ({ web3 }) => {
         setHasAccountChanged(newHasAccountChanged);
     };
 
-
     return (
         <AppContext.Provider value={{
             web3,
             handleBlockScreen,
             sysMsg,
-            showMessage,
             handleDismissMessage,
             account,
             hasWalletAddress,
@@ -131,6 +124,7 @@ const App = ({ web3 }) => {
                             {/* </Segment> */}
                         </div>
                     </div>
+                    <ToastContainer autoClose={20000}/>
                 </div>
             }
             <Dimmer active={screenBlocked} style={{ zIndex: '9999' }}>

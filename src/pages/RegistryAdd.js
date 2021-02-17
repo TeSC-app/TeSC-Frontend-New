@@ -1,8 +1,10 @@
 import React, { useState, useContext, useEffect, useRef, useCallback } from 'react'
 import { Button, Grid, Icon, Label, Table } from 'semantic-ui-react';
+import { toast } from 'react-toastify';
+
 import AppContext from '../appContext';
 import ERCXXXImplementation from '../ethereum/build/contracts/ERCXXXImplementation.json';
-import { buildNegativeMsg, buildPositiveMsg } from "../components/FeedbackMessage";
+import { negativeMsg, positiveMsg } from "../components/FeedbackMessage";
 import {
     estimateRegistryActionCost
 } from '../utils/registry';
@@ -13,7 +15,7 @@ import SearchBox from '../components/SearchBox';
 import PageHeader from '../components/PageHeader';
 
 function RegistryAdd() {
-    const { web3, showMessage, handleBlockScreen, account } = useContext(AppContext)
+    const { web3, handleBlockScreen, account } = useContext(AppContext)
     const [contractAddress, setContractAddress] = useState('')
     const [costEstimatedAdd, setCostEstimatedAdd] = useState(0)
     const [tescContractOwner, setTescContractOwner] = useState(undefined)
@@ -94,7 +96,7 @@ function RegistryAdd() {
                     if (tescContractOwner && tescContractOwner.toLowerCase() === account) {
                         await registryContract.current.methods.add(tescDomain, contractAddress).send({ from: account, gas: '2000000' })
                             .on('receipt', async (txReceipt) => {
-                                showMessage(buildPositiveMsg({
+                                toast(positiveMsg({
                                     header: 'Entry added to the registry',
                                     msg: `TLS-endorsed Smart Contract with domain ${tescDomain} and ${contractAddress} was successfully added to the registry.
                                 You paid ${(txReceipt.gasUsed * web3.utils.fromWei((await web3.eth.getGasPrice()), 'ether')).toFixed(5)} ether.`
@@ -102,19 +104,19 @@ function RegistryAdd() {
                             })
                         setAdded(true)
                     } else {
-                        showMessage(buildNegativeMsg({
+                        toast(negativeMsg({
                             header: 'Unable to add entry to the registry',
                             msg: `The contract at address ${contractAddress} does not belong to your selected wallet address`
                         }))
                     }
                 } else {
-                    showMessage(buildNegativeMsg({
+                    toast(negativeMsg({
                         header: 'Unable to add entry to the registry',
                         msg: `The address ${contractAddress} has already been added to the registry`
                     }))
                 }
             } catch (err) {
-                showMessage(buildNegativeMsg({
+                toast(negativeMsg({
                     code: err.code,
                     header: 'Unable to add entry to the registry',
                     msg: `${!tescDomain ? 'Domain' : !contractAddress ? 'Contract address' : 'The input'} is empty or invalid`

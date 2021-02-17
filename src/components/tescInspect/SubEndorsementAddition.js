@@ -1,16 +1,17 @@
 import React, { useState, useContext, useCallback, useEffect, useRef } from 'react';
 import { Form, Label, Button, Segment, Header, Input, Divider, Icon, Ref, Popup, Checkbox } from 'semantic-ui-react';
+import { toast } from 'react-toastify';
 
 import TeSC from '../../ethereum/build/contracts/ERCXXXImplementation.json';
 import AppContext from '../../appContext';
-import { buildNegativeMsg } from "../FeedbackMessage";
+import { negativeMsg } from "../FeedbackMessage";
 
 import { isValidContractAddress } from '../../utils/tesc';
 
 
 
 const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
-    const { web3, showMessage, account, handleBlockScreen } = useContext(AppContext);
+    const { web3, account, handleBlockScreen } = useContext(AppContext);
 
     const [subendorsements, setSubendorsements] = useState(new Set());
     const [newSubendorsement, setNewSubendorsement] = useState('');
@@ -85,7 +86,7 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
             setSubendorsements(new Set(updatedSubendorsements));
             refresh();
         } catch (error) {
-            showMessage(buildNegativeMsg({
+            toast(negativeMsg({
                 header: `Unable to remove Subendorsement ${subendorsements[index]}`,
                 content: error.message
             }));
@@ -101,7 +102,7 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
             setSubendorsements(new Set([...subendorsements, newSubendorsement]));
             refresh();
         } catch (error) {
-            showMessage(buildNegativeMsg({
+            toast(negativeMsg({
                 header: `Unable to add Subendorsement ${newSubendorsement}`,
                 content: error.message
             }));

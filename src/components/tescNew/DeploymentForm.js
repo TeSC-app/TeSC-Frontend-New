@@ -1,5 +1,7 @@
 import React, { Fragment, useState, useContext, useCallback, useEffect, useRef } from 'react';
 import { Input, Form, Label, Button as BtnSuir, Segment, Popup, Radio, Header, TextArea, Divider, Icon, Grid, Dropdown } from 'semantic-ui-react';
+import { toast } from 'react-toastify';
+
 import Highlight from 'react-highlight.js';
 import hljs from 'highlight.js';
 import hljsSolidity from 'highlightjs-solidity';
@@ -20,7 +22,7 @@ import StepButton from '@material-ui/core/StepButton';
 
 
 import AppContext from '../../appContext';
-import { buildNegativeMsg, buildPositiveMsg } from "../FeedbackMessage";
+import { negativeMsg, positiveMsg } from "../FeedbackMessage";
 import FilePicker from '../FilePicker';
 import FingerprintSegment from './FingerprintSegment';
 import DeploymentOutput from './DeploymentOutput';
@@ -48,6 +50,7 @@ import {
 
 import { extractAxiosErrorMessage } from '../../utils/formatError';
 import axios from 'axios';
+import { PrivateKey } from '@fidm/x509';
 
 hljsSolidity(hljs);
 hljs.initHighlightingOnLoad();
@@ -73,7 +76,7 @@ const useStyles = makeStyles((theme) => ({
 
 
 const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomain='', onTescUpdated }) => {
-    const { web3, showMessage, handleBlockScreen, account } = useContext(AppContext);
+    const { web3, handleBlockScreen, account } = useContext(AppContext);
     
     const [contractAddress, setContractAddress] = useState('');
     const [futureContractAddress, setFutureContractAddress] = useState('');
@@ -151,7 +154,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
                 const payload = { address, domain: currentDomain, expiry: prevExpiry.current, flagsHex };
                 setSignature(await generateSignature(payload, prevPrivateKeyPEM.current));
             } catch (err) {
-                showMessage(buildNegativeMsg({
+                toast(negativeMsg({
                     code: err.code,
                     header: 'Unable to compute signature',
                     msg: err.message
@@ -160,7 +163,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
         } else if (!currentDomain || !prevExpiry.current) {
             setSignature('');
         }
-    }, [futureContractAddress, showMessage, web3]);
+    }, [futureContractAddress, web3]);
 
     const handleLoseDomainInputFocus = () => {
         if (fingerprint) {
@@ -190,6 +193,14 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
 
     const handlePickPrivateKey = (filename, content) => {
         setPrivateKeyFileName(filename);
+
+        // const privateKey = PrivateKey.fromPEM(content);
+        // if (!privateKey.dnsNames.includes(domain) && !privateKey.ipAddresses.includes(domain)) {
+            // throw new Error(`The selected certificate is not issued to domain ${domain.current}`);
+        // }
+        // console.log('privateKey', privateKey)
+        // console.log('privateKey.dnsNames', privateKey.dnsNames)
+        // console.log('privateKey.ipAddresses', privateKey.ipAddresses)
         setPrivateKeyPEM(content);
     };
 
@@ -202,7 +213,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
                 }
             });
         }catch(error){
-            showMessage(buildNegativeMsg({
+            toast(negativeMsg({
                 header: 'Unable to compile your file',
                 msg: "Please make sure to upload a valid file"
             }));
@@ -284,7 +295,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
                             setCostsEstimated(getEthRates(estCost));
                             
                         }catch(error){
-                            showMessage(buildNegativeMsg({
+                            toast(negativeMsg({
                                 header: 'Unable to estimate transaction cost',
                                 msg: "You probably entered invalid constructor parameters in the first step"
                             }));
@@ -295,31 +306,32 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
             } 
         })();
     }, [currentDomain, expiry, contractAddress, futureContractAddress, flags, signature, privateKeyPEM, computeSignature,
-        fingerprint, makeDeploymentTx, initInputs, makeUpdateTx, web3, constructorParameterValues, deploymentJson, showMessage]);
+        fingerprint, makeDeploymentTx, initInputs, makeUpdateTx, web3, constructorParameterValues, deploymentJson]);
 
 
     const validateEndorsement = async () => {
-        try {
-            const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/predeploy/validate`, {
-                params: { 
-                    domain,
-                    claim: getClaimString(), 
-                    signature
-                }
-            });
-
-            console.log(res.status);
-        } catch (err) {
-            throw err;
+        if(domain && expiry && signature) {
+            try {
+                const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/predeploy/validate`, {
+                    params: { 
+                        domain,
+                        claim: getClaimString(), 
+                        signature
+                    }
+                });
+    
+                console.log(res.status);
+            } catch (err) {
+                throw err;
+            }
         }
+        
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         handleBlockScreen(true);
         setIsMetamaskOpen(true);
-
-        showMessage(null);
 
         let success = false;
         if (currentDomain && expiry && signature) {
@@ -337,7 +349,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
                         setActiveStep(activeStep + 1);
                         success = true;
 
-                        showMessage(buildPositiveMsg({
+                        toast(positiveMsg({
                             header: 'Smart Contract successfully deployed',
                             msg: `TLS-endorsed Smart Contract deployed successully at address ${txReceipt.contractAddress}`
                         }));
@@ -357,7 +369,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
                     });
 
             } catch (error) {
-                showMessage(buildNegativeMsg({
+                toast(negativeMsg({
                     code: error.code,
                     header: 'Unable to deploy Smart Contract',
                     msg: extractAxiosErrorMessage({ error, subject: domain })
@@ -365,7 +377,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
                 console.log(error);
             }
         } else {
-            showMessage(buildNegativeMsg({
+            toast(negativeMsg({
                 header: 'Unable to deploy Smart Contract',
                 msg: `${!currentDomain ? 'Domain' : !expiry ? 'Expiry' : !signature ? 'Signature' : 'Some required input'} is empty`
             }));
@@ -516,14 +528,11 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
 
 
     const handleFlagsChange = (i, selected) => {
-        console.log('initInputs.flags', flagsToBytes24Hex(initInputs.flags));
         const newFlags = new BitSet(flags.flip(i).toString());
         setFlags(newFlags);
         if(i ===  FLAGS.DOMAIN_HASHED) {
             setCurrentDomain(domain && !selected ? web3.utils.sha3(domain) : domain)
         }
-        console.log('newFlags', flagsToBytes24Hex(newFlags));
-        console.log('initInputs.flags II', flagsToBytes24Hex(initInputs.flags));
     };
 
     const renderFlagCheckboxes = () => {
@@ -833,7 +842,6 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
 
                                     <TextArea
                                         style={{ wordBreak: 'break-all', minHeight: '7em' }}
-                                        placeholder
                                         value={signature}
                                         onChange={(e) => setSignature(e.target.value)}
                                     />
@@ -948,8 +956,6 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, innputOriginalDomai
         setCostsEstimated(null);
         setCostsPaid(null);
         setSigInputType(null);
-
-        showMessage(null);
     };
 
     const getCurrentStep = useCallback(() => {

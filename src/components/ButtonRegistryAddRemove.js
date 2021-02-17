@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { Popup, Button, Icon } from 'semantic-ui-react';
+import { toast } from 'react-toastify';
 
 import AppContext from '../appContext';
-import { buildNegativeMsg, buildPositiveMsg } from "./FeedbackMessage";
+import { negativeMsg, positiveMsg } from "./FeedbackMessage";
 import {
     addRemoveEntry,
     estimateRegistryActionCost,
@@ -14,7 +15,7 @@ import {
 } from '../utils/conversionRate';
 
 const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, verbose, onClick, style }) => {
-    const { web3, showMessage, handleBlockScreen, hasAccountChanged } = useContext(AppContext);
+    const { web3, handleBlockScreen, hasAccountChanged } = useContext(AppContext);
 
     const [isInRegistry, setIsInRegistry] = useState(false);
     const [costsEstimatedRegistryAction, setCostsEstimatedRegistryAction] = useState(0);
@@ -51,14 +52,14 @@ const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, verbose, on
         handleBlockScreen(true);
         try {
             const cb = (message) => {
-                showMessage(buildPositiveMsg(message));
+                toast(positiveMsg(message));
                 setIsInRegistry(!isInRegistry);
                 if(onClick) onClick(!isInRegistry)
             };
             await addRemoveEntry(isAdding, { web3, domain, contractAddress, cb });
 
         } catch (error) {
-            showMessage(buildNegativeMsg({
+            toast(negativeMsg({
                 header: 'Unable to add entry to the registry',
                 msg: error.message
             }));
