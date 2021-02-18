@@ -15,7 +15,7 @@ import TescDataTable from "../components/tesc/TescDataTable";
 import SubEndorsementAddition from "../components/tescInspect/SubEndorsementAddition";
 import DeploymentForm from "../components/tescNew/DeploymentForm";
 import { extractAxiosErrorMessage } from '../utils/formatError';
-import { getLocalTescs, save, toggleFavourite } from '../utils/storage';
+import { getLocalTesc, updateTeSC, toggleFavourite } from '../utils/storage';
 import { FLAGS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc';
 
 
@@ -35,7 +35,7 @@ const TeSCInspect = ({ location }) => {
     const [isTescUpdated, setIsTescUpdated] = useState(false);
     const [isVerificationRunning, setIsVerificationRunning] = useState(false);
     const locationStateAddress = useRef(null);
-    const localTescs = useRef({});
+    const localTesc = useRef(null);
     const hasSentVerifReq = useRef(false);
 
 
@@ -45,10 +45,11 @@ const TeSCInspect = ({ location }) => {
 
 
     const handleToggleFavourite = () => {
-        const updatedTescs = toggleFavourite({ account, contractAddress, domain: domainFromChain, expiry });
-        setIsFavourite(updatedTescs[contractAddress] ? updatedTescs[contractAddress].isFavourite : false);
-        localTescs.current = updatedTescs;
+        const updatedTesc = toggleFavourite(account, localTesc.current);
+        setIsFavourite(updatedTesc ? updatedTesc.isFavourite : false);
+        localTesc.current = updatedTesc;
     };
+
 
     const assignContractData = useCallback((contract) => {
         const flagsHex = contract.flags;
@@ -63,19 +64,28 @@ const TeSCInspect = ({ location }) => {
 
         setContractOwner(contract.owner);
 
-        if (!localTescs.current[contract.contractAddress]) {
-            const { subendorsements, ...rest } = contract;
-            localTescs.current[contract.contractAddress] = { ...rest, createdAt: moment().unix(), isFavourite: false };
-        }
+        const { subendorsements, ...rest } = contract;
+        localTesc.current = getLocalTesc(account, contract.contractAddress)
+
+        if(localTesc.current !== null) {
+            localTesc.current = { ...(localTesc.current), ...rest};
+        } else {
+            localTesc.current = { ...rest, createdAt: moment().unix(), isFavourite: false };
+        } 
 
         if (contract.owner.toLowerCase() === account.toLowerCase()) {
-            localTescs.current[contract.contractAddress].own = true;
-            save(localTescs.current, account);
+            localTesc.current.own = true;
+            localTesc.current.owner = account;
         }
 
+        if (localTesc.current.own || localTesc.current.isFavourite) {
+            updateTeSC(account, localTesc.current);
+        }
+        setIsFavourite(localTesc.current.isFavourite);
+        console.log('assignContractData localTesc.current', localTesc.current);
     }, [account]);
 
-    const verifyTesc = useCallback(async (address, originalDomain='', runManually = false) => {
+    const verifyTesc = useCallback(async (address, originalDomain = '', runManually = false) => {
         console.log('curVerifResult', curVerifResult);
         const isRepeated = curVerifResult
             && (curVerifResult.target === address)
@@ -118,7 +128,6 @@ const TeSCInspect = ({ location }) => {
                 if (result.endorsers && result.endorsers.length > 0) {
                     setEndorsers(result.endorsers);
                 } else if (result.contract) {
-                    // await fetchTescData(address);
                     assignContractData(result.contract);
                 } else {
                     throw new Error(`Unknow result from backend server: ${result}`);
@@ -139,7 +148,7 @@ const TeSCInspect = ({ location }) => {
             setIsVerificationRunning(false);
         }
         console.log('---------------------------------------------------------');
-            
+
     }, [curVerifResult, assignContractData]);
 
     useEffect(() => {
@@ -153,24 +162,23 @@ const TeSCInspect = ({ location }) => {
         setContractAddress(address);
         setLoading(true);
         if (isValidContractAddress(address)) {
-            setIsFavourite(localTescs.current[address] ? localTescs.current[address].isFavourite : false);
-            console.log('handleChangeAddress');
             await verifyTesc(address);
         }
         setLoading(false);
     }, [verifyTesc]);
 
     useEffect(() => {
-        if (Object.keys(localTescs.current).length === 0) {
-            localTescs.current = getLocalTescs(account);
-        }
+        // if (!localTesc.current) {
+        //     localTesc.current = getLocalTesc(account, contractAddress);
+        //     console.log('localTesc assigned');
+        // }
 
         if (location.state && location.state.contractAddress !== locationStateAddress.current) {
             handleChangeAddress(location.state.contractAddress);
             locationStateAddress.current = location.state.contractAddress;
         }
 
-    }, [account, location.state, handleChangeAddress, locationStateAddress, web3]);
+    }, [account, location.state, handleChangeAddress, locationStateAddress, web3, contractAddress]);
 
     const clearDisplayData = () => {
         setDomainFromChain('');
@@ -180,12 +188,13 @@ const TeSCInspect = ({ location }) => {
         setSignature('');
         setOriginalDomain('');
         setEndorsers(null);
+        localTesc.current = null;
     };
 
     const handleSubmitAddress = async (e) => {
         e.preventDefault();
         try {
-            if(isValidContractAddress(contractAddress, true)){
+            if (isValidContractAddress(contractAddress, true)) {
                 curVerifResult ? setCurVerifResult(null) : await verifyTesc(contractAddress, originalDomain, true);
                 clearDisplayData();
                 setLoading(true);
@@ -382,7 +391,7 @@ const TeSCInspect = ({ location }) => {
 
                         <TableOverview
                             cols={new Set([COL.DOMAIN, COL.ADDRESS, COL.EXPIRY, COL.VERIF, COL.FAV])}
-                            rowData={endorsers.map(({contract}) => ({contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, flags: contract.flags}))}
+                            rowData={endorsers.map(({ contract }) => ({ contractAddress: contract.contractAddress, domain: contract.domain, expiry: contract.expiry, flags: contract.flags }))}
                         />
                     </>
                 }

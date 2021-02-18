@@ -34,11 +34,11 @@ import {
     generateSignature,
     flagsToBytes24Hex,
     padToBytesX,
-    storeTesc,
     estimateDeploymentCost,
     formatClaim,
     FLAGS,
 } from '../../utils/tesc';
+import { getLocalTesc, storeNewTesc, updateTeSC } from '../../utils/storage';
 import {
     getTooltipForType,
     isEmptyValidInputForType,
@@ -350,20 +350,23 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                         success = true;
 
                         toast(positiveMsg({
-                            header: 'Smart Contract successfully deployed',
-                            msg: `TLS-endorsed Smart Contract deployed successully at address ${txReceipt.contractAddress}`
+                            header: `Smart Contract successfully ${!initInputs? 'deployed' : 'updated'}`,
+                            msg: `TLS-endorsed Smart Contract ${!initInputs? 'deployed' : 'updated'} successully at address ${futureContractAddress}`
                         }));
 
-                        storeTesc({
-                            account,
-                            claim: { 
-                                contractAddress: initInputs? contractAddress : txReceipt.contractAddress, 
-                                domain: currentDomain, 
-                                expiry,
-                                isFavourite: false,
-                                isInRegistry: false
-                            }
-                        });
+                        if(!initInputs) {
+                            storeNewTesc({
+                                account,
+                                claim: { 
+                                    contractAddress: futureContractAddress, 
+                                    domain: currentDomain, 
+                                    expiry,
+                                }
+                            });
+                        } else {
+                            const tesc = getLocalTesc(account, contractAddress);
+                            updateTeSC(account, {...tesc, domain: currentDomain, expiry, fingerprint, flags: flagsToBytes24Hex(flags), signature})
+                        }
 
                         if (onTescUpdated){
                             onTescUpdated(true)
