@@ -275,17 +275,17 @@ function TableOverview(props) {
 
         setSubdomainFilter(subdomainFilter.map(subdomainFilter => ({ ...subdomainFilter, isFiltered: false })))
 
-        if (cols.has(COL.VERIF) && cols.has(COL.FAV) && !cols.has(COL.TSC)) {
+        if (hasAllColumns(cols)) {
             setDisplayedEntries(loadStorage(account).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setTescs(loadStorage(account))
-            if (cols.has(COL.DOMAIN) && !hasAllColumns(cols)) {
-                handleIsExploringDomain(false)
-            }
         } else if (cols.has(COL.TSC)) {
-            handleIsExploringDomain(false)
             setDisplayedEntries(tescsWithOccurances.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setTescsWithOccurancesNew(tescsWithOccurances)
+        } else {
+            setDisplayedEntries(rowData.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+            setTescs(rowData)
         }
+        if (typeof handleIsExploringDomain !== 'undefined') handleIsExploringDomain(false)
     }
 
     const handleFiltersText = (e, { name, value }) => {
