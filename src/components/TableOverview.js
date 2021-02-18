@@ -13,7 +13,7 @@ import { forEach } from 'lodash';
 
 import { loadStorage } from '../utils/storage';
 
-const ENTRIES_PER_PAGE = 5;
+export const ENTRIES_PER_PAGE = 5;
 
 export const COL = {
     DOMAIN: 'Domain',
@@ -119,7 +119,9 @@ function TableOverview(props) {
     }, [rowData])
 
     const handleChangeTescs = (tesc) => {
-        setTescs(loadStorage(account));
+        if (hasAllColumns(cols)) {
+            setTescs(loadStorage(account))
+        } else setTescs(rowData.filter(entry => entry.domain.includes(domain)));
     };
 
     const changePage = (event, { activePage }) => {
@@ -135,7 +137,7 @@ function TableOverview(props) {
 
     const renderRows = () => {
         if (displayedEntries && !cols.has(COL.TSC)) {
-            return displayedEntries.filter(tesc => tesc.isFavourite || tesc.own).map((tesc) => (
+            return displayedEntries.filter(tesc => hasAllColumns(cols) ? tesc.isFavourite || tesc.own : true).map((tesc) => (
                 <TableEntry key={tesc.contractAddress}
                     tesc={tesc}
                     onTescsChange={handleChangeTescs}
@@ -144,7 +146,7 @@ function TableOverview(props) {
                 />
             ));
         } else if (displayedEntries && cols.has(COL.TSC)) {
-            return tescsWithOccurancesNew.filter(tesc => tesc.isFavourite || tesc.own).map((entry) => (
+            return tescsWithOccurancesNew.map((entry) => (
                 <TableEntry key={entry.domain}
                     tesc={entry}
                     handleSearchInput={handleSearchInput}
@@ -168,7 +170,7 @@ function TableOverview(props) {
             handleIsExploringDomain(true);
             //for showing domain-specific analytics
             handleDomainFilter(domain)
-            const filteredRowData = loadStorage(account).filter(entry => entry.domain.includes(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry)
+            const filteredRowData = rowData.filter(entry => entry.domain.includes(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry)
             setTescs(filteredRowData);
         }
         handleLoading(false);
@@ -344,9 +346,6 @@ function TableOverview(props) {
                         handleDomainFilter(filterTypes.domainFilter.domainFilter)
                     }
                 }
-                break
-            case 'SUBDOMAIN':
-
                 break
             case 'EXPIRY':
                 setTescs(tescs.filter(tesc => tesc.expiry >= filterTypes.expiryFromFilter.expiryFromFilter && tesc.expiry <= filterTypes.expiryToFilter.expiryToFilter))

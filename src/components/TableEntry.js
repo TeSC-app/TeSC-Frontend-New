@@ -63,7 +63,7 @@ function TableEntry(props) {
 
     const handleToggleFavourites = () => {
         toggleFavourite({ account, contractAddress, domain, expiry });
-        onTescsChange();
+        if (typeof onTescsChange !== 'undefined') onTescsChange();
         setIsFavourite(!isFavourite);
     };
 
@@ -128,7 +128,7 @@ function TableEntry(props) {
                     <span>
                         {own && hasAllColumns(cols) ?
                             <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="purple" />} /> :
-                            <Popup inverted content="You favorited this contract" trigger={<Icon className="user-icon" name="star" color="yellow" />} />
+                            !own && hasAllColumns(cols) ? <Popup inverted content="You favorited this contract" trigger={<Icon className="user-icon" name="star" color="yellow" />} /> : null
                         }
                         <LinkTescInspect contractAddress={contractAddress} />
                     </span> : renderDomainForRegistryInspect()
