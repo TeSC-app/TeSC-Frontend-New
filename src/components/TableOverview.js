@@ -138,7 +138,7 @@ function TableOverview(props) {
             return displayedEntries.filter(tesc => tesc.isFavourite || tesc.own).map((tesc) => (
                 <TableEntry key={tesc.contractAddress}
                     tesc={tesc}
-                    onTescsChange={handleChangeTescs}
+                    onTescChange={handleChangeTescs}
                     cols={cols}
                     setVerificationInTescs={setVerificationInTescs}
                 />
@@ -273,8 +273,9 @@ function TableOverview(props) {
         setSubdomainFilter(subdomainFilter.map(subdomainFilter => ({...subdomainFilter, isFiltered: false})))
 
         if (cols.has(COL.VERIF) && cols.has(COL.FAV) && !cols.has(COL.TSC)) {
-            setDisplayedEntries(loadStorage(account).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(loadStorage(account))
+            const storage = loadStorage(account)
+            setDisplayedEntries(storage.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+            setTescs(storage)
             if (cols.has(COL.DOMAIN) && !hasAllColumns(cols)) {
                 handleIsExploringDomain(false)
             }

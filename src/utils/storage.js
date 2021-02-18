@@ -3,10 +3,13 @@ import web3 from 'web3';
 
 let localTescs = {};
 
+const CREATE = 'create';
+const UPDATE = 'update';
+const DELETE = 'delete';
+
 export const loadStorage = (walletAddress) => {
     // const walletAddress = web3.currentProvider.selectedAddress;
     if (!walletAddress) return [];
-    console.log('loadStorage of ', walletAddress);
     const storage = JSON.parse(localStorage.getItem(web3.utils.toChecksumAddress(walletAddress)));
     return storage ? storage : [];
 };
@@ -20,7 +23,7 @@ export const loadLocalTescObjects = (walletAddress) => {
     return localTescs;
 };
 
-export const getLocalTescs = (walletAddress) => {
+const getLocalTescs = (walletAddress) => {
     if (Object.keys(localTescs).length === 0)
         return loadLocalTescObjects(walletAddress);
 
@@ -44,10 +47,10 @@ export const updateTeSC = (account, localTesc) => {
 export const storeNewTesc = ({ account, claim }) => {
     const { contractAddress, domain, expiry } = claim;
     const newTesc = { contractAddress, domain, expiry, isFavourite: false, own: true, verified: false, createdAt: moment().unix() };
-    updateLocalStorage(account, newTesc);
+    updateLocalStorage(account, newTesc, CREATE);
 };
 
-const updateLocalStorage = (account, tesc) => {
+const updateLocalStorage = (account, tesc, op = UPDATE) => {
     let tescs = loadStorage(account);
     if (!tescs) {
         tescs = [];
@@ -59,36 +62,38 @@ const updateLocalStorage = (account, tesc) => {
             break;
         }
     }
-    if (foundAt < 0) {
+    if (foundAt < 0 && op === CREATE) {
         tescs.push(tesc);
-    } else {
-        console.log('foundAt', foundAt);
-        console.log('newTesc', tesc);
+    } else if (op === DELETE) {
+        tescs.splice(foundAt, 1);
+    } else if (op === UPDATE) {
         tescs[foundAt] = tesc;
+    } else {
+        console.log('Wrong operator!');
     }
     localStorage.setItem(account, JSON.stringify(tescs));
+    if (op === DELETE) return null;
+    return tesc;
 };
 
-export const saveArray = (tescArray, account) => {
-    localStorage.setItem(account, JSON.stringify(tescArray));
-};
+
 
 export const toggleFavourite = (account, tesc, cb = undefined) => {
-    const localTescs = getLocalTescs(account);
     const { contractAddress } = tesc;
-    let found = localTescs && localTescs[contractAddress];
+    let localTesc = getLocalTesc(account, contractAddress);
+    let found = !!localTesc;
+    let updatedTesc;
     if (found) {
-        localTescs[contractAddress].isFavourite = !localTescs[contractAddress].isFavourite;
-        if (!localTescs[contractAddress].isFavourite && !localTescs[contractAddress].own) {
+        localTesc.isFavourite = !localTesc.isFavourite;
+        if (!localTesc.isFavourite && !localTesc.own) {
             console.log('deleting ', contractAddress);
-            delete localTescs[contractAddress];
+            updateLocalStorage(account, localTesc, DELETE);
+        } else {
+            updatedTesc = updateLocalStorage(account, localTesc, UPDATE);
         }
     } else {
-        localTescs[contractAddress] = { ...tesc, isFavourite: true, createdAt: moment().unix() };
+        updatedTesc = updateLocalStorage(account, { ...tesc, isFavourite: true, createdAt: moment().unix() }, CREATE);
     }
-    console.log('localTescs ', localTescs);
-
-    localStorage.setItem(account, JSON.stringify(Object.values(localTescs)));
-    if (cb) cb(localTescs[contractAddress]);
-    return localTescs[contractAddress];
+    if (cb) cb(updatedTesc);
+    return updatedTesc;
 };

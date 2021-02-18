@@ -45,6 +45,7 @@ const TeSCInspect = ({ location }) => {
 
 
     const handleToggleFavourite = () => {
+        console.log('localTesc.current', localTesc.current)
         const updatedTesc = toggleFavourite(account, localTesc.current);
         setIsFavourite(updatedTesc ? updatedTesc.isFavourite : false);
         localTesc.current = updatedTesc;
@@ -168,10 +169,10 @@ const TeSCInspect = ({ location }) => {
     }, [verifyTesc]);
 
     useEffect(() => {
-        // if (!localTesc.current) {
-        //     localTesc.current = getLocalTesc(account, contractAddress);
-        //     console.log('localTesc assigned');
-        // }
+        if (!localTesc.current) {
+            localTesc.current = getLocalTesc(account, contractAddress);
+            console.log('localTesc assigned');
+        }
 
         if (location.state && location.state.contractAddress !== locationStateAddress.current) {
             handleChangeAddress(location.state.contractAddress);
