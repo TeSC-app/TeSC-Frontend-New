@@ -253,6 +253,7 @@ function TableOverview(props) {
     }
 
     const clearFilters = () => {
+        console.log(filterTypes)
         setFilterTypes({
             isOwnFilter: { isOwnFilter: true, isFiltered: false },
             isNotOwnFilter: { isNotOwnFilter: true, isFiltered: false },
@@ -289,15 +290,6 @@ function TableOverview(props) {
         setFilterTypes(prevState => ({ ...prevState, [name]: { [name]: value, isFiltered: false } }))
     }
 
-    const handleFiltersCheckboxSubdomain = (e, subdomain, checked, index) => {
-        let items = [...subdomainFilter]
-        let item = { ...items[index] }
-        item.subdomain = subdomain
-        item.isChecked = !checked
-        items[index] = item
-        setSubdomainFilter(items)
-    }
-
     const handleFiltersDate = (date, modifier, dayPickerInput) => {
         const name = dayPickerInput.props.inputProps.name
         setFilterTypes(prevState => ({ ...prevState, [name]: { [name]: convertToUnix(date), isFiltered: false } }))
@@ -316,31 +308,45 @@ function TableOverview(props) {
         setTescs(tescs.filter(tesc => filterForCheckboxes(tesc[tescProperty], optionA, optionB, filterType.includes('OWN') ? account : true)))
     }
 
+    const filterForSubdomain = (e, subdomain, checked, index) => {
+        let items = [...subdomainFilter]
+        let item = { ...items[index] }
+        item.subdomain = subdomain
+        item.isChecked = !checked
+        item.isFiltered = true
+        items[index] = item
+        setTescs(tescs.filter(tesc => item.isChecked && extractSubdomainFromDomain(tesc.domain) === subdomain))
+        setSubdomainFilter(items)
+    }
+
     const filterEntries = (filterType, name, checked) => {
         switch (filterType) {
             case 'OWN':
                 changeCheckboxFilters(name, checked, filterType, 'owner')
                 break
             case 'ADDRESS':
-                setTescs(tescs.filter(tesc => tesc.contractAddress === filterTypes.contractAddressFilter.contractAddressFilter))
-                setFilterTypes(prevState => ({
-                    ...prevState,
-                    'contractAddressFilter': { 'contractAddressFilter': filterTypes.contractAddressFilter.contractAddressFilter, isFiltered: true }
-                }))
+                if (filterTypes.contractAddressFilter.contractAddressFilter !== '') {
+                    setTescs(tescs.filter(tesc => tesc.contractAddress === filterTypes.contractAddressFilter.contractAddressFilter))
+                    setFilterTypes(prevState => ({
+                        ...prevState,
+                        'contractAddressFilter': { 'contractAddressFilter': filterTypes.contractAddressFilter.contractAddressFilter, isFiltered: true }
+                    }))
+                }
                 break
             case 'DOMAIN':
-                if (cols.has(COL.TSC)) setTescsWithOccurancesNew(tescsWithOccurances.filter(tesc => tesc.domain.includes(filterTypes.domainFilter.domainFilter)))
-                else setTescs(tescs.filter(tesc => tesc.domain.includes(filterTypes.domainFilter.domainFilter)))
-                setFilterTypes(prevState => ({
-                    ...prevState, 'domainFilter': { 'domainFilter': filterTypes.domainFilter.domainFilter, isFiltered: true }
-                }))
-                if (cols.has(COL.DOMAIN) && !hasAllColumns(cols) && typeof handleDomainFilter !== 'undefined') {
-                    handleDomainFilter(filterTypes.domainFilter.domainFilter)
+                if (filterTypes.domainFilter.domainFilter !== '') {
+                    if (cols.has(COL.TSC)) setTescsWithOccurancesNew(tescsWithOccurances.filter(tesc => tesc.domain.includes(filterTypes.domainFilter.domainFilter)))
+                    else setTescs(tescs.filter(tesc => tesc.domain.includes(filterTypes.domainFilter.domainFilter)))
+                    setFilterTypes(prevState => ({
+                        ...prevState, 'domainFilter': { 'domainFilter': filterTypes.domainFilter.domainFilter, isFiltered: true }
+                    }))
+                    if (cols.has(COL.DOMAIN) && !hasAllColumns(cols) && typeof handleDomainFilter !== 'undefined') {
+                        handleDomainFilter(filterTypes.domainFilter.domainFilter)
+                    }
                 }
                 break
             case 'SUBDOMAIN':
-                setTescs(tescs.filter(tesc => subdomainFilter.some(subdomainFilter => subdomainFilter.isChecked === true && extractSubdomainFromDomain(tesc.domain) === subdomainFilter.subdomain)))
-                setSubdomainFilter(subdomainFilter.map(subdomainFilter => ({ ...subdomainFilter, isFiltered: true })))
+
                 break
             case 'EXPIRY':
                 setTescs(tescs.filter(tesc => tesc.expiry >= filterTypes.expiryFromFilter.expiryFromFilter && tesc.expiry <= filterTypes.expiryToFilter.expiryToFilter))
@@ -386,7 +392,7 @@ function TableOverview(props) {
                             <Form.Checkbox className='checkbox__label' name={subdomainFilter.subdomain}
                                 label={subdomainFilter.subdomain}
                                 checked={subdomainFilter.isChecked}
-                                onChange={(e) => handleFiltersCheckboxSubdomain(e, subdomainFilter.subdomain, subdomainFilter.isChecked, index)} />
+                                onChange={(e) => filterForSubdomain(e, subdomainFilter.subdomain, subdomainFilter.isChecked, index)} />
                         ))}
                     </Form>
                 </Dropdown.Menu>
@@ -478,8 +484,9 @@ function TableOverview(props) {
     }
 
     const renderFilteringDropdownTextfield = (filterType) => {
-        const placeholder = filterType === 'DOMAIN' ? 'gaulug.de' : 'ADDRESS' ? '0xdF0d...' : ''
+        const placeholder = filterType === 'DOMAIN' ? 'example.com' : 'ADDRESS' ? '0xdF0d...' : ''
         const title = filterType === 'DOMAIN' ? 'Domain' : 'ADDRESS' ? 'Address' : ''
+        const value = filterType === 'DOMAIN' ? filterTypes.domainFilter.domainFilter : 'ADDRESS' ? filterTypes.contractAddressFilter.contractAddressFilter : ''
         const inputPropName = filterType === 'DOMAIN' ? 'domainFilter' : 'ADDRESS' ? 'contractAddressFilter' : ''
         const classesDropdown = filterType === 'DOMAIN' && filterTypes.domainFilter.isFiltered ? 'icon dropdown-filters-filtered' :
             filterType === 'DOMAIN' && !filterTypes.domainFilter.isFiltered ? 'icon dropdown-filters' :
@@ -493,8 +500,8 @@ function TableOverview(props) {
                 className={classesDropdown}
                 onBlur={() => filterEntries(filterType)}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
-                    <Form>
-                        <Form.Input placeholder={placeholder} name={inputPropName} onChange={handleFiltersText} />
+                    <Form onSubmit={() => filterEntries(filterType)}>
+                        <Form.Input placeholder={placeholder} name={inputPropName} value={value} onChange={handleFiltersText} />
                     </Form>
                 </Dropdown.Menu>
             </Dropdown>)
