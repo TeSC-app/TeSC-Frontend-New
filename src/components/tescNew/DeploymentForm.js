@@ -1,10 +1,11 @@
 import React, { Fragment, useState, useContext, useCallback, useEffect, useRef } from 'react';
-import { Input, Form, Label, Button as BtnSuir, Segment, Popup, Radio, Header, TextArea, Divider, Icon, Grid, Dropdown } from 'semantic-ui-react';
+import { Input, Form, Label, Button as BtnSuir, Segment, Popup, Radio, Header, TextArea, Divider, Icon, Grid, Dropdown, Button } from 'semantic-ui-react';
 import { toast } from 'react-toastify';
 
 import Highlight from 'react-highlight.js';
 import hljs from 'highlight.js';
 import hljsSolidity from 'highlightjs-solidity';
+import fileDownload from 'js-file-download';
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import { formatDate, parseDate } from 'react-day-picker/moment';
@@ -107,8 +108,6 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
 
     const [deploymentJson, setDeploymentJson] = useState(null);
     const [constructorParameters, setConstructorParameters] = useState(null);
-    const [constructorParameterValues, setConstructorParameterValues] = useState([]);
-    const [allParamsCorrectlyEntered, setAllParamsCorrectlyEntered] = useState(null);
     const [contractsInFile, setContractsInFile] = useState(null);
     const [selectedContract, setSelectedContract] = useState(null);
 
@@ -173,10 +172,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
         
     }
 
-    const makeDeploymentTx = useCallback(async (currentDomain, json, constructorParameterValues) => {
+    const makeDeploymentTx = useCallback(async (currentDomain, json, parameterValuesForDeployment) => {
         return await new web3.eth.Contract(json.abi).deploy({
             data: json.bytecode,
-            arguments: [currentDomain, prevExpiry.current, flagsToBytes24Hex(prevFlags.current), padToBytesX(prevFingerprint.current, 32), prevSignature.current].concat(constructorParameterValues)
+            arguments: [currentDomain, prevExpiry.current, flagsToBytes24Hex(prevFlags.current), padToBytesX(prevFingerprint.current, 32), prevSignature.current].concat(parameterValuesForDeployment)
         });
     }, [web3.eth.Contract]);
 
@@ -205,6 +204,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
     };
 
     const handlePickSolidityFile = async (filename, content) => {
+        setConstructorParameters(null);
         setSelectedContract(null);
         try{
             await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/compile`, {
@@ -213,6 +213,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                 }
             });
         }catch(error){
+            setContractsInFile(null);            
             toast(negativeMsg({
                 header: 'Unable to compile your file',
                 msg: "Please make sure to upload a valid file"
@@ -288,7 +289,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
 
                 if (signature) {
                     console.log(5)
-                    const tx = !initInputs ? await makeDeploymentTx(currentDomain, deploymentJson, constructorParameterValues) : await makeUpdateTx(currentDomain);
+                    const tx = !initInputs ? await makeDeploymentTx(currentDomain, deploymentJson, buildConstructorParameterValuesForDeployment(constructorParameters)) : await makeUpdateTx(currentDomain);
                     if (!initInputs || contractAddress) {
                         try{
                             const estCost = await estimateDeploymentCost(web3, tx);
@@ -306,7 +307,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
             } 
         })();
     }, [currentDomain, expiry, contractAddress, futureContractAddress, flags, signature, privateKeyPEM, computeSignature,
-        fingerprint, makeDeploymentTx, initInputs, makeUpdateTx, web3, constructorParameterValues, deploymentJson]);
+        fingerprint, makeDeploymentTx, initInputs, makeUpdateTx, web3, constructorParameters, deploymentJson]);
 
 
     const validateEndorsement = async () => {
@@ -337,7 +338,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
         if (currentDomain && expiry && signature) {
             try {
                 await validateEndorsement();
-                const tx = !initInputs ? await makeDeploymentTx(currentDomain, deploymentJson, constructorParameterValues) : await makeUpdateTx(currentDomain);
+                const tx = !initInputs ? await makeDeploymentTx(currentDomain, deploymentJson, buildConstructorParameterValuesForDeployment(constructorParameters)) : await makeUpdateTx(currentDomain);
                 console.log("tx", tx)
                 await tx.send({ from: account, gas: '3000000' })
                     .on('receipt', async (txReceipt) => {
@@ -394,7 +395,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
 
     const renderConstructorParameterInputFields = () => {
         return constructorParameters.map((constructorParameter, i) => 
-            <Form.Group inline>
+            <Form.Group inline key={"constructorParam"+i}>
                 <label>
                     {constructorParameter.type} {constructorParameter.name} 
                     {!isEmptyValidInputForType(constructorParameter.type) && <span style={{ color: 'red' }}>*</span>} 
@@ -405,27 +406,31 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                     />
                 </label>
                 <Input
-                    // TODO how does interaction between value and onChange work?
-                    //value={constructorParameterValues[i].toString()}
-                    onChange={e => handleTextChange(e.target.value, i, constructorParameter.type)}
+                    defaultValue={constructorParameters[i].value || ''}
+                    onBlur={e => constructorParameters[i].value = e.target.value}
                 />
             </Form.Group>
-        )
-    }
-
-    const handleTextChange = (value, index, type) => {
-        const updatedValues = constructorParameterValues;
-        if(type.endsWith("[]")){
-            if(value === ""){
-                updatedValues[index] = [];
-            }else{
-                updatedValues[index] = value.split(',');
-            }
-        }else{
-            updatedValues[index] = value;
+            )
         }
-        setConstructorParameterValues(updatedValues);
-        setAllParamsCorrectlyEntered(validateConstructorParameterInput(constructorParameters, constructorParameterValues));
+        
+    const buildConstructorParameterValuesForDeployment = (parameters) => {
+        if(parameters === null){
+            return [];
+        }
+        const valuesForDeployment = [];
+        parameters.forEach(parameter => {
+            const value = parameter.value || '';
+            if(parameter.type.endsWith("[]")){
+                if(value === ""){
+                    valuesForDeployment.push([]);
+                }else{
+                    valuesForDeployment.push(value.split(','));
+                }
+            }else{
+                valuesForDeployment.push(value);
+            }
+        });
+        return valuesForDeployment;
     }
 
     const isHashMatchedOriginalDomain = (hash, original) => {
@@ -459,8 +464,8 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
             setContractsInFile(null);
             setSelectedContract(null);
             setConstructorParameters(null);
-            setConstructorParameterValues([]);
-            setAllParamsCorrectlyEntered(null);
+        }else{
+            setDeploymentJson(null);
         }
     }
 
@@ -479,18 +484,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
             }
         });
         const constructorParamsFromRes = constructorParametersRes.data.constructorParameters;
-        setConstructorParameters(constructorParamsFromRes);
-
-        // constructor parameters initial values
-        const initialConstructorParameterValues = [];
-        constructorParamsFromRes.forEach((parameter) => {
-            if(parameter.type.endsWith("[]")){
-                initialConstructorParameterValues.push([]);
-            }else{
-                initialConstructorParameterValues.push("");
-            } 
-        });
-        setConstructorParameterValues(initialConstructorParameterValues);
+        // add value to each entry
+        const constructorParamsWithValue = [];
+        constructorParamsFromRes.forEach(entry => constructorParamsWithValue.push({...entry, value: ''}));
+        setConstructorParameters(constructorParamsWithValue);
         
         // endorsed solidity code
         const addInterfaceRes = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/solidityCode/addInterface`, {
@@ -509,7 +506,23 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                 selectedContract: value
             }
         });
-        setDeploymentJson(compileRes.data.json);
+        if(!compileRes.data.json){
+            compileRes.data.compileErrors.forEach(err => {
+                if(err.severity === 'error'){
+                    toast(negativeMsg({
+                        header: "Compilation of endorsed contract failed",
+                        msg: err.message + ' (' + err.sourceLocation.file + ": " + err.sourceLocation.start + "-" + err.sourceLocation.end + ")"
+                    }));
+                }             
+            });
+            setDeploymentJson(null);
+        }else{
+            setDeploymentJson(compileRes.data.json);
+        }
+    }
+
+    const downloadEndorsedSolidityCode = () => {
+        fileDownload(endorsedSolidityCode, "Endorsed" + solidityFileName);
     }
 
     const handleTextCopy = (e) => {
@@ -619,7 +632,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                                     <FilePicker
                                         label='Choose solidity file'
                                         onPickFile={handlePickSolidityFile}
-                                        input={{fileName:solidityFileName, content: solidityCode}}
+                                        input={{fileName:solidityFileName, content: solidityCode, acceptedFiles:".sol"}}
                                     />
                                     <div><em>Pick the solidity file with the Smart Contract that you want to endorse and deploy</em></div>
                                 </div>     
@@ -638,6 +651,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                                     </label>
                                     <Dropdown 
                                         placeholder='Select Smart Contract'
+                                        value={selectedContract || null}
                                         fluid
                                         selection
                                         onChange={handleContractSelectedFromDropdown}
@@ -657,15 +671,20 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                                             content={solidityFileName + ' with endorsed ' + selectedContract}
                                             trigger={<Icon name='question circle' />}
                                         />
+                                        <Button circular icon size='mini' onClick={downloadEndorsedSolidityCode}>
+                                            <Icon name='download' />     
+                                        </Button>                                                                      
                                     </label>
-                                    <Highlight language='solidity'>
-                                        {endorsedSolidityCode}
-                                    </Highlight>
+                                    <div style={{maxHeight:"300px", overflowY:"auto"}}>
+                                        <Highlight language='solidity'>                         
+                                            {endorsedSolidityCode}                              
+                                        </Highlight>      
+                                    </div>                         
                                 </Form.Field>      
                                 </div>   
                             )}
 
-                            {(constructorParameters && constructorParameters.length > 0) && (
+                            {(constructorParameters && constructorParameters.length > 0 && deploymentJson !== null) && (
                                <div style={{ paddingTop: '20px' }}>
                                     <label>
                                         <b>Values for constructor parameters</b> <span style={{ color: 'red' }}>*</span>
@@ -680,7 +699,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                             )}
                         </>
                     ),
-                    completed: deploymentType === "reference" || (selectedContract && constructorParameters && (constructorParameters.length === 0 || allParamsCorrectlyEntered && allParamsCorrectlyEntered === true)),
+                    completed: deploymentJson !== null,
                     reachable: true
                 }
             case 1:
@@ -815,7 +834,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                                             label='Choose certificate  key'
                                             onPickFile={handlePickPrivateKey}
                                             isDisabled={!currentDomain || !expiry}
-                                            input={{fileName:privateKeyFileName, content: privateKeyPEM}}
+                                            input={{fileName:privateKeyFileName, content: privateKeyPEM, acceptedFiles: ".pem, .txt, .cer, .cert, .key"}}
                                         />
                                     </div>
                                     <div><em>Pick the certificate private key file to automatically compute the signature</em></div>
@@ -931,6 +950,9 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
     };
 
     const handleNext = () => {
+        if(constructorParameterValuesInvalid()){
+            return;
+        }
         console.log('fingerprint', fingerprint)
         const newActiveStep =
             isLastStep() && !allStepsCompleted()
@@ -947,8 +969,25 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
     };
 
     const handleStep = (step) => () => {
+        if(constructorParameterValuesInvalid()){
+            return;
+        }
         setActiveStep(step);
     };
+
+    const constructorParameterValuesInvalid = () => {
+        if(activeStep === 0 && constructorParameters && constructorParameters.length !== 0){
+            const invalidInputIndex = validateConstructorParameterInput(constructorParameters);
+            if(invalidInputIndex !== -1){
+                toast(negativeMsg({
+                    header: 'Invalid constructor parameter value',
+                    msg: "Please enter a valid value for parameter " + constructorParameters[invalidInputIndex].type + " " + constructorParameters[invalidInputIndex].name
+                }));
+                return true;
+            }
+        }
+        return false;
+    }
 
     const handleReset = () => {
         setActiveStep(0);

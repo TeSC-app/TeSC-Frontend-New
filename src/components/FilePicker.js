@@ -6,6 +6,7 @@ const FilePicker = ({ label, onPickFile, isDisabled = false, input }) => {
     const fileInputRef = useRef(null);
     const [fileName, setFileName] = useState(input && input.fileName ? input.fileName : '');
     const [content, setContent] = useState(input && input.content ? input.content : '');
+    const [acceptedFiles, setAcceptedFiles] = useState(input && input.acceptedFiles ? input.acceptedFiles : ".pem, .txt, .cer, .cert, .key, .sol");
 
     /* https://stackoverflow.com/a/56377153 */
     const handlePickFile = (event) => {
@@ -37,7 +38,7 @@ const FilePicker = ({ label, onPickFile, isDisabled = false, input }) => {
                 ref={fileInputRef}
                 type="file"
                 onChange={handlePickFile}
-                accept=".pem, .txt, .cer, .cert, .key, .sol"
+                accept={acceptedFiles}
                 hidden
             />
             {!!fileName && <Label basic pointing='left'>{fileName}</Label>}
