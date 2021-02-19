@@ -2,9 +2,15 @@ import React, { useState, useEffect } from 'react';
 import classNames from 'classnames';
 import { SectionSplitProps } from '../../utils/SectionProps';
 import SectionHeader from './partials/SectionHeader';
-import Image from '../elements/Image';
+import { Image } from 'semantic-ui-react'
+import { Link } from 'react-router-dom';
 
 import '../../assets/scss/landingPage.scoped.scss';
+import analyticsImg from '../../assets/images/analytics.png';
+import dashboardImg from '../../assets/images/dashboard.png';
+import deployImg from '../../assets/images/deploy.png';
+import verifyImg from '../../assets/images/verify.png';
+import overviewImg from '../../assets/images/overview.png';
 
 const propTypes = {
   ...SectionSplitProps.types
@@ -64,9 +70,9 @@ const FeaturesSplit = ({
   useEffect(() => {
     (async () => {
       const imgs = [];
-      for (let i = 0; i < 3; i++) {
-        imgs[i] = (await import(`./../../assets/images/features-split-image-0${i + 1}.png`)).default;
-        console.log(i, imgs[i]);
+      for (let i = 0; i < 4; i++) {
+        //imgs[i] = (await import(`./../../assets/images/features-split-image-0${i + 1}.png`)).default;
+        //console.log(i, imgs[i]);
       }
       setImages(imgs);
       console.log('images loaded');
@@ -117,17 +123,9 @@ const FeaturesSplit = ({
                 </p>
                 <br />
               </div>
-              <div className={
-                classNames(
-                  'split-item-image center-content-mobile reveal-from-bottom',
-                  imageFill && 'split-item-image-fill'
-                )}
+              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}
                 data-reveal-container=".split-item">
-                <Image
-                  src={images[0]}
-                  alt="Features split 01"
-                  width={528}
-                  height={396} />
+                <Image src={overviewImg} size="large"/>
               </div>
             </div>
           </div>
@@ -139,39 +137,92 @@ const FeaturesSplit = ({
             <div className="split-item">
               <div className="split-item-content center-content-mobile reveal-from-right" data-reveal-container=".split-item">
                 <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
-                  Lightning fast workflow
+                  Dashboard
                   </div>
                 <h3 className="mt-0 mb-12">
-                  Data-driven insights
+                  Overview over your contracts
                   </h3>
                 <p className="m-0">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                  </p>
+                  The dashboard helps you to keep track of your deployed contracts. Check the verification status, 
+                  set favourites, and use the diverse filter options!
+                  <br/><br/>
+               
+                  <Link to="/dashboard">
+                    <span className="text-color-primary"><b>Go to dashboard</b></span> 📰         
+                  </Link>  
+                </p>
               </div>
-              <div className={
-                classNames(
-                  'split-item-image center-content-mobile reveal-from-bottom',
-                  imageFill && 'split-item-image-fill'
-                )}
+              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}   
                 data-reveal-container=".split-item">
-                <Image
-                  src={images[1]}
-                  alt="Features split 02"
-                  width={528}
-                  height={396} />
+                <Image src={dashboardImg} size="large"/>
               </div>
             </div>
 
             <div className="split-item">
               <div className="split-item-content center-content-mobile reveal-from-left" data-reveal-container=".split-item">
                 <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
-                  Lightning fast workflow
+                  Create & Deploy TeSC
                   </div>
                 <h3 className="mt-0 mb-12">
-                  Data-driven insights
+                  Guided deployment process
+                  </h3>
+                <p className="m-0">  
+                  Six easy to perform steps guide you through the endorsement and deployment of your contract.
+                  Tedious tasks, like inheriting the reference implementation or computing the signature, will be automated for you.
+                  All you need is a <b>'.sol' file</b> including your contract, your <b>domain name</b>, and the <b>certificate private key</b> of your domain. 
+                  <br/><br/>
+               
+                  <Link to="/tesc/new">
+                    <span className="text-color-primary"><b>Deploy</b></span> 🚀         
+                  </Link>            
+                  </p>
+              </div>
+              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}  
+                data-reveal-container=".split-item">
+                <Image src={deployImg} size="large"/>
+              </div>
+            </div>
+
+            <div className="split-item">
+              <div className="split-item-content center-content-mobile reveal-from-right" data-reveal-container=".split-item">
+                <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
+                  Inspect TeSC
+                  </div>
+                <h3 className="mt-0 mb-12">
+                  Verification of TeSCs
                   </h3>
                 <p className="m-0">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                  Before making a payment to a contract, you can verify that it belongs to the given domain. 
+                  Just enter the <b>address of the contract</b> in question.<br/>
+                  If you are the owner of the TeSC, you can also update it here.
+                  <br/><br/>
+               
+                  <Link to="/tesc/inspect">
+                    <span className="text-color-primary"><b>Inspect</b></span> 🔍         
+                  </Link>  
+                </p>
+              </div>
+              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}
+                data-reveal-container=".split-item">
+                <Image src={verifyImg} size="large"/>
+              </div>
+            </div>
+
+            <div className="split-item">
+              <div className="split-item-content center-content-mobile reveal-from-left" data-reveal-container=".split-item">
+                <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
+                  Explore TeSC Registry
+                  </div>
+                <h3 className="mt-0 mb-12">
+                  Contracts in TeSC Registry
+                  </h3>
+                <p className="m-0">  
+                  Browse the TeSC registry in a convenient way. Included contracts are grouped by domain name and can be filtered with various options.
+                  <br/><br/>
+               
+                  <Link to="/registry/inspect">
+                    <span className="text-color-primary"><b>Explore</b></span> 🗺️         
+                  </Link>            
                   </p>
               </div>
               <div className={
@@ -180,11 +231,30 @@ const FeaturesSplit = ({
                   imageFill && 'split-item-image-fill'
                 )}
                 data-reveal-container=".split-item">
-                <Image
-                  src={images[2]}
-                  alt="Features split 03"
-                  width={528}
-                  height={396} />
+                <Image src='https://react.semantic-ui.com/images/wireframe/image.png'/>
+              </div>
+            </div>
+
+            <div className="split-item">
+              <div className="split-item-content center-content-mobile reveal-from-right" data-reveal-container=".split-item">
+                <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
+                  TeSC Registry Analytics
+                  </div>
+                <h3 className="mt-0 mb-12">
+                  Statistics for TeSC Registry
+                  </h3>
+                <p className="m-0">
+                  View current numbers from the TeSC Registry, e.g. the number of deployed contracts, used flags, and domains.
+                  <br/><br/>
+               
+                  <Link to="/registry/analytics">
+                    <span className="text-color-primary"><b>Graphs and pie charts</b></span> 🥧         
+                  </Link>  
+                </p>
+              </div>
+              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}   
+                data-reveal-container=".split-item">
+                <Image src={analyticsImg} size="large"/>
               </div>
             </div>
 
