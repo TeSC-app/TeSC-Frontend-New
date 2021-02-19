@@ -52,9 +52,13 @@ const FeaturesSplit = ({
     alignTop && 'align-top'
   );
 
-  const sectionHeader = {
-    title: 'Workflow that just works',
+  const tescOverviewSectionHeader = {
+    title: 'TeSC: the big picture',
     paragraph: 'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum — semper quis lectus nulla at volutpat diam ut venenatis.'
+  };
+
+  const tescSpecificSectionHeader = {
+    title: 'TeSC: step by step',
   };
 
   useEffect(() => {
@@ -77,10 +81,10 @@ const FeaturesSplit = ({
     >
       <div className="container">
         <div className={innerClasses}>
-          <SectionHeader data={sectionHeader} className="center-content" />
+          <SectionHeader data={tescOverviewSectionHeader} className="center-content" />
           <div className={splitClasses}>
 
-            <div className="split-item" style={{alignItems: 'normal'}}>
+            <div className="split-item" style={{ alignItems: 'normal' }}>
               <div className="split-item-content center-content-mobile reveal-from-left" data-reveal-container=".split-item">
                 <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
                   Overview
@@ -97,11 +101,11 @@ const FeaturesSplit = ({
                 </p>
                 <br />
                 <p className="m-0">
-                3. This is an optional step to register the TeSC to the TeSC Registry, which is another Smart Contract on the Ethereum network acting as a repository for all TeSCs in the network.
+                  3. This is an optional step to register the TeSC to the TeSC Registry, which is another Smart Contract on the Ethereum network acting as a repository for all TeSCs in the network.
                 </p>
                 <br />
                 <p className="m-0">
-                4. Serves the website containing the TeSC address. The website must use HTTPS with TLS-certificate containing the TLS public key
+                  4. Serves the website containing the TeSC address. The website must use HTTPS with TLS-certificate containing the TLS public key
                 </p>
                 <br />
                 <p className="m-0">
@@ -126,6 +130,11 @@ const FeaturesSplit = ({
                   height={396} />
               </div>
             </div>
+          </div>
+        </div>
+        <div className={innerClasses}>
+          <SectionHeader data={tescSpecificSectionHeader} className="center-content" />
+          <div className={splitClasses}>
 
             <div className="split-item">
               <div className="split-item-content center-content-mobile reveal-from-right" data-reveal-container=".split-item">

@@ -72,16 +72,6 @@ export const estimateDeploymentCost = async (web3, tx) => {
 };
 
 
-export const storeTesc = ({ account, claim }) => {
-    const { contractAddress, domain, expiry } = claim;
-    let tescs = JSON.parse(localStorage.getItem(account));
-    if (!tescs) {
-        tescs = [];
-    }
-    tescs.push({ contractAddress, domain, expiry, isFavourite: false, own: true, verified: false, createdAt: moment().unix() });
-    localStorage.setItem(account, JSON.stringify(tescs));
-};
-
 export const isValidContractAddress = (address, withReason = false) => {
     if (!withReason) {
         return (address.substring(0, 2) === '0x')

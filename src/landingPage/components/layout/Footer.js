@@ -47,7 +47,7 @@ const Footer = ({
           </div>
           <div className="footer-bottom space-between text-xxs invert-order-desktop">
             <FooterNav />
-            <div className="footer-copyright">Made by <a href="https://cruip.com">Cruip</a>. All right reserved</div>
+            <div className="footer-copyright">Made in <a href="https://wwwmatthes.in.tum.de/pages/18witnulbiwl6/Master-Lab-Course-Web-Applications">SEBA Lab Course</a> at Chair <a href="https://wwwmatthes.in.tum.de">Sebis</a>, <a href="https://www.tum.de">Technical University of Munich (TUM)</a>.</div>
           </div>
         </div>
       </div>

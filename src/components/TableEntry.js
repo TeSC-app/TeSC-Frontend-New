@@ -20,7 +20,7 @@ function TableEntry(props) {
     const {
         tesc,
         preverified,
-        onTescsChange,
+        onTescChange,
         handleSearchInput,
         handleSearchSubmit,
         cols
@@ -62,8 +62,8 @@ function TableEntry(props) {
     };
 
     const handleToggleFavourites = () => {
-        toggleFavourite({ account, contractAddress, domain, expiry });
-        onTescsChange();
+        toggleFavourite(account, {...tesc, isFavourite: !isFavourite});
+        onTescChange();
         setIsFavourite(!isFavourite);
     };
 
