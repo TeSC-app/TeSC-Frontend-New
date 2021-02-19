@@ -78,8 +78,6 @@ function TableOverview(props) {
         byCreatedAt: { from: '', to: '' },
     })
 
-    const [subdomainFilter, setSubdomainFilter] = useState([])
-
     useEffect(() => {
         const init = async () => {
             try {
@@ -101,20 +99,6 @@ function TableOverview(props) {
         init();
     }, [tescs, account, web3, cols, tescsWithOccurancesNew, tescsWithOccurances]);
 
-    useEffect(() => {
-        setTescs(rowData);
-        const subdomainList = rowData.filter(entry => extractSubdomainFromDomain(entry.domain) !== '').map(entry => extractSubdomainFromDomain(entry.domain))
-        const subdomainFilterState = []
-        const map = new Map();
-        for (const subdomain of subdomainList) {
-            if (!map.has(subdomain)) {
-                map.set(subdomain, true);    // set any value to Map
-                subdomainFilterState.push({ subdomain, isChecked: false, isFiltered: false })
-            }
-        }
-        setSubdomainFilter(subdomainFilterState)
-    }, [rowData])
-
     const handleChangeTescs = (tesc) => {
         setTescs(loadStorage(account));
     };
@@ -132,7 +116,6 @@ function TableOverview(props) {
 
     const renderRows = () => {
         let displayedEntriesNew = [...displayedEntries]
-        console.log('NEW ENTRIES... ', displayedEntriesNew)
         if (hasAllColumns(cols)) displayedEntriesNew = displayedEntries.filter(tesc => tesc.isFavourite || tesc.own)
         if (displayedEntriesNew && !cols.has(COL.TSC)) {
             return displayedEntriesNew.map((tesc) => (
@@ -265,15 +248,23 @@ function TableOverview(props) {
             byFavourites: { is: false, isNot: false },
             byCreatedAt: { from: '', to: '' },
         })
-        setSubdomainFilter(subdomainFilter.map(subdomainFilter => ({ ...subdomainFilter, isFiltered: false })))
-        if (cols.has(COL.VERIF) && cols.has(COL.FAV) && !cols.has(COL.TSC)) {
+        //dashboard table
+        if (hasAllColumns(cols)) {
             const storage = loadStorage(account)
             setDisplayedEntries(storage.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setTescs(storage)
+        }
+        //subendorsements table
+        else if (!hasAllColumns(cols) && !cols.has(COL.TSC) && cols.has(COL.FAV)) {
+            console.log('ROW DATA,', rowData)
+            setDisplayedEntries(rowData.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+            setTescs(rowData)
+        //registry inspect initial table
         } else if (cols.has(COL.TSC)) {
             setDisplayedEntries(tescsWithOccurances.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setTescsWithOccurancesNew(tescsWithOccurances)
         }
+        //when we clear filters in registry inspect we go back to the initial table with tescs with occurances
         if (typeof handleIsExploringDomain !== 'undefined') handleIsExploringDomain(false)
         if (typeof rowDataOriginal !== 'undefined') updateRowData(rowDataOriginal)
     }
@@ -433,7 +424,7 @@ function TableOverview(props) {
                 {hasAllColumns(cols) ? renderFilteringDropdownForCheckboxes('Own', 'Own', 'Not own', 'isOwnFilter', 'isNotOwnFilter') : null}
                 {cols.has(COL.ADDRESS) ? renderFilteringDropdownTextfield('Address', 'contractAddressFilter', filterTypes.byContractAddress.input, '0x8Def') : null}
                 {cols.has(COL.DOMAIN) ? renderFilteringDropdownTextfield('Domain', 'domainFilter', filterTypes.byDomain.input, 'example.com') : null}
-                {cols.has(COL.DOMAIN) && !cols.has(COL.TSC) && subdomainFilter.length > 0 ? renderFilteringDropdownForCheckboxesSubdomain('Subdomain') : null}
+                {cols.has(COL.DOMAIN) && !cols.has(COL.TSC) ? renderFilteringDropdownForCheckboxesSubdomain('Subdomain') : null}
                 {cols.has(COL.EXPIRY) ? renderFilteringDropdownForDayPickers('Expiry', 'expiryFromFilter', 'expiryToFilter', filterTypes.byExpiry.from, filterTypes.byExpiry.to) : null}
                 {!cols.has(COL.TSC) ? renderFilteringDropdownForCheckboxes('Verified', 'Verified', 'Not verified', 'isVerifiedFilter', 'isNotVerifiedFilter') : null}
                 {cols.has(COL.REG) ? renderFilteringDropdownForCheckboxes('Registry', 'In Registry', 'Not in registry', 'isInRegistryFilter', 'isNotInRegistryFilter') : null}
