@@ -35,10 +35,12 @@ function TableOverview(props) {
     const {
         rowData,
         tescsWithOccurances,
+        rowDataOriginal,
         handleLoading,
         handleIsExploringDomain,
         handleDomainFilter,
-        cols
+        cols,
+        updateRowData
     } = props;
 
     const { web3, account } = useContext(AppContext);
@@ -128,8 +130,11 @@ function TableOverview(props) {
     };
 
     const renderRows = () => {
-        if (displayedEntries && !cols.has(COL.TSC)) {
-            return displayedEntries.filter(tesc => tesc.isFavourite || tesc.own).map((tesc) => (
+        let displayedEntriesNew = [...displayedEntries]
+        console.log('NEW ENTRIES... ', displayedEntriesNew)
+        if (hasAllColumns(cols)) displayedEntriesNew = displayedEntries.filter(tesc => tesc.isFavourite || tesc.own)
+        if (displayedEntriesNew && !cols.has(COL.TSC)) {
+            return displayedEntriesNew.map((tesc) => (
                 <TableEntry key={tesc.contractAddress}
                     tesc={tesc}
                     onTescChange={handleChangeTescs}
@@ -137,8 +142,8 @@ function TableOverview(props) {
                     setVerificationInTescs={setVerificationInTescs}
                 />
             ));
-        } else if (displayedEntries && cols.has(COL.TSC)) {
-            return tescsWithOccurancesNew.filter(tesc => tesc.isFavourite || tesc.own).map((entry) => (
+        } else if (tescsWithOccurancesNew && cols.has(COL.TSC)) {
+            return tescsWithOccurancesNew.map((entry) => (
                 <TableEntry key={entry.domain}
                     tesc={entry}
                     handleSearchInput={handleSearchInput}
@@ -162,8 +167,9 @@ function TableOverview(props) {
             handleIsExploringDomain(true);
             //for showing domain-specific analytics
             handleDomainFilter(domain)
-            const filteredRowData = loadStorage(account).filter(entry => entry.domain.includes(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry)
+            const filteredRowData = rowData.filter(entry => entry.domain.includes(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry)
             setTescs(filteredRowData);
+            updateRowData(filteredRowData)
         }
         handleLoading(false);
     };
@@ -267,6 +273,7 @@ function TableOverview(props) {
             setTescsWithOccurancesNew(tescsWithOccurances)
         }
         if (typeof handleIsExploringDomain !== 'undefined') handleIsExploringDomain(false)
+        if (typeof rowDataOriginal !== 'undefined') updateRowData(rowDataOriginal)
     }
 
     const changeTextFilters = (e, { name, value }) => {
@@ -313,7 +320,9 @@ function TableOverview(props) {
         const filterTypesNew = updateTextfieldFilterStatus(name, value, filterTypes)
         setFilterTypes(filterTypesNew)
         //only filter on active filters
+        if (cols.has(COL.TSC)) setTescsWithOccurancesNew(tescsWithOccurances.filter(tesc => applyFilteringConditions(tesc, filterTypesNew)))
         setTescs(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypesNew, account)))
+        if (!hasAllColumns(cols) && typeof updateRowData !== 'undefined') updateRowData(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypesNew, account)))
     }
 
     const renderFilteringDropdownForCheckboxesSubdomain = (title) => {

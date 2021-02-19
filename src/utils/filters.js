@@ -69,12 +69,7 @@ export const filterByIsInRegistry = (isInRegistry, is, isNot) => {
 }
 
 export const applyFilteringConditions = (tesc, filterTypes, account) => {
-    if (typeof tesc.owner !== undefined) {
-        console.log('tesc.owner: ', tesc.owner)
-        console.log('filterTypes.byOwner.is', filterTypes.byOwner.is)
-        console.log('result of the stupid filtering function which should be true: ', filterByOwner(tesc.owner, account, filterTypes.byOwner.is, filterTypes.byOwner.isNot))
-    }
-    console.log('names of used filters: ', Object.entries(filterTypes).filter(entry =>
+    /*console.log('names of used filters: ', Object.entries(filterTypes).filter(entry =>
         (entry[1].hasOwnProperty('input') && entry[1].input !== '') ||
         (entry[1].hasOwnProperty('from') && entry[1].from !== '' && entry[1].to !== '') ||
         (entry[1].hasOwnProperty('is') && (entry[1].is || entry[1].isNot)))
@@ -88,7 +83,7 @@ export const applyFilteringConditions = (tesc, filterTypes, account) => {
         .reduce((condition, entry_) =>
             entry_ === 'byFavourites' ? condition || filterByFavourites(tesc.isFavourite, filterTypes.byFavourites.is, filterTypes.byFavourites.isNot) :
                 condition, true))
-    console.log(filterTypes)
+    console.log(filterTypes)*/
     return Object.entries(filterTypes).filter(entry =>
         (entry[1].hasOwnProperty('input') && entry[1].input !== '' && entry[1].isFiltered === true) ||
         (entry[1].hasOwnProperty('from') && entry[1].from !== '' && entry[1].to !== '') ||
