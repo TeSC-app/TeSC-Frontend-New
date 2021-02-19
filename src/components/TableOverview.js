@@ -8,14 +8,7 @@ import SearchBox from './SearchBox';
 import { convertToUnix, extractSubdomainFromDomain } from '../utils/tesc'
 import { loadStorage } from '../utils/storage';
 import {
-    filterByAddress,
-    filterByDomain,
-    filterByOwner,
-    filterByExpiry,
-    filterByCreatedAt,
-    filterByFavourites, 
-    filterByIsInRegistry,
-    filterByVerified
+    applyFilteringConditions
 } from '../utils/filters'
 
 const ENTRIES_PER_PAGE = 5;
@@ -301,7 +294,7 @@ function TableOverview(props) {
                 break
             case 'isInRegistryFilter': setFilterTypes({ ...filterTypes, byIsInRegistry: { is: checked, isNot: filterTypes.byIsInRegistry.isNot } })
                 break
-            case 'isNotInRegistryFilter': setFilterTypes({ ...filterTypes, byIsInRegistry: { is: filterTypes.byIsInRegistry7.is, isNot: checked } })
+            case 'isNotInRegistryFilter': setFilterTypes({ ...filterTypes, byIsInRegistry: { is: filterTypes.byIsInRegistry.is, isNot: checked } })
                 break
             default: setFilterTypes(filterTypes)
         }
@@ -332,18 +325,8 @@ function TableOverview(props) {
     }
 
     const filterEntries = () => {
-        console.log('FILTER TYPES', filterTypes)
-        console.log('ROW DATA', rowData)
-        console.log('FILTER RESULT', rowData.filter(tesc => filterByFavourites(tesc.isFavourite)))
-        setTescs(rowData.filter(tesc => filterByOwner(tesc.owner, account, filterTypes.byOwner.is, filterTypes.byOwner.isNot) &&
-            filterByVerified(tesc.verified, filterTypes.byVerified.is, filterTypes.byVerified.isNot) &&
-            filterByFavourites(tesc.isFavourite, filterTypes.byFavourites.is, filterTypes.byFavourites.isNot) &&
-            filterByIsInRegistry(tesc.isInRegistry, filterTypes.byIsInRegistry.is, filterTypes.byIsInRegistry.isNot) &&
-            filterByDomain(tesc.domain, filterTypes.byDomain.input) &&
-            filterByAddress(tesc.contractAddress, filterTypes.byContractAddress.input) &&
-            filterByCreatedAt(tesc.createdAt, filterTypes.byCreatedAt.from, filterTypes.byCreatedAt.to) &&
-            filterByExpiry(tesc.expiry, filterTypes.byExpiry.from, filterTypes.byExpiry.to)
-        ))
+        //only filter on active filters
+        setTescs(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypes, account)))
     }
 
     const renderFilteringDropdownForCheckboxesSubdomain = (title) => {
