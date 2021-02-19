@@ -2,10 +2,15 @@ import React, { useState, useEffect } from 'react';
 import classNames from 'classnames';
 import { SectionSplitProps } from '../../utils/SectionProps';
 import SectionHeader from './partials/SectionHeader';
-import Image from '../elements/Image';
+import { Image } from 'semantic-ui-react'
 import { Link } from 'react-router-dom';
 
 import '../../assets/scss/landingPage.scoped.scss';
+import analyticsImg from '../../assets/images/analytics.png';
+import dashboardImg from '../../assets/images/dashboard.png';
+import deployImg from '../../assets/images/deploy.png';
+import verifyImg from '../../assets/images/verify.png';
+import overviewImg from '../../assets/images/overview.png';
 
 const propTypes = {
   ...SectionSplitProps.types
@@ -62,8 +67,8 @@ const FeaturesSplit = ({
     (async () => {
       const imgs = [];
       for (let i = 0; i < 4; i++) {
-        imgs[i] = (await import(`./../../assets/images/features-split-image-0${i + 1}.png`)).default;
-        console.log(i, imgs[i]);
+        //imgs[i] = (await import(`./../../assets/images/features-split-image-0${i + 1}.png`)).default;
+        //console.log(i, imgs[i]);
       }
       setImages(imgs);
       console.log('images loaded');
@@ -108,17 +113,9 @@ const FeaturesSplit = ({
                   6. When the user wants to verifiy a TeSC, they will go to the Ethereum network and get contract data from at  e.g. domain, signature from<br/><br/>
                 </p>
               </div>
-              <div className={
-                classNames(
-                  'split-item-image center-content-mobile reveal-from-bottom',
-                  imageFill && 'split-item-image-fill'
-                )}
+              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}
                 data-reveal-container=".split-item">
-                <Image
-                  src={images[0]}
-                  alt="Features split 01"
-                  width={528}
-                  height={396} />
+                <Image src={overviewImg} size="large"/>
               </div>
             </div>
 
@@ -140,17 +137,9 @@ const FeaturesSplit = ({
                   </Link>  
                 </p>
               </div>
-              <div className={
-                classNames(
-                  'split-item-image center-content-mobile reveal-from-bottom',
-                  imageFill && 'split-item-image-fill'
-                )}
+              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}   
                 data-reveal-container=".split-item">
-                <Image
-                  src={images[1]}
-                  alt="Features split 02"
-                  width={528}
-                  height={396} />
+                <Image src={dashboardImg} size="large"/>
               </div>
             </div>
 
@@ -173,17 +162,9 @@ const FeaturesSplit = ({
                   </Link>            
                   </p>
               </div>
-              <div className={
-                classNames(
-                  'split-item-image center-content-mobile reveal-from-bottom',
-                  imageFill && 'split-item-image-fill'
-                )}
+              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}  
                 data-reveal-container=".split-item">
-                <Image
-                  src={images[2]}
-                  alt="Features split 03"
-                  width={528}
-                  height={396} />
+                <Image src={deployImg} size="large"/>
               </div>
             </div>
 
@@ -206,17 +187,9 @@ const FeaturesSplit = ({
                   </Link>  
                 </p>
               </div>
-              <div className={
-                classNames(
-                  'split-item-image center-content-mobile reveal-from-bottom',
-                  imageFill && 'split-item-image-fill'
-                )}
+              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}
                 data-reveal-container=".split-item">
-                <Image
-                  src={images[3]}
-                  alt="Features split 02"
-                  width={528}
-                  height={396} />
+                <Image src={verifyImg} size="large"/>
               </div>
             </div>
 
@@ -243,11 +216,7 @@ const FeaturesSplit = ({
                   imageFill && 'split-item-image-fill'
                 )}
                 data-reveal-container=".split-item">
-                <Image
-                  src={images[2]}
-                  alt="Features split 03"
-                  width={528}
-                  height={396} />
+                <Image src='https://react.semantic-ui.com/images/wireframe/image.png'/>
               </div>
             </div>
 
@@ -268,17 +237,9 @@ const FeaturesSplit = ({
                   </Link>  
                 </p>
               </div>
-              <div className={
-                classNames(
-                  'split-item-image center-content-mobile reveal-from-bottom',
-                  imageFill && 'split-item-image-fill'
-                )}
+              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}   
                 data-reveal-container=".split-item">
-                <Image
-                  src={images[3]}
-                  alt="Features split 02"
-                  width={528}
-                  height={396} />
+                <Image src={analyticsImg} size="large"/>
               </div>
             </div>
 
