@@ -8,7 +8,9 @@ import SearchBox from './SearchBox';
 import { convertToUnix, extractSubdomainFromDomain } from '../utils/tesc'
 import { loadStorage } from '../utils/storage';
 import {
-    applyFilteringConditions
+    applyFilteringConditions,
+    editCheckboxFilterTypes,
+    updateTextfieldFilterStatus
 } from '../utils/filters'
 
 const ENTRIES_PER_PAGE = 5;
@@ -64,8 +66,8 @@ function TableOverview(props) {
     const [isShowingFilters, setIsShowingFilters] = useState(false)
     const [filterTypes, setFilterTypes] = useState({
         byOwner: { is: false, isNot: false },
-        byDomain: { input: '' },
-        byContractAddress: { input: '' },
+        byDomain: { input: '', isFiltered: false },
+        byContractAddress: { input: '', isFiltered: false },
         byExpiry: { from: '', to: '' },
         byVerified: { is: false, isNot: false },
         byIsInRegistry: { is: false, isNot: false },
@@ -247,8 +249,8 @@ function TableOverview(props) {
     const clearFilters = () => {
         setFilterTypes({
             byOwner: { is: false, isNot: false },
-            byDomain: { input: '' },
-            byContractAddress: { input: '' },
+            byDomain: { input: '', isFiltered: false },
+            byContractAddress: { input: '', isFiltered: false },
             byExpiry: { from: '', to: '' },
             byVerified: { is: false, isNot: false },
             byIsInRegistry: { is: false, isNot: false },
@@ -269,35 +271,18 @@ function TableOverview(props) {
 
     const changeTextFilters = (e, { name, value }) => {
         switch (name) {
-            case 'domainFilter': setFilterTypes(({ ...filterTypes, byDomain: { input: value } }))
+            case 'domainFilter': setFilterTypes(({ ...filterTypes, byDomain: { input: value, isFiltered: false } }))
                 break
-            case 'contractAddressFilter': setFilterTypes(({ ...filterTypes, byContractAddress: { input: value } }))
+            case 'contractAddressFilter': setFilterTypes(({ ...filterTypes, byContractAddress: { input: value, isFiltered: false } }))
                 break
             default: setFilterTypes(filterTypes)
         }
     }
 
     const changeCheckboxFilters = (name, checked) => {
-        console.log('were edditing a checkbox ', name, ' ', checked)
-        switch (name) {
-            case 'isOwnFilter': setFilterTypes({ ...filterTypes, byOwner: { is: checked, isNot: filterTypes.byOwner.isNot } })
-                break
-            case 'isNotOwnFilter': setFilterTypes({ ...filterTypes, byOwner: { is: filterTypes.byOwner.is, isNot: checked } })
-                break
-            case 'isVerifiedFilter': setFilterTypes({ ...filterTypes, byVerified: { is: checked, isNot: filterTypes.byVerified.isNot } })
-                break
-            case 'isNotVerifiedFilter': setFilterTypes({ ...filterTypes, byVerified: { is: filterTypes.byVerified.is, isNot: checked } })
-                break
-            case 'isFavouriteFilter': setFilterTypes({ ...filterTypes, byFavourites: { is: checked, isNot: filterTypes.byFavourites.isNot } })
-                break
-            case 'isNotFavouriteFilter': setFilterTypes({ ...filterTypes, byFavourites: { is: filterTypes.byFavourites.is, isNot: checked } })
-                break
-            case 'isInRegistryFilter': setFilterTypes({ ...filterTypes, byIsInRegistry: { is: checked, isNot: filterTypes.byIsInRegistry.isNot } })
-                break
-            case 'isNotInRegistryFilter': setFilterTypes({ ...filterTypes, byIsInRegistry: { is: filterTypes.byIsInRegistry.is, isNot: checked } })
-                break
-            default: setFilterTypes(filterTypes)
-        }
+        const filterTypesNew = editCheckboxFilterTypes(name, checked, filterTypes)
+        setFilterTypes(filterTypesNew)
+        setTescs(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypesNew, account)))
     }
 
     const changeSubdomainCheckboxFilters = (e, subdomain, checked, index) => {
@@ -324,9 +309,11 @@ function TableOverview(props) {
         }
     }
 
-    const filterEntries = () => {
+    const filterEntries = (name, value) => {
+        const filterTypesNew = updateTextfieldFilterStatus(name, value, filterTypes)
+        setFilterTypes(filterTypesNew)
         //only filter on active filters
-        setTescs(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypes, account)))
+        setTescs(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypesNew, account)))
     }
 
     const renderFilteringDropdownForCheckboxesSubdomain = (title) => {
@@ -374,8 +361,7 @@ function TableOverview(props) {
                 text={title}
                 icon='angle down'
                 simple
-                className={classesDropdown}
-                onBlur={filterEntries}>
+                className={classesDropdown}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
                     <Form>
                         <Form.Checkbox className='checkbox__label' name={inputPropNameOne} label={checkboxLabelOne} checked={checkedOne} onChange={(e, { name, checked }) => changeCheckboxFilters(name, checked)} />
@@ -425,19 +411,18 @@ function TableOverview(props) {
 
     }
 
-    const renderFilteringDropdownTextfield = (title, inputPropName, placeholder) => {
-        const classesDropdown = title === 'Domain' && filterTypes.byDomain.input !== '' ? 'icon dropdown-filters-filtered' :
-            title === 'Address' && filterTypes.byContractAddress.input !== '' ? 'icon dropdown-filters-filtered' :
+    const renderFilteringDropdownTextfield = (title, inputPropName, filterTypeInput, placeholder) => {
+        const classesDropdown = title === 'Domain' && filterTypes.byDomain.input !== '' && filterTypes.byDomain.isFiltered ? 'icon dropdown-filters-filtered' :
+            title === 'Address' && filterTypes.byContractAddress.input !== '' && filterTypes.byExpiry.isFiltered ? 'icon dropdown-filters-filtered' :
                 'icon dropdown-filters'
         return (
             <Dropdown
                 text={title}
                 icon={'angle down'}
                 simple
-                className={classesDropdown}
-                onBlur={filterEntries}>
+                className={classesDropdown}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
-                    <Form>
+                    <Form onSubmit={() => filterEntries(inputPropName, filterTypeInput)}>
                         <Form.Input placeholder={placeholder} name={inputPropName} onChange={changeTextFilters} />
                     </Form>
                 </Dropdown.Menu>
@@ -448,11 +433,11 @@ function TableOverview(props) {
         if (isShowingFilters) {
             return (<>
                 {hasAllColumns(cols) ? renderFilteringDropdownForCheckboxes('Own', 'Own', 'Not own', 'isOwnFilter', 'isNotOwnFilter') : null}
-                {cols.has(COL.ADDRESS) ? renderFilteringDropdownTextfield('Address', 'contractAddressFilter', '0x8Def') : null}
-                {cols.has(COL.DOMAIN) ? renderFilteringDropdownTextfield('Address', 'domainFilter', 'example.com') : null}
+                {cols.has(COL.ADDRESS) ? renderFilteringDropdownTextfield('Address', 'contractAddressFilter', filterTypes.byContractAddress.input, '0x8Def') : null}
+                {cols.has(COL.DOMAIN) ? renderFilteringDropdownTextfield('Domain', 'domainFilter', filterTypes.byDomain.input, 'example.com') : null}
                 {cols.has(COL.DOMAIN) && !cols.has(COL.TSC) && subdomainFilter.length > 0 ? renderFilteringDropdownForCheckboxesSubdomain('Subdomain') : null}
                 {cols.has(COL.EXPIRY) ? renderFilteringDropdownForDayPickers('Expiry', 'expiryFromFilter', 'expiryToFilter', filterTypes.byExpiry.from, filterTypes.byExpiry.to) : null}
-                {!cols.has(COL.TSC) ? renderFilteringDropdownForCheckboxes('Verified', 'Verified', 'Not verified', 'isOwnFilter', 'isNotOwnFilter') : null}
+                {!cols.has(COL.TSC) ? renderFilteringDropdownForCheckboxes('Verified', 'Verified', 'Not verified', 'isVerifiedFilter', 'isNotVerifiedFilter') : null}
                 {cols.has(COL.REG) ? renderFilteringDropdownForCheckboxes('Registry', 'In Registry', 'Not in registry', 'isInRegistryFilter', 'isNotInRegistryFilter') : null}
                 {cols.has(COL.FAV) ? renderFilteringDropdownForCheckboxes('Favourites', 'Favourite', 'Not favourite', 'isFavouriteFilter', 'isNotFavouriteFilter') : null}
                 {cols.has(COL.CA) ? renderFilteringDropdownForDayPickers('Created at', 'createdAtFromFilter', 'createdAtToFilter', filterTypes.byCreatedAt.from, filterTypes.byCreatedAt.to) : null}
@@ -462,7 +447,7 @@ function TableOverview(props) {
 
     const renderClearFiltersButton = () => {
         const isAtLeastOneFilterUsed = Object.entries(filterTypes).some(entry =>
-            (entry[1].hasOwnProperty('input') && entry[1].input !== '') ||
+            (entry[1].hasOwnProperty('isFiltered') && entry[1].isFiltered) ||
             (entry[1].hasOwnProperty('from') && entry[1].from !== '' && entry[1].to !== '') ||
             (entry[1].hasOwnProperty('is') && (entry[1].is || entry[1].isNot)))
             || subdomainFilter.some(subdomain => subdomain.isFiltered)
