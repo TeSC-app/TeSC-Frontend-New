@@ -69,6 +69,7 @@ function TableOverview(props) {
     const [filterTypes, setFilterTypes] = useState({
         byOwner: { is: false, isNot: false },
         byDomain: { input: '', isFiltered: false },
+        bySubdomain: { www: false },
         byContractAddress: { input: '', isFiltered: false },
         byExpiry: { from: '', to: '' },
         byVerified: { is: false, isNot: false },
@@ -256,6 +257,7 @@ function TableOverview(props) {
         setFilterTypes({
             byOwner: { is: false, isNot: false },
             byDomain: { input: '', isFiltered: false },
+            bySubdomain: { www: false },
             byContractAddress: { input: '', isFiltered: false },
             byExpiry: { from: '', to: '' },
             byVerified: { is: false, isNot: false },
@@ -286,19 +288,11 @@ function TableOverview(props) {
         }
     }
 
-    const changeCheckboxFilters = (name, checked) => {
+    const changeCheckboxFiltersAndFilter = (name, checked) => {
         const filterTypesNew = editCheckboxFilterTypes(name, checked, filterTypes)
         setFilterTypes(filterTypesNew)
         setTescs(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypesNew, account)))
-    }
-
-    const changeSubdomainCheckboxFilters = (e, subdomain, checked, index) => {
-        let items = [...subdomainFilter]
-        let item = { ...items[index] }
-        item.subdomain = subdomain
-        item.isChecked = !checked
-        items[index] = item
-        setSubdomainFilter(items)
+        if (!hasAllColumns(cols) && typeof updateRowData !== 'undefined') updateRowData(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypesNew, account)))
     }
 
     const changeDateFilters = (date, modifier, dayPickerInput) => {
@@ -326,22 +320,17 @@ function TableOverview(props) {
     }
 
     const renderFilteringDropdownForCheckboxesSubdomain = (title) => {
-        const classesDropdown = subdomainFilter.some(subdomain => subdomain.isFiltered === true) ? 'icon dropdown-filters-filtered' : 'icon dropdown-filters'
+        const classesDropdown = title === 'Subdomain' &&
+            filterTypes.bySubdomain.www ? 'icon dropdown-filters-filtered' : 'icon dropdown-filters'
         return (
             <Dropdown
                 text={title}
                 icon='angle down'
                 simple
-                className={classesDropdown}
-                onBlur={filterEntries}>
+                className={classesDropdown}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
                     <Form>
-                        {subdomainFilter.map((subdomainFilter, index) => (
-                            <Form.Checkbox className='checkbox__label' name={subdomainFilter.subdomain}
-                                label={subdomainFilter.subdomain}
-                                checked={subdomainFilter.isChecked}
-                                onChange={(e) => changeSubdomainCheckboxFilters(e, subdomainFilter.subdomain, subdomainFilter.isChecked, index)} />
-                        ))}
+                        <Form.Checkbox className='checkbox__label' name='www' label='www' checked={filterTypes.www} onChange={(e, { name, checked }) => changeCheckboxFiltersAndFilter(name, checked)} />
                     </Form>
                 </Dropdown.Menu>
             </Dropdown>)
@@ -373,8 +362,8 @@ function TableOverview(props) {
                 className={classesDropdown}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
                     <Form>
-                        <Form.Checkbox className='checkbox__label' name={inputPropNameOne} label={checkboxLabelOne} checked={checkedOne} onChange={(e, { name, checked }) => changeCheckboxFilters(name, checked)} />
-                        <Form.Checkbox className='checkbox__label' name={inputPropNameTwo} label={checkboxLabelTwo} checked={checkedTwo} onChange={(e, { name, checked }) => changeCheckboxFilters(name, checked)} />
+                        <Form.Checkbox className='checkbox__label' name={inputPropNameOne} label={checkboxLabelOne} checked={checkedOne} onChange={(e, { name, checked }) => changeCheckboxFiltersAndFilter(name, checked)} />
+                        <Form.Checkbox className='checkbox__label' name={inputPropNameTwo} label={checkboxLabelTwo} checked={checkedTwo} onChange={(e, { name, checked }) => changeCheckboxFiltersAndFilter(name, checked)} />
                     </Form>
                 </Dropdown.Menu>
             </Dropdown>)
@@ -458,8 +447,9 @@ function TableOverview(props) {
         const isAtLeastOneFilterUsed = Object.entries(filterTypes).some(entry =>
             (entry[1].hasOwnProperty('isFiltered') && entry[1].isFiltered) ||
             (entry[1].hasOwnProperty('from') && entry[1].from !== '' && entry[1].to !== '') ||
-            (entry[1].hasOwnProperty('is') && (entry[1].is || entry[1].isNot)))
-            || subdomainFilter.some(subdomain => subdomain.isFiltered)
+            (entry[1].hasOwnProperty('is') && (entry[1].is || entry[1].isNot)) ||
+            (entry[1].hasOwnProperty('www') && entry[1].www))
+
         if (isAtLeastOneFilterUsed) return (<Button
             content='Clear filters'
             icon='remove circle'

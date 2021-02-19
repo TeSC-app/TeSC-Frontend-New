@@ -120,7 +120,7 @@ function RegistryInspect() {
                 <>
                 <SearchBox
                             onChange={handleDomainFilter}
-                            onSubmit={() => setEntriesRaw(entriesRaw.filter(entry => entry.domain.includes(domainFilter)).sort((tescA, tescB) => tescB.expiry - tescA.expiry))}
+                            onSubmit={() => setEntriesRaw(entriesOriginal.filter(entry => entry.domain.includes(domainFilter)).sort((tescA, tescB) => tescB.expiry - tescA.expiry))}
                             value={domainFilter}
                             placeholder='www.mysite.com'
                             label='Domain'

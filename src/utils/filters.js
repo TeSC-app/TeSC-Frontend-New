@@ -1,3 +1,5 @@
+import { extractSubdomainFromDomain } from './tesc'
+
 export const editCheckboxFilterTypes = (name, checked, filterTypes) => {
     let filterTypesNew = { ...filterTypes }
     switch (name) {
@@ -16,6 +18,8 @@ export const editCheckboxFilterTypes = (name, checked, filterTypes) => {
         case 'isInRegistryFilter': filterTypesNew = ({ ...filterTypes, byIsInRegistry: { is: checked, isNot: filterTypes.byIsInRegistry.isNot } })
             break
         case 'isNotInRegistryFilter': filterTypesNew = ({ ...filterTypes, byIsInRegistry: { is: filterTypes.byIsInRegistry.is, isNot: checked } })
+            break
+        case 'www': filterTypesNew = ({ ...filterTypes, bySubdomain: { www: checked } })
             break
         default: filterTypesNew = { ...filterTypes }
     }
@@ -68,6 +72,10 @@ export const filterByIsInRegistry = (isInRegistry, is, isNot) => {
     return (is && isInRegistry) || (isNot && !isInRegistry)
 }
 
+export const filterBySubdomain = (domain, www) => {
+    return www && extractSubdomainFromDomain(domain) === 'www'
+}
+
 export const applyFilteringConditions = (tesc, filterTypes, account) => {
     /*console.log('names of used filters: ', Object.entries(filterTypes).filter(entry =>
         (entry[1].hasOwnProperty('input') && entry[1].input !== '') ||
@@ -87,7 +95,8 @@ export const applyFilteringConditions = (tesc, filterTypes, account) => {
     return Object.entries(filterTypes).filter(entry =>
         (entry[1].hasOwnProperty('input') && entry[1].input !== '' && entry[1].isFiltered === true) ||
         (entry[1].hasOwnProperty('from') && entry[1].from !== '' && entry[1].to !== '') ||
-        (entry[1].hasOwnProperty('is') && (entry[1].is || entry[1].isNot)))
+        (entry[1].hasOwnProperty('is') && (entry[1].is || entry[1].isNot)) ||
+        (entry[1].hasOwnProperty('www') && entry[1].www))
         .map(entry => entry[0])
         .reduce((condition, entry_) =>
             entry_ === 'byDomain' ? condition && filterByDomain(tesc.domain, filterTypes.byDomain.input, filterTypes.byDomain.isFiltered) :
@@ -98,5 +107,6 @@ export const applyFilteringConditions = (tesc, filterTypes, account) => {
                                 entry_ === 'byFavourites' ? condition && filterByFavourites(tesc.isFavourite, filterTypes.byFavourites.is, filterTypes.byFavourites.isNot) :
                                     entry_ === 'byExpiry' ? condition && filterByExpiry(tesc.expiry, filterTypes.byExpiry.from, filterTypes.byExpiry.to) :
                                         entry_ === 'byCreatedAt' ? condition && filterByCreatedAt(tesc.createdAt, filterTypes.byCreatedAt.from, filterTypes.byCreatedAt.to) :
-                                            condition, true)
+                                            entry_ === 'bySubdomain' ? condition && filterBySubdomain(tesc.domain, filterTypes.bySubdomain.www) :
+                                                condition, true)
 }
