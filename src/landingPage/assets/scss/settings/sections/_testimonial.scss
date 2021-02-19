@@ -7,6 +7,7 @@ $testimonial-header--padding__mobile: 	null;		// testimonial header, bottom padd
 $testimonial-header--padding__desktop:	null;		// testimonial header, bottom padding (desktop)
 $testimonial-items--padding__mobile: 	null;		// padding between testimonial items (mobile)
 $testimonial-items--padding__desktop: 	null;		// padding between testimonial items (desktop)
-$testimonial-item--width: 				344px;		// testimonial item, width
+// $testimonial-item--width: 				344px;		// testimonial item, width
+$testimonial-item--width: 				250px;		// testimonial item, width
 $testimonial-item--inner-padding-v: 	24px;		// testimonial item, inner top and bottom padding (it inherits $tiles-item--inner-padding-v unless you replace null with a new value)
 $testimonial-item--inner-padding-h: 	32px;		// testimonial item, inner left and right padding (it inherits $tiles-item--inner-padding-h unless you replace null with a new value)
