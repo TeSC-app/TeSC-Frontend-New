@@ -128,7 +128,7 @@ function TableEntry(props) {
                     <span>
                         {own && hasAllColumns(cols) ?
                             <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="purple" />} /> :
-                            !own && hasAllColumns(cols) ? <Popup inverted content="You favorited this contract" trigger={<Icon className="user-icon" name="star" color="yellow" />} /> : null
+                            <Popup inverted content="You favorited this contract" trigger={<Icon className="user-icon" name={!own && hasAllColumns(cols) ? 'star' : ''} color="yellow" />} />
                         }
                         <LinkTescInspect contractAddress={contractAddress} />
                     </span> : renderDomainForRegistryInspect()
