@@ -98,11 +98,11 @@ function TableEntry(props) {
     };
 
     const renderDomainForRegistryInspect = () => {
-        return (isSha3(domain)) ?
+        return (isSha3(domain)) || domain.length > 15 ?
             <Popup content={`${domain}`} trigger={
                 cols.has(COL.TSC) ?
-                    <Button basic size='medium' onClick={exploreDomain}>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
-                    <i>{`0x${domain.substring(0, 2)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
+                    <Button basic size='medium' onClick={exploreDomain}>{`${domain.substring(0, 4)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
+                    <i>{`${domain.substring(0, 4)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
             : cols.has(COL.TSC) ? <Button basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain;
     };
 
@@ -128,7 +128,8 @@ function TableEntry(props) {
                     <span>
                         {own && hasAllColumns(cols) ?
                             <Popup inverted content="You own this contract" trigger={<Icon className="user-icon" name="user" color="purple" />} /> :
-                            <Popup inverted content="You favorited this contract" trigger={<Icon className="user-icon" name="star" color="yellow" />} />
+                            !own && hasAllColumns(cols) ?
+                                <Popup inverted content="You favorited this contract" trigger={<Icon className="user-icon" name="star" color="yellow" />} /> : null
                         }
                         <LinkTescInspect contractAddress={contractAddress} />
                     </span> : renderDomainForRegistryInspect()
