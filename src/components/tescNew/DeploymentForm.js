@@ -604,7 +604,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
 
 
     const getStepContent = (step) => {
-        switch (initInputs? step + 1 : step) {
+        const curStep = initInputs? step + 1 : step;
+        console.log('curStep', curStep)
+        console.log('activeStep', activeStep)
+        switch (curStep) {
             case 0:
                 return {
                     component: (
@@ -894,7 +897,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                             />
                         </Fragment>
                     ),
-                    completed: getStepContent(step - 2).completed && getStepContent(step - 1).completed,
+                    completed: getStepContent(step - 2).completed && getStepContent(step - 1).completed &&  activeStep >= (initInputs? 2 : 3),
                     reachable: (getStepContent(step - 2).completed && getStepContent(step - 1).completed) || getStepContent(step - 1).reachable
                 };
             case 4:
@@ -910,7 +913,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                                     <span>Cost estimation:  </span>
                                     <Label tag style={{ color: 'royalblue', }}>
                                         {costsEstimated.eth} <span style={{ fontSize: '0.75em' }}>ETH </span>
-                                        {costsEstimated.usd > 0 && `(~ ${costsEstimated.usd}`} <span style={{ fontSize: '0.75em' }}>USD</span>)
+                                        {costsEstimated.eur > 0 && `(~ ${costsEstimated.eur}`} <span style={{ fontSize: '0.75em' }}>EUR</span>)
                                     </Label>
                                 </div>
                             )}
