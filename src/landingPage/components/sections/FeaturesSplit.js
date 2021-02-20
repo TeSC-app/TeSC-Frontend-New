@@ -255,9 +255,9 @@ const FeaturesSplit = ({
               </div>
             </div>
 
-            <div className="split-item">
+            <div className="split-item" style={{ alignItems: 'normal' }}>
               <div className="split-item-content center-content-mobile reveal-from-left" data-reveal-container=".split-item">
-                <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
+                <div className="text-xxs text-color-primary fw-600 tt-u mb-8" style={{paddingTop:'40%'}}>
                   TeSC-CLI
                   </div>
                 <h3 className="mt-0 mb-12">
@@ -269,8 +269,15 @@ const FeaturesSplit = ({
                   </p>
               </div>
               <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}} 
-                data-reveal-container=".split-item">
-                <Image src='https://react.semantic-ui.com/images/wireframe/image.png'/>
+                data-reveal-container=".split-item">               
+                  <iframe
+                    title="media"
+                    src={`clidemo/test.html`}
+                    frameBorder="0"
+                    allowFullScreen
+                    height="1000"
+                    width="650"
+                  />
               </div>
             </div>
           </div>
