@@ -23,6 +23,7 @@ function RegistryInspect() {
     const [loading, setLoading] = useState(false)
     const [isExploringDomain, setIsExploringDomain] = useState(false)
     const [domainFilter, setDomainFilter] = useState('')
+    const [entriesOriginal, setEntriesOriginal] = useState([])
 
     const handleDomainFilter = (domain) => {
         setDomainFilter(domain)
@@ -74,6 +75,9 @@ function RegistryInspect() {
                             });
                         }
                     }
+                    //this is needed when we apply the filters in the registry 
+                    //and our original rowData is changed because we need to change the analytics - used in clearFilters()
+                    setEntriesOriginal(entriesRaw)
                     setEntriesRaw(entriesRaw)
                     setTescsWithOccurances(distinctTescsWithOccurances)
                 } else {
@@ -90,6 +94,11 @@ function RegistryInspect() {
         setIsExploringDomain(isExploringDomain);
     };
 
+    //when we filter we update the row data and by doing so the analytics as well
+    const updateRowData = (entries) => {
+        setEntriesRaw(entries)
+    }
+
     const renderTable = () => {
         if (entriesRaw && entriesRaw.length > 0 && !loading) {
             return (
@@ -97,10 +106,12 @@ function RegistryInspect() {
                     <TableOverview
                         rowData={entriesRaw}
                         tescsWithOccurances={tescsWithOccurances}
+                        rowDataOriginal={entriesOriginal}
                         handleLoading={handleLoading}
                         handleIsExploringDomain={handleIsExploringDomain}
                         handleDomainFilter={handleDomainFilter}
-                        cols={isExploringDomain ? new Set([COL.ADDRESS, COL.DOMAIN, COL.EXPIRY, COL.VERIF, COL.FAV]) : new Set([COL.DOMAIN, COL.TSC, COL.VERIF])}
+                        updateRowData={updateRowData}
+                        cols={isExploringDomain ? new Set([COL.ADDRESS, COL.DOMAIN, COL.EXPIRY, COL.VERIF]) : new Set([COL.DOMAIN, COL.TSC, COL.VERIF])}
                     />
                 </div>
             );
@@ -109,7 +120,7 @@ function RegistryInspect() {
                 <>
                 <SearchBox
                             onChange={handleDomainFilter}
-                            onSubmit={() => setEntriesRaw(entriesRaw.filter(entry => entry.domain.includes(domainFilter)).sort((tescA, tescB) => tescB.expiry - tescA.expiry))}
+                            onSubmit={() => setEntriesRaw(entriesOriginal.filter(entry => entry.domain.includes(domainFilter)).sort((tescA, tescB) => tescB.expiry - tescA.expiry))}
                             value={domainFilter}
                             placeholder='www.mysite.com'
                             label='Domain'
