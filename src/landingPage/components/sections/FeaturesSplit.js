@@ -11,6 +11,7 @@ import dashboardImg from '../../assets/images/dashboard.png';
 import deployImg from '../../assets/images/deploy.png';
 import verifyImg from '../../assets/images/verify.png';
 import overviewImg from '../../assets/images/overview.png';
+import exploreImg from '../../assets/images/explore.png';
 
 const propTypes = {
   ...SectionSplitProps.types
@@ -225,20 +226,16 @@ const FeaturesSplit = ({
                   </Link>            
                   </p>
               </div>
-              <div className={
-                classNames(
-                  'split-item-image center-content-mobile reveal-from-bottom',
-                  imageFill && 'split-item-image-fill'
-                )}
+              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}} 
                 data-reveal-container=".split-item">
-                <Image src='https://react.semantic-ui.com/images/wireframe/image.png'/>
+                <Image src={exploreImg} size="large"/>
               </div>
             </div>
 
             <div className="split-item">
               <div className="split-item-content center-content-mobile reveal-from-right" data-reveal-container=".split-item">
                 <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
-                  TeSC Registry Analytics
+                  Registry-wide Analytics
                   </div>
                 <h3 className="mt-0 mb-12">
                   Statistics for TeSC Registry
@@ -258,6 +255,24 @@ const FeaturesSplit = ({
               </div>
             </div>
 
+            <div className="split-item">
+              <div className="split-item-content center-content-mobile reveal-from-left" data-reveal-container=".split-item">
+                <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
+                  TeSC-CLI
+                  </div>
+                <h3 className="mt-0 mb-12">
+                  Verification on Command Line
+                  </h3>
+                <p className="m-0">  
+                  The functionality of the TeSC system can also be used on the command line. 
+                  The CLI includes the verification of contracts, registration of contracts in the registry, and caching mechanisms for quicker responses.
+                  </p>
+              </div>
+              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}} 
+                data-reveal-container=".split-item">
+                <Image src='https://react.semantic-ui.com/images/wireframe/image.png'/>
+              </div>
+            </div>
           </div>
         </div>
       </div>
