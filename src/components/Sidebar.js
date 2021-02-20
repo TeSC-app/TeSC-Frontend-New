@@ -113,9 +113,9 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
                         <MenuItem onClick={(e) => handlePageNavigation(e, "/registry/inspect")} >
                             Explore
                         </MenuItem>
-                        <MenuItem onClick={(e) => handlePageNavigation(e, '/registry/add')} >
+                        {/* <MenuItem onClick={(e) => handlePageNavigation(e, '/registry/add')} >
                             Add entry
-                        </MenuItem>
+                        </MenuItem> */}
                         <MenuItem onClick={(e) => handlePageNavigation(e, '/registry/analytics')} >
                             Analytics
                         </MenuItem>
