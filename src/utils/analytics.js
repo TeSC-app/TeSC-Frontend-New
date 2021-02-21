@@ -46,12 +46,12 @@ export const computeTopDomains = (entries) => {
         domain: isSha3(entry.domain) || entry.domain.length > 25
             ? `${entry.domain.substring(0, 4)}...${entry.domain.substring(entry.domain.length - 2, entry.domain.length)}` : entry.domain, count: entries.reduce((counter, entry_) =>
                 entry_.domain === entry.domain ? counter += 1 : counter, 0)
-    })).sort((entryA, entryB) => entryB.count.toString().localeCompare(entryA.count))
-    
+    }))
+    const tescsWithOccurancesSorted = tescsWithOccurances.sort((entryA, entryB) => entryB.count.toString().localeCompare(entryA.count))
     const distinctTescsWithOccurances = [];
     const map = new Map();
     let index = 0;
-    for (const entry of tescsWithOccurances) {
+    for (const entry of tescsWithOccurancesSorted) {
         if (!map.has(entry.domain)) {
             map.set(entry.domain, true);    // set any value to Map
             distinctTescsWithOccurances.push({
