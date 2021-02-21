@@ -66,7 +66,7 @@ const FeaturesSplit = ({
 
   const tescOverviewSectionHeader = {
     title: 'TeSC: the big picture',
-    paragraph: 'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum — semper quis lectus nulla at volutpat diam ut venenatis.'
+    paragraph: 'TLS-endorsed Smart Contracts make use of the TLS-certificate to bind websites on the Internet and smart contracts on the Ethereum network.'
   };
 
   const tescSpecificSectionHeader = {
@@ -95,32 +95,21 @@ const FeaturesSplit = ({
                   Overview
                 </div>
                 <h3 className="mt-0 mb-12">
-                  How TeSC works
+                  The Goal
                 </h3>
                 <p className="m-0">
-                  1. Creates a SC conforming to the TeSC infterface by signing the Claim using TLS-certificate private key of example.com. We call it a TLS-endorsed Smart Contract, or TeSC for short.
+                  The concept of TLS-endorsed Smart Contract (TeSC for short) is all about filling the gap between websites on the Internet and smart contracts on the Ethereum network, thereby preventing the Address Replacement attacks. It ensures that contract addresses posted on a website are pointing smart contracts genuinely owned by the website/domain owner. Making sure that smart contract owner and website/domain owner are the same entity helps the entities that would like to send funds to the smart contract be sure that they are not transfering funds to the wrong smart contract.
                 </p>
+
                 <br />
+
+                <h3 className="mt-0 mb-12">
+                  The How
+                </h3>
                 <p className="m-0">
-                  2. Deploy that TeSC to the Ethereum network
+                  TLS-endorsed Smart Contract ultilizes TLS-certificate of the website and the asymmetric encryption to achieve the goal of binding websites and smart contracts. The data of a TeSC is signed with the private key of the TLS-certificate and the resulting Signature is stored on-chain in TeSC. A funding entity, e.g. an ICO investor, will then verify a TeSC by decrypting the Signature using the public key of the TLS-certificate retrieved from the website. The verification pocess gives a binary result: either the contract is trustworthy, i.e. the smart contract owner and the website/domain owner are the same entity, or the contract is not trustworthy since it is probably under the Address Replacement attack. Based on the the verification result, the funding entity decides whether they would transfer the funds to that smart contract or not.
                 </p>
-                <br />
-                <p className="m-0">
-                  3. This is an optional step to register the TeSC to the TeSC Registry, which is another Smart Contract on the Ethereum network acting as a repository for all TeSCs in the network.
-                </p>
-                <br />
-                <p className="m-0">
-                  4. Serves the website containing the TeSC address. The website must use HTTPS with TLS-certificate containing the TLS public key
-                </p>
-                <br />
-                <p className="m-0">
-                  5. The users visit the website and see TeSC address at 0x1234567890AbcDeF
-                </p>
-                <br />
-                <p className="m-0">
-                  6. When the user wants to verifiy a TeSC, they will go to the Ethereum network and get contract data from at  e.g. domain, signature from
-                </p>
-                <br />
+               
               </div>
               <div className={`${classNames('reveal-from-bottom')} split-item-image tesc-concept`} style={{ marginLeft: "auto", marginRight: "auto" }}
                 data-reveal-container=".split-item">
