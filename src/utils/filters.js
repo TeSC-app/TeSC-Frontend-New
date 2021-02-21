@@ -1,4 +1,4 @@
-import { extractSubdomainFromDomain } from './tesc'
+import { extractSubdomainFromDomain, convertToUnix } from './tesc'
 
 export const editCheckboxFilterTypes = (name, checked, filterTypes) => {
     let filterTypesNew = { ...filterTypes }
@@ -38,6 +38,34 @@ export const updateTextfieldFilterStatus = (name, value, filterTypes) => {
     return filterTypesNew
 }
 
+export const updateDayPickerFilterStatus = (name, value, filterTypes) => {
+    let filterTypesNew = { ...filterTypes }
+    switch (name) {
+        case 'expiryToFilter': filterTypesNew = { ...filterTypes, byExpiry: { from: filterTypes.byExpiry.from, to: value, isFiltered: true } }
+            break
+        case 'createdAtToFilter': filterTypesNew = { ...filterTypes, byCreatedAt: { from: filterTypes.byCreatedAt.from, to: value, isFiltered: true } }
+            break
+        default: filterTypesNew = { ...filterTypes }
+    }
+    return filterTypesNew
+}
+
+export const updateDateOrTextfieldFilterStatus = (name, value, filterTypes) => {
+    let filterTypesNew = { ...filterTypes }
+    switch (name) {
+        case 'domainFilter': filterTypesNew = { ...filterTypes, ...updateTextfieldFilterStatus(name, value, filterTypes) }
+            break
+        case 'contractAddressFilter': filterTypesNew = { ...filterTypes, ...updateTextfieldFilterStatus(name, value, filterTypes) }
+            break
+        case 'expiryToFilter': filterTypesNew = { ...filterTypes, ...updateDayPickerFilterStatus(name, value, filterTypes) }
+            break
+        case 'createdAtToFilter': filterTypesNew = { ...filterTypes, ...updateDayPickerFilterStatus(name, value, filterTypes) }
+            break
+        default: filterTypesNew = { ...filterTypes }
+    }
+    return filterTypesNew
+}
+
 export const filterByDomain = (domain, input, isFiltered) => {
     return (input !== '' && isFiltered && (domain === input))
 }
@@ -46,13 +74,13 @@ export const filterByAddress = (contractAddress, input, isFiltered) => {
     return (input !== '' && isFiltered && (contractAddress === input))
 }
 
-export const filterByExpiry = (expiry, from, to) => {
-    return ((from !== '' && to !== '') &&
+export const filterByExpiry = (expiry, from, to, isFiltered) => {
+    return ((from !== '' && to !== '' && isFiltered) &&
         (from <= expiry && expiry <= to))
 }
 
-export const filterByCreatedAt = (createdAt, from, to) => {
-    return ((from !== '' && to !== '') &&
+export const filterByCreatedAt = (createdAt, from, to, isFiltered) => {
+    return ((from !== '' && to !== '' && isFiltered) &&
         (from <= createdAt && createdAt <= to))
 }
 
@@ -105,8 +133,8 @@ export const applyFilteringConditions = (tesc, filterTypes, account) => {
                         entry_ === 'byIsInRegistry' ? condition && filterByIsInRegistry(tesc.isInRegistry, filterTypes.byIsInRegistry.is, filterTypes.byIsInRegistry.isNot) :
                             entry_ === 'byVerified' ? condition && filterByVerified(tesc.verified, filterTypes.byVerified.is, filterTypes.byVerified.isNot) :
                                 entry_ === 'byFavourites' ? condition && filterByFavourites(tesc.isFavourite, filterTypes.byFavourites.is, filterTypes.byFavourites.isNot) :
-                                    entry_ === 'byExpiry' ? condition && filterByExpiry(tesc.expiry, filterTypes.byExpiry.from, filterTypes.byExpiry.to) :
-                                        entry_ === 'byCreatedAt' ? condition && filterByCreatedAt(tesc.createdAt, filterTypes.byCreatedAt.from, filterTypes.byCreatedAt.to) :
+                                    entry_ === 'byExpiry' ? condition && filterByExpiry(tesc.expiry, filterTypes.byExpiry.from, filterTypes.byExpiry.to, filterTypes.byExpiry.isFiltered) :
+                                        entry_ === 'byCreatedAt' ? condition && filterByCreatedAt(tesc.createdAt, filterTypes.byCreatedAt.from, filterTypes.byCreatedAt.to, filterTypes.byCreatedAt.isFiltered) :
                                             entry_ === 'bySubdomain' ? condition && filterBySubdomain(tesc.domain, filterTypes.bySubdomain.www) :
                                                 condition, true)
 }

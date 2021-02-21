@@ -5,12 +5,12 @@ import { formatDate, parseDate } from 'react-day-picker/moment';
 import AppContext from '../appContext';
 import TableEntry from './TableEntry';
 import SearchBox from './SearchBox';
-import { convertToUnix, extractSubdomainFromDomain } from '../utils/tesc'
+import { convertToUnix } from '../utils/tesc'
 import { loadStorage } from '../utils/storage';
 import {
     applyFilteringConditions,
     editCheckboxFilterTypes,
-    updateTextfieldFilterStatus
+    updateDateOrTextfieldFilterStatus
 } from '../utils/filters'
 
 const ENTRIES_PER_PAGE = 5;
@@ -71,11 +71,11 @@ function TableOverview(props) {
         byDomain: { input: '', isFiltered: false },
         bySubdomain: { www: false },
         byContractAddress: { input: '', isFiltered: false },
-        byExpiry: { from: '', to: '' },
+        byExpiry: { from: '', to: '', isFiltered: false },
         byVerified: { is: false, isNot: false },
         byIsInRegistry: { is: false, isNot: false },
         byFavourites: { is: false, isNot: false },
-        byCreatedAt: { from: '', to: '' },
+        byCreatedAt: { from: '', to: '', isFiltered: false },
     })
 
     useEffect(() => {
@@ -259,7 +259,7 @@ function TableOverview(props) {
             console.log('ROW DATA,', rowData)
             setDisplayedEntries(rowData.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setTescs(rowData)
-        //registry inspect initial table
+            //registry inspect initial table
         } else if (cols.has(COL.TSC)) {
             setDisplayedEntries(tescsWithOccurances.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setTescsWithOccurancesNew(tescsWithOccurances)
@@ -289,20 +289,20 @@ function TableOverview(props) {
     const changeDateFilters = (date, modifier, dayPickerInput) => {
         const name = dayPickerInput.props.inputProps.name
         switch (name) {
-            case 'expiryFromFilter': setFilterTypes(({ ...filterTypes, byExpiry: { from: convertToUnix(date), to: filterTypes.byExpiry.to } }))
+            case 'expiryFromFilter': setFilterTypes(({ ...filterTypes, byExpiry: { from: convertToUnix(date), to: filterTypes.byExpiry.to, isFiltered: false } }))
                 break
-            case 'expiryToFilter': setFilterTypes(({ ...filterTypes, byExpiry: { from: filterTypes.byExpiry.from, to: convertToUnix(date) } }))
+            case 'expiryToFilter': setFilterTypes(({ ...filterTypes, byExpiry: { from: filterTypes.byExpiry.from, to: convertToUnix(date), isFiltered: false } }))
                 break
-            case 'createdAtFromFilter': setFilterTypes(({ ...filterTypes, byCreatedAt: { from: convertToUnix(date), to: filterTypes.byCreatedAt.to } }))
+            case 'createdAtFromFilter': setFilterTypes(({ ...filterTypes, byCreatedAt: { from: convertToUnix(date), to: filterTypes.byCreatedAt.to, isFiltered: false } }))
                 break
-            case 'createdAtToFilter': setFilterTypes(({ ...filterTypes, byCreatedAt: { from: filterTypes.byCreatedAt.from, to: convertToUnix(date) } }))
+            case 'createdAtToFilter': setFilterTypes(({ ...filterTypes, byCreatedAt: { from: filterTypes.byCreatedAt.from, to: convertToUnix(date), isFiltered: false } }))
                 break
             default: setFilterTypes(filterTypes)
         }
     }
 
     const filterEntries = (name, value) => {
-        const filterTypesNew = updateTextfieldFilterStatus(name, value, filterTypes)
+        const filterTypesNew = updateDateOrTextfieldFilterStatus(name, value, filterTypes)
         setFilterTypes(filterTypesNew)
         //only filter on active filters
         if (cols.has(COL.TSC)) setTescsWithOccurancesNew(tescsWithOccurances.filter(tesc => applyFilteringConditions(tesc, filterTypesNew)))
@@ -361,8 +361,8 @@ function TableOverview(props) {
     }
 
     const renderFilteringDropdownForDayPickers = (title, inputPropNameFrom, inputPropNameTo, dateFrom, dateTo) => {
-        const classesDropdown = title === 'Expiry' && (filterTypes.byExpiry.from && filterTypes.byExpiry.to) ? 'icon dropdown-filters-filtered' :
-            title === 'Created At' && (filterTypes.byCreatedAt.from && filterTypes.byCreatedAt.to) ? 'icon dropdown-filters-filtered' :
+        const classesDropdown = title === 'Expiry' && (filterTypes.byExpiry.from && filterTypes.byExpiry.to && filterTypes.byExpiry.isFiltered) ? 'icon dropdown-filters-filtered' :
+            title === 'Created At' && (filterTypes.byCreatedAt.from && filterTypes.byCreatedAt.to && filterTypes.byCreatedAt.isFiltered) ? 'icon dropdown-filters-filtered' :
                 'icon dropdown-filters'
         return (
             <Dropdown
@@ -370,7 +370,7 @@ function TableOverview(props) {
                 icon={'angle down'}
                 simple
                 className={classesDropdown}
-                onBlur={filterEntries}>
+                onBlur={() => filterEntries(inputPropNameTo, dateTo)}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
                     <Form>
                         <Form.Field><DayPickerInput
@@ -437,7 +437,7 @@ function TableOverview(props) {
     const renderClearFiltersButton = () => {
         const isAtLeastOneFilterUsed = Object.entries(filterTypes).some(entry =>
             (entry[1].hasOwnProperty('isFiltered') && entry[1].isFiltered) ||
-            (entry[1].hasOwnProperty('from') && entry[1].from !== '' && entry[1].to !== '') ||
+            (entry[1].hasOwnProperty('from') && entry[1].from !== '' && entry[1].to !== '' && entry[1].isFiltered) ||
             (entry[1].hasOwnProperty('is') && (entry[1].is || entry[1].isNot)) ||
             (entry[1].hasOwnProperty('www') && entry[1].www))
 
