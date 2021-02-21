@@ -93,9 +93,15 @@ const App = ({ web3 }) => {
                 <Route path='/' exact component={LandingPage} />
                 :
                 <div className='layout'>
-                    <Sidebar collapsed={collapsed} toggled={toggled} handleToggleSidebar={setToggled} handleCollapseSidebar={handleCollapseSidebar} />
+                    <Sidebar
+                        collapsed={collapsed}
+                        toggled={toggled}
+                        handleToggleSidebar={setToggled}
+                        handleCollapseSidebar={handleCollapseSidebar}
+                        sidebarCollapsed={collapsed}
+                    />
                     <div style={{ width: '100vw', height: '100vh' }}>
-                        <Navbar hasWalletAddress={hasWalletAddress} selectedAccount={account} handleCollapseSidebar={handleCollapseSidebar} sidebarCollapsed={collapsed} />
+                        <Navbar hasWalletAddress={hasWalletAddress} selectedAccount={account} />
 
                         <div className="page">
                             {/* <Segment className='main-segment' raised> */}
@@ -122,7 +128,7 @@ const App = ({ web3 }) => {
                             {/* </Segment> */}
                         </div>
                     </div>
-                    <ToastContainer autoClose={10000}/>
+                    <ToastContainer autoClose={10000} />
                 </div>
             }
             <Dimmer active={screenBlocked} style={{ zIndex: '9999' }}>
