@@ -70,20 +70,20 @@ export const checkExpirationDates = (entries) => {
             entry_.expiry < moment().unix() ? counter += 1 : counter, 0), color: colorsBar[0]
     },
     {
-        expired: '<1 month', count: entries.reduce((counter, entry_) =>
-            entry_.expiry < moment().add(1, 'months').unix() && entry_.expiry > moment().unix() ? counter += 1 : counter, 0), color: colorsBar[1]
+        expired: '1 month', count: entries.reduce((counter, entry_) =>
+            entry_.expiry <= moment().add(1, 'months').unix() && entry_.expiry > moment().unix() ? counter += 1 : counter, 0), color: colorsBar[1]
     },
     {
-        expired: '<3 months', count: entries.reduce((counter, entry_) =>
-            entry_.expiry < moment().add(3, 'months').unix() && entry_.expiry > moment().add(1, 'months').unix() ? counter += 1 : counter, 0), color: colorsBar[2]
+        expired: '6 months', count: entries.reduce((counter, entry_) =>
+            entry_.expiry <= moment().add(6, 'months').unix() && entry_.expiry > moment().add(1, 'months').unix() ? counter += 1 : counter, 0), color: colorsBar[2]
     },
     {
-        expired: '<6 months', count: entries.reduce((counter, entry_) =>
-            entry_.expiry < moment().add(6, 'months').unix() && entry_.expiry > moment().add(3, 'months').unix() ? counter += 1 : counter, 0), color: colorsBar[3]
+        expired: '1 year', count: entries.reduce((counter, entry_) =>
+            entry_.expiry <= moment().add(12, 'months').unix() && entry_.expiry > moment().add(6, 'months').unix() ? counter += 1 : counter, 0), color: colorsBar[3]
     },
     {
-        expired: '>=6 months', count: entries.reduce((counter, entry_) =>
-            entry_.expiry >= moment().add(6, 'months').unix() ? counter += 1 : counter, 0), color: colorsBar[4]
+        expired: '>1 year', count: entries.reduce((counter, entry_) =>
+            entry_.expiry > moment().add(12, 'months').unix() ? counter += 1 : counter, 0), color: colorsBar[4]
     }]
     return data
 } 

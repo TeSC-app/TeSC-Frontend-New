@@ -1,5 +1,12 @@
-import { extractSubdomainFromDomain, convertToUnix } from './tesc'
+import { extractSubdomainFromDomain } from './tesc'
 
+export const computeAtLeastOneFilterUsed = (filterTypes) => {
+    return Object.entries(filterTypes).some(entry =>
+        (entry[1].hasOwnProperty('input') && entry[1].hasOwnProperty('isFiltered') && entry[1].input !== '' && entry[1].isFiltered) ||
+        (entry[1].hasOwnProperty('from') && (entry[1].from !== '' || entry[1].to !== '') && entry[1].isFiltered) ||
+        (entry[1].hasOwnProperty('is') && (entry[1].is || entry[1].isNot)) ||
+        (entry[1].hasOwnProperty('www') && entry[1].www))
+}
 export const editCheckboxFilterTypes = (name, checked, filterTypes) => {
     let filterTypesNew = { ...filterTypes }
     switch (name) {
@@ -75,8 +82,8 @@ export const filterByAddress = (contractAddress, input, isFiltered) => {
 }
 
 export const filterByExpiry = (expiry, from, to, isFiltered) => {
-    return ((from !== '' && to !== '' && isFiltered) &&
-        (from <= expiry && expiry <= to))
+    return (((from !== '' || to !== '') && isFiltered) &&
+        from === '' && to !== '' ? expiry <= to : to === '' && from !== '' ? from <= expiry : from <= expiry && expiry <= to)
 }
 
 export const filterByCreatedAt = (createdAt, from, to, isFiltered) => {
@@ -122,7 +129,7 @@ export const applyFilteringConditions = (tesc, filterTypes, account) => {
     console.log(filterTypes)*/
     return Object.entries(filterTypes).filter(entry =>
         (entry[1].hasOwnProperty('input') && entry[1].input !== '' && entry[1].isFiltered === true) ||
-        (entry[1].hasOwnProperty('from') && entry[1].from !== '' && entry[1].to !== '') ||
+        (entry[1].hasOwnProperty('from') && (entry[1].from !== '' || entry[1].to !== '')) ||
         (entry[1].hasOwnProperty('is') && (entry[1].is || entry[1].isNot)) ||
         (entry[1].hasOwnProperty('www') && entry[1].www))
         .map(entry => entry[0])

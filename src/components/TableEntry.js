@@ -114,10 +114,14 @@ function TableEntry(props) {
     }
 
     const renderTescContractCount = () => {
-        return (<div className='smart-contracts'>{tesc.contractAddresses.map((entry, index, contractAddresses) =>
-        (index <= 10 ? <Popup key={entry.contractAddress} content={entry.contractAddress} trigger={
+        return (<div className='smart-contracts'>{tesc.contractAddresses ? tesc.contractAddresses.map((entry, index, contractAddresses) =>
+        (index <= 10 ? <Popup key={entry.contractAddress} on='click' trigger={
             <Image src={!entry.verified && !isSha3(domain) ? '../images/smart-contract-icon-invalid.png' : entry.verified ?
-                '../images/smart-contract-icon-valid.png' : '../images/smart-contract-icon.png'} className='smart-contracts__icon' alt='Smart Contract' size='mini' />} /> : index === 11 ? `...and ${contractAddresses.length - index} more` : null))}</div>)
+                '../images/smart-contract-icon-valid.png' : '../images/smart-contract-icon.png'} className='smart-contracts__icon popup-smart-contract' alt='Smart Contract' size='mini' />} >
+                    <Popup.Content>
+                        <LinkTescInspect contractAddress={entry.contractAddress} />
+                    </Popup.Content>
+                    </Popup> : index === 11 ? `...and ${contractAddresses.length - index} more` : null)) : null}</div>)
     }
 
 
