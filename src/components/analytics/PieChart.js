@@ -19,7 +19,7 @@ function PieChart(props) {
                 innerRadius={0.5}
                 padAngle={0.7}
                 cornerRadius={3}
-                colors={isFlags ? {scheme: 'nivo'} : ['#32CD32', '#DC143C']}
+                colors={isFlags ? { scheme: 'set3' } : ['#32CD32', '#DC143C']}
                 borderWidth={1}
                 borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
                 radialLabelsSkipAngle={10}
@@ -58,10 +58,10 @@ function PieChart(props) {
 
     return (
         <div style={{ height: isRegistryInspect ? 100 : 300 }}>
-            { !isRegistryInspect ? 
-            <PageHeader title={isFlags ? 'Popular Flags' : 'Valid To Invalid Ratio'}
-                isRegistryAnalytics={true}
-                infoText={infoText} /> : null
+            { !isRegistryInspect ?
+                <PageHeader title={isFlags ? 'Popular Flags' : 'Valid To Invalid Ratio'}
+                    isRegistryAnalytics={true}
+                    infoText={infoText} /> : null
             }
             {renderPie()}
         </div>
