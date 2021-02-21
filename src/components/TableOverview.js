@@ -5,15 +5,16 @@ import { formatDate, parseDate } from 'react-day-picker/moment';
 import AppContext from '../appContext';
 import TableEntry from './TableEntry';
 import SearchBox from './SearchBox';
-import { convertToUnix, extractSubdomainFromDomain } from '../utils/tesc'
+import { convertToUnix, extractSubdomainFromDomain } from '../utils/tesc';
 import { loadStorage } from '../utils/storage';
 import {
     applyFilteringConditions,
     editCheckboxFilterTypes,
     updateTextfieldFilterStatus
-} from '../utils/filters'
+} from '../utils/filters';
 
-const ENTRIES_PER_PAGE = 5;
+const DEFAULT_ENTRIES_PER_PAGE = 10;
+const ENTRIES_PER_PAGE_OPTIONS = [5, 10, 15, 20, 30, 50];
 
 export const COL = {
     DOMAIN: 'Domain',
@@ -46,9 +47,10 @@ function TableOverview(props) {
     const { web3, account } = useContext(AppContext);
 
     const [tescs, setTescs] = useState(rowData);
-    const [tescsWithOccurancesNew, setTescsWithOccurancesNew] = useState(tescsWithOccurances)
+    const [tescsWithOccurancesNew, setTescsWithOccurancesNew] = useState(tescsWithOccurances);
+    const [entriesPerPage, setEntriesPerPage] = useState(DEFAULT_ENTRIES_PER_PAGE);
+    const [totalPages, setTotalPages] = useState(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / entriesPerPage) : tescs ? Math.ceil(tescs.length / entriesPerPage) : 0);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / ENTRIES_PER_PAGE) : tescs ? Math.ceil(tescs.length / ENTRIES_PER_PAGE) : 0);
     const [displayedEntries, setDisplayedEntries] = useState([]);
 
     //for search input inside registry inspect
@@ -63,9 +65,9 @@ function TableOverview(props) {
         isSortingByFavourite: { isSortingByFavouriteAsc: true, isSorting: false },
         isSortingByCreatedAt: { isSortingByCreatedAtAsc: true, isSorting: false },
         isSortingByTotalSC: { isSortingByTotalSCAsc: true, isSorting: false }
-    })
+    });
 
-    const [isShowingFilters, setIsShowingFilters] = useState(false)
+    const [isShowingFilters, setIsShowingFilters] = useState(false);
     const [filterTypes, setFilterTypes] = useState({
         byOwner: { is: false, isNot: false },
         byDomain: { input: '', isFiltered: false },
@@ -76,20 +78,20 @@ function TableOverview(props) {
         byIsInRegistry: { is: false, isNot: false },
         byFavourites: { is: false, isNot: false },
         byCreatedAt: { from: '', to: '' },
-    })
+    });
 
     useEffect(() => {
         const init = async () => {
             try {
-                if (cols.has(COL.TSC)) setDisplayedEntries(account && tescsWithOccurances ? tescsWithOccurances.slice(0, ENTRIES_PER_PAGE) : [])
-                else setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRIES_PER_PAGE) : []);
+                if (cols.has(COL.TSC)) setDisplayedEntries(account && tescsWithOccurances ? tescsWithOccurances.slice(0, entriesPerPage) : []);
+                else setDisplayedEntries(account && tescs ? tescs.slice(0, entriesPerPage) : []);
 
-                setTotalPages(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / ENTRIES_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRIES_PER_PAGE : 0));
+                setTotalPages(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / entriesPerPage) : Math.ceil(tescs ? tescs.length / entriesPerPage : 0));
                 window.ethereum.on('accountsChanged', (accounts) => {
                     console.log('accounts changed');
                     const tescs = loadStorage(accounts[0]);
                     setTescs(tescs);
-                    setDisplayedEntries(tescs.slice(0, ENTRIES_PER_PAGE));
+                    setDisplayedEntries(tescs.slice(0, entriesPerPage));
                 });
             }
             catch (error) {
@@ -97,7 +99,7 @@ function TableOverview(props) {
             }
         };
         init();
-    }, [tescs, account, web3, cols, tescsWithOccurancesNew, tescsWithOccurances]);
+    }, [tescs, account, web3, cols, tescsWithOccurancesNew, tescsWithOccurances, entriesPerPage]);
 
     const handleChangeTescs = (tesc) => {
         setTescs(loadStorage(account));
@@ -107,16 +109,16 @@ function TableOverview(props) {
         //check if there are filters applied
         setCurrentPage(activePage);
         if (!cols.has(COL.TSC)) {
-            setTotalPages(Math.ceil(tescs.length / ENTRIES_PER_PAGE));
-            setDisplayedEntries(tescs.slice((activePage - 1) * ENTRIES_PER_PAGE, activePage * ENTRIES_PER_PAGE));
+            setTotalPages(Math.ceil(tescs.length / entriesPerPage));
+            setDisplayedEntries(tescs.slice((activePage - 1) * entriesPerPage, activePage * entriesPerPage));
         } else {
-            setDisplayedEntries(tescsWithOccurancesNew.slice((activePage - 1) * ENTRIES_PER_PAGE, activePage * ENTRIES_PER_PAGE));
+            setDisplayedEntries(tescsWithOccurancesNew.slice((activePage - 1) * entriesPerPage, activePage * entriesPerPage));
         }
     };
 
     const renderRows = () => {
-        let displayedEntriesNew = [...displayedEntries]
-        if (hasAllColumns(cols)) displayedEntriesNew = displayedEntries.filter(tesc => tesc.isFavourite || tesc.own)
+        let displayedEntriesNew = [...displayedEntries];
+        if (hasAllColumns(cols)) displayedEntriesNew = displayedEntries.filter(tesc => tesc.isFavourite || tesc.own);
         if (displayedEntriesNew && !cols.has(COL.TSC)) {
             return displayedEntriesNew.map((tesc) => (
                 <TableEntry key={tesc.contractAddress}
@@ -142,7 +144,7 @@ function TableOverview(props) {
     };
 
     const handleSearchSubmit = (e) => {
-        const domain = e.target ? e.target[0].value : e
+        const domain = e.target ? e.target[0].value : e;
         handleLoading(true);
         if (domain === '') {
             handleIsExploringDomain(false);
@@ -150,10 +152,10 @@ function TableOverview(props) {
         } else {
             handleIsExploringDomain(true);
             //for showing domain-specific analytics
-            handleDomainFilter(domain)
-            const filteredRowData = rowData.filter(entry => entry.domain.includes(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry)
+            handleDomainFilter(domain);
+            const filteredRowData = rowData.filter(entry => entry.domain.includes(domain)).sort((tescA, tescB) => tescB.expiry - tescA.expiry);
             setTescs(filteredRowData);
-            updateRowData(filteredRowData)
+            updateRowData(filteredRowData);
         }
         handleLoading(false);
     };
@@ -180,61 +182,61 @@ function TableOverview(props) {
             isSortingByFavourite: { isSortingByFavouriteAsc: true, isSorting: false },
             isSortingByCreatedAt: { isSortingByCreatedAtAsc: true, isSorting: false },
             isSortingByTotalSC: { isSortingByTotalSCAsc: true, isSorting: false }
-        })
-    }
+        });
+    };
 
     const sortEntries = (sortType) => {
         switch (sortType) {
             case 'ADDRESS':
-                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByAddress.isSortingByAddressAsc ? tescA.contractAddress - tescB.contractAddress : tescB.contractAddress - tescA.contractAddress).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-                clearSorting()
-                setSortingTypes(prevState => ({ ...prevState, isSortingByAddress: { isSortingByAddressAsc: sortingTypes.isSortingByAddress.isSortingByAddressAsc ? false : true, isSorting: true } }))
-                break
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByAddress.isSortingByAddressAsc ? tescA.contractAddress - tescB.contractAddress : tescB.contractAddress - tescA.contractAddress).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                clearSorting();
+                setSortingTypes(prevState => ({ ...prevState, isSortingByAddress: { isSortingByAddressAsc: sortingTypes.isSortingByAddress.isSortingByAddressAsc ? false : true, isSorting: true } }));
+                break;
             case 'DOMAIN':
-                if (cols.has(COL.TSC)) setDisplayedEntries(tescsWithOccurancesNew.sort((tescA, tescB) => sortingTypes.isSortingByDomain.isSortingByDomainAsc ? tescA.domain.localeCompare(tescB.domain) : tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-                else setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByDomain.isSortingByDomainAsc ? tescA.domain.localeCompare(tescB.domain) : tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-                clearSorting()
-                setSortingTypes(prevState => ({ ...prevState, isSortingByDomain: { isSortingByDomainAsc: sortingTypes.isSortingByDomain.isSortingByDomainAsc ? false : true, isSorting: true } }))
-                break
+                if (cols.has(COL.TSC)) setDisplayedEntries(tescsWithOccurancesNew.sort((tescA, tescB) => sortingTypes.isSortingByDomain.isSortingByDomainAsc ? tescA.domain.localeCompare(tescB.domain) : tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                else setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByDomain.isSortingByDomainAsc ? tescA.domain.localeCompare(tescB.domain) : tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                clearSorting();
+                setSortingTypes(prevState => ({ ...prevState, isSortingByDomain: { isSortingByDomainAsc: sortingTypes.isSortingByDomain.isSortingByDomainAsc ? false : true, isSorting: true } }));
+                break;
             case 'EXPIRY':
-                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByExpiry.isSortingByExpiryAsc ? tescA.expiry.toString().localeCompare(tescB.expiry) : tescB.expiry.toString().localeCompare(tescA.expiry)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-                clearSorting()
-                setSortingTypes(prevState => ({ ...prevState, isSortingByExpiry: { isSortingByExpiryAsc: sortingTypes.isSortingByExpiry.isSortingByExpiryAsc ? false : true, isSorting: true } }))
-                break
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByExpiry.isSortingByExpiryAsc ? tescA.expiry.toString().localeCompare(tescB.expiry) : tescB.expiry.toString().localeCompare(tescA.expiry)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                clearSorting();
+                setSortingTypes(prevState => ({ ...prevState, isSortingByExpiry: { isSortingByExpiryAsc: sortingTypes.isSortingByExpiry.isSortingByExpiryAsc ? false : true, isSorting: true } }));
+                break;
             case 'TOTAL_SC':
-                setDisplayedEntries(tescsWithOccurances.sort((tescA, tescB) => sortingTypes.isSortingByTotalSC.isSortingByTotalSCAsc ? tescA.contractCount.toString().localeCompare(tescB.contractCount) : tescB.contractCount.toString().localeCompare(tescA.contractCount)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-                clearSorting()
-                setSortingTypes(prevState => ({ ...prevState, isSortingByTotalSC: { isSortingByTotalSCAsc: sortingTypes.isSortingByTotalSC.isSortingByTotalSCAsc ? false : true, isSorting: true } }))
-                break
+                setDisplayedEntries(tescsWithOccurances.sort((tescA, tescB) => sortingTypes.isSortingByTotalSC.isSortingByTotalSCAsc ? tescA.contractCount.toString().localeCompare(tescB.contractCount) : tescB.contractCount.toString().localeCompare(tescA.contractCount)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                clearSorting();
+                setSortingTypes(prevState => ({ ...prevState, isSortingByTotalSC: { isSortingByTotalSCAsc: sortingTypes.isSortingByTotalSC.isSortingByTotalSCAsc ? false : true, isSorting: true } }));
+                break;
             case 'VERIFIED':
-                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByVerified.isSortingByVerifiedAsc ? tescA.verified.toString().localeCompare(tescB.verified) : tescB.verified.toString().localeCompare(tescA.verified)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-                clearSorting()
-                setSortingTypes(prevState => ({ ...prevState, isSortingByVerified: { isSortingByVerifiedAsc: sortingTypes.isSortingByVerified.isSortingByVerifiedAsc ? false : true, isSorting: true } }))
-                break
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByVerified.isSortingByVerifiedAsc ? tescA.verified.toString().localeCompare(tescB.verified) : tescB.verified.toString().localeCompare(tescA.verified)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                clearSorting();
+                setSortingTypes(prevState => ({ ...prevState, isSortingByVerified: { isSortingByVerifiedAsc: sortingTypes.isSortingByVerified.isSortingByVerifiedAsc ? false : true, isSorting: true } }));
+                break;
             case 'REGISTRY':
-                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByIsInRegistry.isSortingByIsInRegistryAsc ? tescA.isInRegistry.toString().localeCompare(tescB.isInRegistry) : tescB.isInRegistry.toString().localeCompare(tescA.isInRegistry)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-                clearSorting()
-                setSortingTypes(prevState => ({ ...prevState, isSortingByIsInRegistry: { isSortingByIsInRegistryAsc: sortingTypes.isSortingByIsInRegistry.isSortingByIsInRegistryAsc ? false : true, isSorting: true } }))
-                break
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByIsInRegistry.isSortingByIsInRegistryAsc ? tescA.isInRegistry.toString().localeCompare(tescB.isInRegistry) : tescB.isInRegistry.toString().localeCompare(tescA.isInRegistry)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                clearSorting();
+                setSortingTypes(prevState => ({ ...prevState, isSortingByIsInRegistry: { isSortingByIsInRegistryAsc: sortingTypes.isSortingByIsInRegistry.isSortingByIsInRegistryAsc ? false : true, isSorting: true } }));
+                break;
             case 'FAVOURITES':
-                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByFavourite.isSortingByFavouriteAsc ? tescA.isFavourite.toString().localeCompare(tescB.isFavourite) : tescB.isFavourite.toString().localeCompare(tescA.isFavourite)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-                clearSorting()
-                setSortingTypes(prevState => ({ ...prevState, isSortingByFavourite: { isSortingByFavouriteAsc: sortingTypes.isSortingByFavourite.isSortingByFavouriteAsc ? false : true, isSorting: true } }))
-                break
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByFavourite.isSortingByFavouriteAsc ? tescA.isFavourite.toString().localeCompare(tescB.isFavourite) : tescB.isFavourite.toString().localeCompare(tescA.isFavourite)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                clearSorting();
+                setSortingTypes(prevState => ({ ...prevState, isSortingByFavourite: { isSortingByFavouriteAsc: sortingTypes.isSortingByFavourite.isSortingByFavouriteAsc ? false : true, isSorting: true } }));
+                break;
             case 'CREATED_AT':
-                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByCreatedAt.isSortingByCreatedAtAsc ? tescA.createdAt.toString().localeCompare(tescB.createdAt) : tescB.createdAt.toString().localeCompare(tescA.createdAt)).slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-                clearSorting()
-                setSortingTypes(prevState => ({ ...prevState, isSortingByCreatedAt: { isSortingByCreatedAtAsc: sortingTypes.isSortingByCreatedAt.isSortingByCreatedAtAsc ? false : true, isSorting: true } }))
-                break
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByCreatedAt.isSortingByCreatedAtAsc ? tescA.createdAt.toString().localeCompare(tescB.createdAt) : tescB.createdAt.toString().localeCompare(tescA.createdAt)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                clearSorting();
+                setSortingTypes(prevState => ({ ...prevState, isSortingByCreatedAt: { isSortingByCreatedAtAsc: sortingTypes.isSortingByCreatedAt.isSortingByCreatedAtAsc ? false : true, isSorting: true } }));
+                break;
             default:
-                setDisplayedEntries(tescs.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-                setTescs(tescs.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+                setDisplayedEntries(tescs.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                setTescs(tescs.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
         }
-    }
+    };
 
     const setVerificationInTescs = (tescsWithVerification) => {
-        setTescs(tescsWithVerification)
-    }
+        setTescs(tescsWithVerification);
+    };
 
     const clearFilters = () => {
         setFilterTypes({
@@ -247,72 +249,72 @@ function TableOverview(props) {
             byIsInRegistry: { is: false, isNot: false },
             byFavourites: { is: false, isNot: false },
             byCreatedAt: { from: '', to: '' },
-        })
+        });
         //dashboard table
         if (hasAllColumns(cols)) {
-            const storage = loadStorage(account)
-            setDisplayedEntries(storage.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(storage)
+            const storage = loadStorage(account);
+            setDisplayedEntries(storage.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+            setTescs(storage);
         }
         //subendorsements table
         else if (!hasAllColumns(cols) && !cols.has(COL.TSC) && cols.has(COL.FAV)) {
-            console.log('ROW DATA,', rowData)
-            setDisplayedEntries(rowData.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(rowData)
-        //registry inspect initial table
+            console.log('ROW DATA,', rowData);
+            setDisplayedEntries(rowData.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+            setTescs(rowData);
+            //registry inspect initial table
         } else if (cols.has(COL.TSC)) {
-            setDisplayedEntries(tescsWithOccurances.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescsWithOccurancesNew(tescsWithOccurances)
+            setDisplayedEntries(tescsWithOccurances.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+            setTescsWithOccurancesNew(tescsWithOccurances);
         }
         //when we clear filters in registry inspect we go back to the initial table with tescs with occurances
-        if (typeof handleIsExploringDomain !== 'undefined') handleIsExploringDomain(false)
-        if (typeof rowDataOriginal !== 'undefined') updateRowData(rowDataOriginal)
-    }
+        if (typeof handleIsExploringDomain !== 'undefined') handleIsExploringDomain(false);
+        if (typeof rowDataOriginal !== 'undefined') updateRowData(rowDataOriginal);
+    };
 
     const changeTextFilters = (e, { name, value }) => {
         switch (name) {
-            case 'domainFilter': setFilterTypes(({ ...filterTypes, byDomain: { input: value, isFiltered: false } }))
-                break
-            case 'contractAddressFilter': setFilterTypes(({ ...filterTypes, byContractAddress: { input: value, isFiltered: false } }))
-                break
-            default: setFilterTypes(filterTypes)
+            case 'domainFilter': setFilterTypes(({ ...filterTypes, byDomain: { input: value, isFiltered: false } }));
+                break;
+            case 'contractAddressFilter': setFilterTypes(({ ...filterTypes, byContractAddress: { input: value, isFiltered: false } }));
+                break;
+            default: setFilterTypes(filterTypes);
         }
-    }
+    };
 
     const changeCheckboxFiltersAndFilter = (name, checked) => {
-        const filterTypesNew = editCheckboxFilterTypes(name, checked, filterTypes)
-        setFilterTypes(filterTypesNew)
-        setTescs(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypesNew, account)))
-        if (!hasAllColumns(cols) && typeof updateRowData !== 'undefined') updateRowData(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypesNew, account)))
-    }
+        const filterTypesNew = editCheckboxFilterTypes(name, checked, filterTypes);
+        setFilterTypes(filterTypesNew);
+        setTescs(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypesNew, account)));
+        if (!hasAllColumns(cols) && typeof updateRowData !== 'undefined') updateRowData(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypesNew, account)));
+    };
 
     const changeDateFilters = (date, modifier, dayPickerInput) => {
-        const name = dayPickerInput.props.inputProps.name
+        const name = dayPickerInput.props.inputProps.name;
         switch (name) {
-            case 'expiryFromFilter': setFilterTypes(({ ...filterTypes, byExpiry: { from: convertToUnix(date), to: filterTypes.byExpiry.to } }))
-                break
-            case 'expiryToFilter': setFilterTypes(({ ...filterTypes, byExpiry: { from: filterTypes.byExpiry.from, to: convertToUnix(date) } }))
-                break
-            case 'createdAtFromFilter': setFilterTypes(({ ...filterTypes, byCreatedAt: { from: convertToUnix(date), to: filterTypes.byCreatedAt.to } }))
-                break
-            case 'createdAtToFilter': setFilterTypes(({ ...filterTypes, byCreatedAt: { from: filterTypes.byCreatedAt.from, to: convertToUnix(date) } }))
-                break
-            default: setFilterTypes(filterTypes)
+            case 'expiryFromFilter': setFilterTypes(({ ...filterTypes, byExpiry: { from: convertToUnix(date), to: filterTypes.byExpiry.to } }));
+                break;
+            case 'expiryToFilter': setFilterTypes(({ ...filterTypes, byExpiry: { from: filterTypes.byExpiry.from, to: convertToUnix(date) } }));
+                break;
+            case 'createdAtFromFilter': setFilterTypes(({ ...filterTypes, byCreatedAt: { from: convertToUnix(date), to: filterTypes.byCreatedAt.to } }));
+                break;
+            case 'createdAtToFilter': setFilterTypes(({ ...filterTypes, byCreatedAt: { from: filterTypes.byCreatedAt.from, to: convertToUnix(date) } }));
+                break;
+            default: setFilterTypes(filterTypes);
         }
-    }
+    };
 
     const filterEntries = (name, value) => {
-        const filterTypesNew = updateTextfieldFilterStatus(name, value, filterTypes)
-        setFilterTypes(filterTypesNew)
+        const filterTypesNew = updateTextfieldFilterStatus(name, value, filterTypes);
+        setFilterTypes(filterTypesNew);
         //only filter on active filters
-        if (cols.has(COL.TSC)) setTescsWithOccurancesNew(tescsWithOccurances.filter(tesc => applyFilteringConditions(tesc, filterTypesNew)))
-        setTescs(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypesNew, account)))
-        if (!hasAllColumns(cols) && typeof updateRowData !== 'undefined') updateRowData(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypesNew, account)))
-    }
+        if (cols.has(COL.TSC)) setTescsWithOccurancesNew(tescsWithOccurances.filter(tesc => applyFilteringConditions(tesc, filterTypesNew)));
+        setTescs(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypesNew, account)));
+        if (!hasAllColumns(cols) && typeof updateRowData !== 'undefined') updateRowData(rowData.filter(tesc => applyFilteringConditions(tesc, filterTypesNew, account)));
+    };
 
     const renderFilteringDropdownForCheckboxesSubdomain = (title) => {
         const classesDropdown = title === 'Subdomain' &&
-            filterTypes.bySubdomain.www ? 'icon dropdown-filters-filtered' : 'icon dropdown-filters'
+            filterTypes.bySubdomain.www ? 'icon dropdown-filters-filtered' : 'icon dropdown-filters';
         return (
             <Dropdown
                 text={title}
@@ -324,8 +326,8 @@ function TableOverview(props) {
                         <Form.Checkbox className='checkbox__label' name='www' label='www' checked={filterTypes.www} onChange={(e, { name, checked }) => changeCheckboxFiltersAndFilter(name, checked)} />
                     </Form>
                 </Dropdown.Menu>
-            </Dropdown>)
-    }
+            </Dropdown>);
+    };
 
     const renderFilteringDropdownForCheckboxes = (title, checkboxLabelOne, checkboxLabelTwo, inputPropNameOne, inputPropNameTwo) => {
         const classesDropdown = title === 'Verified' &&
@@ -336,15 +338,15 @@ function TableOverview(props) {
                     (filterTypes.byFavourites.is || filterTypes.byFavourites.isNot) ? 'icon dropdown-filters-filtered' :
                     title === 'Own' &&
                         (filterTypes.byOwner.is || filterTypes.byOwner.isNot) ? 'icon dropdown-filters-filtered' :
-                        'icon dropdown-filters'
+                        'icon dropdown-filters';
         const checkedOne = title === 'Own' ? filterTypes.byOwner.is :
             title === 'Verified' ? filterTypes.byVerified.is :
                 title === 'Registry' ? filterTypes.byIsInRegistry.is :
-                    filterTypes.byFavourites.is
+                    filterTypes.byFavourites.is;
         const checkedTwo = title === 'Own' ? filterTypes.byOwner.isNot :
             title === 'Verified' ? filterTypes.byVerified.isNot :
                 title === 'Registry' ? filterTypes.byIsInRegistry.isNot :
-                    filterTypes.byFavourites.isNot
+                    filterTypes.byFavourites.isNot;
         return (
             <Dropdown
                 text={title}
@@ -357,13 +359,13 @@ function TableOverview(props) {
                         <Form.Checkbox className='checkbox__label' name={inputPropNameTwo} label={checkboxLabelTwo} checked={checkedTwo} onChange={(e, { name, checked }) => changeCheckboxFiltersAndFilter(name, checked)} />
                     </Form>
                 </Dropdown.Menu>
-            </Dropdown>)
-    }
+            </Dropdown>);
+    };
 
     const renderFilteringDropdownForDayPickers = (title, inputPropNameFrom, inputPropNameTo, dateFrom, dateTo) => {
         const classesDropdown = title === 'Expiry' && (filterTypes.byExpiry.from && filterTypes.byExpiry.to) ? 'icon dropdown-filters-filtered' :
             title === 'Created At' && (filterTypes.byCreatedAt.from && filterTypes.byCreatedAt.to) ? 'icon dropdown-filters-filtered' :
-                'icon dropdown-filters'
+                'icon dropdown-filters';
         return (
             <Dropdown
                 text={title}
@@ -396,14 +398,14 @@ function TableOverview(props) {
                             /></Form.Field>
                     </Form>
                 </Dropdown.Menu>
-            </Dropdown>)
+            </Dropdown>);
 
-    }
+    };
 
     const renderFilteringDropdownTextfield = (title, inputPropName, filterTypeInput, placeholder) => {
         const classesDropdown = title === 'Domain' && filterTypes.byDomain.input !== '' && filterTypes.byDomain.isFiltered ? 'icon dropdown-filters-filtered' :
             title === 'Address' && filterTypes.byContractAddress.input !== '' && filterTypes.byExpiry.isFiltered ? 'icon dropdown-filters-filtered' :
-                'icon dropdown-filters'
+                'icon dropdown-filters';
         return (
             <Dropdown
                 text={title}
@@ -415,8 +417,8 @@ function TableOverview(props) {
                         <Form.Input placeholder={placeholder} name={inputPropName} onChange={changeTextFilters} />
                     </Form>
                 </Dropdown.Menu>
-            </Dropdown>)
-    }
+            </Dropdown>);
+    };
 
     const renderFiltersGroup = () => {
         if (isShowingFilters) {
@@ -430,16 +432,16 @@ function TableOverview(props) {
                 {cols.has(COL.REG) ? renderFilteringDropdownForCheckboxes('Registry', 'In Registry', 'Not in registry', 'isInRegistryFilter', 'isNotInRegistryFilter') : null}
                 {cols.has(COL.FAV) ? renderFilteringDropdownForCheckboxes('Favourites', 'Favourite', 'Not favourite', 'isFavouriteFilter', 'isNotFavouriteFilter') : null}
                 {cols.has(COL.CA) ? renderFilteringDropdownForDayPickers('Created at', 'createdAtFromFilter', 'createdAtToFilter', filterTypes.byCreatedAt.from, filterTypes.byCreatedAt.to) : null}
-            </>)
+            </>);
         }
-    }
+    };
 
     const renderClearFiltersButton = () => {
         const isAtLeastOneFilterUsed = Object.entries(filterTypes).some(entry =>
             (entry[1].hasOwnProperty('isFiltered') && entry[1].isFiltered) ||
             (entry[1].hasOwnProperty('from') && entry[1].from !== '' && entry[1].to !== '') ||
             (entry[1].hasOwnProperty('is') && (entry[1].is || entry[1].isNot)) ||
-            (entry[1].hasOwnProperty('www') && entry[1].www))
+            (entry[1].hasOwnProperty('www') && entry[1].www));
 
         if (isAtLeastOneFilterUsed) return (<Button
             content='Clear filters'
@@ -447,8 +449,8 @@ function TableOverview(props) {
             basic
             className='dropdown-filters__menu__button'
             onClick={clearFilters}
-        />)
-    }
+        />);
+    };
 
     const renderLegendForSCImages = () => {
         if (cols.has(COL.TSC)) return (
@@ -457,8 +459,8 @@ function TableOverview(props) {
                 <div style={{ display: 'flex', alignItems: 'center' }}><Image src='../images/smart-contract-icon-valid.png' className='smart-contracts-legend__icon' alt='Smart Contract' size='mini' /><Label basic size='mini' content='Valid Smart Contract' /></div>
                 <div style={{ display: 'flex', alignItems: 'center' }}><Image src='../images/smart-contract-icon.png' className='smart-contracts-legend__icon' alt='Smart Contract' size='mini' /><Label size='mini' basic content='Hashed domain. Cleartext domain must be provided to verify' /></div>
             </div>
-        )
-    }
+        );
+    };
 
     return (
         <>
@@ -472,7 +474,7 @@ function TableOverview(props) {
                     icon='filter'
                     basic
                     className='dropdown-filters__menu__button'
-                    onClick={() => { isShowingFilters ? setIsShowingFilters(false) : setIsShowingFilters(true) }}
+                    onClick={() => { isShowingFilters ? setIsShowingFilters(false) : setIsShowingFilters(true); }}
                 />
             </div>
             <Table color='purple'>
@@ -540,8 +542,17 @@ function TableOverview(props) {
                         lastItem={totalPages > 8 ? { content: <Icon name='angle double right' />, icon: true } : null}
                         prevItem={{ content: <Icon name='angle left' />, icon: true }}
                         nextItem={{ content: <Icon name='angle right' />, icon: true }} />
-                </div> : null
+                    <span style={{margin: '10px'}}>Entries per page: </span>
+                    <Dropdown
+                        compact
+                        selection
+                        options={ENTRIES_PER_PAGE_OPTIONS.map(num => ({ key: num, value: num, text: num, onClick: () => setEntriesPerPage(num) }))}
+                        value={entriesPerPage}
+                    />
+                </div>
+                : <> </>
             }
+
         </>
     );
 }
