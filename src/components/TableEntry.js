@@ -98,12 +98,12 @@ function TableEntry(props) {
     };
 
     const renderDomainForRegistryInspect = () => {
-        return (isSha3(domain)) || domain.length > 15 ?
+        return (isSha3(domain)) || domain.length > 25 ?
             <Popup content={`${domain}`} trigger={
                 cols.has(COL.TSC) ?
-                    <Button basic size='medium' onClick={exploreDomain}>{`${domain.substring(0, 4)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
+                    <Button basic size='medium' className='domain-explore' onClick={exploreDomain}>{`${domain.substring(0, 4)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
                     <i>{`${domain.substring(0, 4)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
-            : cols.has(COL.TSC) ? <Button basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain;
+            : cols.has(COL.TSC) ? <Button className='domain-explore' basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain;
     };
 
     const renderPieChartForVerified = () => {

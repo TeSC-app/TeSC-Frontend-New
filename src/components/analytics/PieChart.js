@@ -8,7 +8,7 @@ function PieChart(props) {
     const { data, loading, isFlags, isRegistryInspect, infoText, isExploringDomain } = props
 
     const renderPie = () => {
-        return loading ? <Segment>
+        return loading ? <Segment basic>
             <Dimmer active={loading} inverted>
                 <Loader size='large'>Loading Pie Chart</Loader>
             </Dimmer>

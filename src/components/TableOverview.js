@@ -81,7 +81,7 @@ function TableOverview(props) {
     useEffect(() => {
         const init = async () => {
             try {
-                if (cols.has(COL.TSC)) setDisplayedEntries(account && tescsWithOccurances ? tescsWithOccurances.slice(0, ENTRIES_PER_PAGE) : [])
+                if (cols.has(COL.TSC)) setDisplayedEntries(account && tescsWithOccurancesNew ? tescsWithOccurancesNew.slice(0, ENTRIES_PER_PAGE) : [])
                 else setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRIES_PER_PAGE) : []);
 
                 setTotalPages(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / ENTRIES_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRIES_PER_PAGE : 0));
@@ -110,6 +110,7 @@ function TableOverview(props) {
             setTotalPages(Math.ceil(tescs.length / ENTRIES_PER_PAGE));
             setDisplayedEntries(tescs.slice((activePage - 1) * ENTRIES_PER_PAGE, activePage * ENTRIES_PER_PAGE));
         } else {
+            setTotalPages(Math.ceil(tescsWithOccurancesNew.length / ENTRIES_PER_PAGE));
             setDisplayedEntries(tescsWithOccurancesNew.slice((activePage - 1) * ENTRIES_PER_PAGE, activePage * ENTRIES_PER_PAGE));
         }
     };
@@ -127,7 +128,7 @@ function TableOverview(props) {
                 />
             ));
         } else if (tescsWithOccurancesNew && cols.has(COL.TSC)) {
-            return tescsWithOccurancesNew.map((entry) => (
+            return displayedEntriesNew.map((entry) => (
                 <TableEntry key={entry.domain}
                     tesc={entry}
                     handleSearchInput={handleSearchInput}
