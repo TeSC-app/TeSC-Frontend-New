@@ -15,7 +15,7 @@ function PieChart(props) {
             <Image src='https://react.semantic-ui.com/images/wireframe/paragraph.png' />
         </Segment> : <ResponsivePie
                 data={data}
-                margin={{ top: isRegistryInspect ? 0 : 40, right: 80, bottom: isRegistryInspect ? 20 : 80, left: 0 }}
+                margin={{ top: isRegistryInspect ? 0 : 40, right: 80, bottom: isRegistryInspect ? 20 : 80, left: isFlags ? -110 : 0 }}
                 innerRadius={0.5}
                 padAngle={0.7}
                 cornerRadius={3}
@@ -33,7 +33,7 @@ function PieChart(props) {
                         anchor: 'bottom',
                         direction: isFlags || isRegistryInspect ? 'column' : 'row',
                         justify: false,
-                        translateX: isFlags || isRegistryInspect ? 180 : 0,
+                        translateX: isFlags || isRegistryInspect ? 155 : 0,
                         translateY: isFlags || isRegistryInspect ? 0 : 56,
                         itemsSpacing: 0,
                         itemWidth: 100,

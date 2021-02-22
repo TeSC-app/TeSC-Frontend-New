@@ -474,8 +474,8 @@ function TableOverview(props) {
             {renderSearchBox()}
             <div style={{ textAlign: 'end' }}>
                 {renderLegendForSCImages()}
-                {renderFiltersGroup()}
                 {renderClearFiltersButton()}
+                {renderFiltersGroup()}
                 <Button
                     content='Filters'
                     icon='filter'
