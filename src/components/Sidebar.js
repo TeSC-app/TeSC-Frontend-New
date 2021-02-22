@@ -1,4 +1,4 @@
-import React, { Fragment, useContext } from 'react';
+import React, { Fragment, useContext, useState, useEffect } from 'react';
 import { useHistory, useLocation, NavLink } from 'react-router-dom';
 import { ProSidebar, Menu, MenuItem, SubMenu, SidebarHeader, SidebarContent, SidebarFooter } from 'react-pro-sidebar';
 import { Icon, Label, Image, Button, Grid, Popup } from 'semantic-ui-react';
@@ -9,15 +9,31 @@ import 'react-pro-sidebar/dist/css/styles.css';
 import { FaScroll, FaChartBar, FaAddressBook, FaWallet } from 'react-icons/fa';
 import AppContext from '../appContext';
 import sidebarBg from '../static/images/bg1.jpg';
-
+import axios from 'axios'
 
 
 const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollapseSidebar }) => {
     const { hasWalletAddress, account, networkId } = useContext(AppContext);
+    const [blockChainUrl, setBlockChainUrl] = useState('')
 
     let history = useHistory();
     let location = useLocation();
 
+    useEffect(() => {
+        (async () => {
+            try {
+                const response = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}`);
+                //for each object key that is an array get the values associated to that key and out of these values build an array of objects
+                if (response.status === 200) {
+                    console.log(response)
+                    //console.log(registryEntries.map(entry => ({ ...entry, ...updateCreatedAtAndFavouritesForRegistryInspectEntries(entry) })))
+                    setBlockChainUrl(response.data.blockChainURL)
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        })()
+    }, [])
     const handlePageNavigation = (e, dest) => {
         if (location.pathname !== dest) {
             history.push(dest);
@@ -72,7 +88,7 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
                 network = 'TeSC Test Net';
                 break;
             default:
-                network = 'Unidentified Network'
+                network = blockChainUrl
         }
         if (window.ethereum) {
             return network;

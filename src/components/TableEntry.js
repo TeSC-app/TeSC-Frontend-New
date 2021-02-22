@@ -98,12 +98,12 @@ function TableEntry(props) {
     };
 
     const renderDomainForRegistryInspect = () => {
-        return (isSha3(domain)) || domain.length > 15 ?
+        return (isSha3(domain)) || domain.length > 25 ?
             <Popup content={`${domain}`} trigger={
                 cols.has(COL.TSC) ?
-                    <Button basic size='medium' onClick={exploreDomain}>{`${domain.substring(0, 4)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
+                    <Button basic size='medium' className='domain-explore' onClick={exploreDomain}>{`${domain.substring(0, 4)}...${domain.substring(domain.length - 2, domain.length)}`}</Button> :
                     <i>{`${domain.substring(0, 4)}...${domain.substring(domain.length - 2, domain.length)}`}</i>} />
-            : cols.has(COL.TSC) ? <Button basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain;
+            : cols.has(COL.TSC) ? <Button className='domain-explore' basic size='medium' onClick={exploreDomain}>{domain}</Button> : domain;
     };
 
     const renderPieChartForVerified = () => {
@@ -114,10 +114,14 @@ function TableEntry(props) {
     }
 
     const renderTescContractCount = () => {
-        return (<div className='smart-contracts'>{tesc.contractAddresses.map((entry, index, contractAddresses) =>
-        (index <= 10 ? <Popup key={entry.contractAddress} content={entry.contractAddress} trigger={
+        return (<div className='smart-contracts'>{tesc.contractAddresses ? tesc.contractAddresses.map((entry, index, contractAddresses) =>
+        (index <= 10 ? <Popup key={entry.contractAddress} on='click' trigger={
             <Image src={!entry.verified && !isSha3(domain) ? '../images/smart-contract-icon-invalid.png' : entry.verified ?
-                '../images/smart-contract-icon-valid.png' : '../images/smart-contract-icon.png'} className='smart-contracts__icon' alt='Smart Contract' size='mini' />} /> : index === 11 ? `...and ${contractAddresses.length - index} more` : null))}</div>)
+                '../images/smart-contract-icon-valid.png' : '../images/smart-contract-icon.png'} className='smart-contracts__icon popup-smart-contract' alt='Smart Contract' size='mini' />} >
+                    <Popup.Content>
+                        <LinkTescInspect contractAddress={entry.contractAddress} />
+                    </Popup.Content>
+                    </Popup> : index === 11 ? `...and ${contractAddresses.length - index} more` : null)) : null}</div>)
     }
 
 

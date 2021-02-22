@@ -10,7 +10,7 @@ function BarChart(props) {
     const getBarColor = bar => bar.data.color;
 
     const renderBarChart = () => {
-        return loading ? <Segment>
+        return loading ? <Segment basic>
             <Dimmer active={loading} inverted>
                 <Loader size='large'>Loading Bar Chart</Loader>
             </Dimmer>

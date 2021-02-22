@@ -5,12 +5,13 @@ import { formatDate, parseDate } from 'react-day-picker/moment';
 import AppContext from '../appContext';
 import TableEntry from './TableEntry';
 import SearchBox from './SearchBox';
-import { convertToUnix, extractSubdomainFromDomain } from '../utils/tesc'
+import { convertToUnix } from '../utils/tesc'
 import { loadStorage } from '../utils/storage';
 import {
     applyFilteringConditions,
     editCheckboxFilterTypes,
-    updateTextfieldFilterStatus
+    updateDateOrTextfieldFilterStatus,
+    computeAtLeastOneFilterUsed
 } from '../utils/filters'
 
 const ENTRIES_PER_PAGE = 5;
@@ -71,17 +72,17 @@ function TableOverview(props) {
         byDomain: { input: '', isFiltered: false },
         bySubdomain: { www: false },
         byContractAddress: { input: '', isFiltered: false },
-        byExpiry: { from: '', to: '' },
+        byExpiry: { from: '', to: '', isFiltered: false },
         byVerified: { is: false, isNot: false },
         byIsInRegistry: { is: false, isNot: false },
         byFavourites: { is: false, isNot: false },
-        byCreatedAt: { from: '', to: '' },
+        byCreatedAt: { from: '', to: '', isFiltered: false },
     })
 
     useEffect(() => {
         const init = async () => {
             try {
-                if (cols.has(COL.TSC)) setDisplayedEntries(account && tescsWithOccurances ? tescsWithOccurances.slice(0, ENTRIES_PER_PAGE) : [])
+                if (cols.has(COL.TSC)) setDisplayedEntries(account && tescsWithOccurancesNew ? tescsWithOccurancesNew.slice(0, ENTRIES_PER_PAGE) : [])
                 else setDisplayedEntries(account && tescs ? tescs.slice(0, ENTRIES_PER_PAGE) : []);
 
                 setTotalPages(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / ENTRIES_PER_PAGE) : Math.ceil(tescs ? tescs.length / ENTRIES_PER_PAGE : 0));
@@ -110,6 +111,7 @@ function TableOverview(props) {
             setTotalPages(Math.ceil(tescs.length / ENTRIES_PER_PAGE));
             setDisplayedEntries(tescs.slice((activePage - 1) * ENTRIES_PER_PAGE, activePage * ENTRIES_PER_PAGE));
         } else {
+            setTotalPages(Math.ceil(tescsWithOccurancesNew.length / ENTRIES_PER_PAGE));
             setDisplayedEntries(tescsWithOccurancesNew.slice((activePage - 1) * ENTRIES_PER_PAGE, activePage * ENTRIES_PER_PAGE));
         }
     };
@@ -127,7 +129,7 @@ function TableOverview(props) {
                 />
             ));
         } else if (tescsWithOccurancesNew && cols.has(COL.TSC)) {
-            return tescsWithOccurancesNew.map((entry) => (
+            return displayedEntriesNew.map((entry) => (
                 <TableEntry key={entry.domain}
                     tesc={entry}
                     handleSearchInput={handleSearchInput}
@@ -242,11 +244,11 @@ function TableOverview(props) {
             byDomain: { input: '', isFiltered: false },
             bySubdomain: { www: false },
             byContractAddress: { input: '', isFiltered: false },
-            byExpiry: { from: '', to: '' },
+            byExpiry: { from: '', to: '', isFiltered: false },
             byVerified: { is: false, isNot: false },
             byIsInRegistry: { is: false, isNot: false },
             byFavourites: { is: false, isNot: false },
-            byCreatedAt: { from: '', to: '' },
+            byCreatedAt: { from: '', to: '', isFiltered: false },
         })
         //dashboard table
         if (hasAllColumns(cols)) {
@@ -256,17 +258,22 @@ function TableOverview(props) {
         }
         //subendorsements table
         else if (!hasAllColumns(cols) && !cols.has(COL.TSC) && cols.has(COL.FAV)) {
-            console.log('ROW DATA,', rowData)
             setDisplayedEntries(rowData.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
-            setTescs(rowData)
+            setTescs(rowData)  
+        } 
         //registry inspect initial table
-        } else if (cols.has(COL.TSC)) {
+        else if (cols.has(COL.TSC)) {
             setDisplayedEntries(tescsWithOccurances.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
             setTescsWithOccurancesNew(tescsWithOccurances)
         }
-        //when we clear filters in registry inspect we go back to the initial table with tescs with occurances
-        if (typeof handleIsExploringDomain !== 'undefined') handleIsExploringDomain(false)
-        if (typeof rowDataOriginal !== 'undefined') updateRowData(rowDataOriginal)
+        //registry domain explore table - we need this to correctly display results again in the initial table
+        else if (!hasAllColumns(cols) && !cols.has(COL.TSC) && !cols.has(COL.FAV)) {
+            setDisplayedEntries(tescsWithOccurances.slice((currentPage - 1) * ENTRIES_PER_PAGE, currentPage * ENTRIES_PER_PAGE))
+            setTescsWithOccurancesNew(tescsWithOccurances)
+            //when we clear filters in registry inspect we go back to the initial table with tescs with occurances
+            if (typeof rowDataOriginal !== 'undefined') updateRowData(rowDataOriginal)
+            if (typeof handleIsExploringDomain !== 'undefined') handleIsExploringDomain(false)
+        }
     }
 
     const changeTextFilters = (e, { name, value }) => {
@@ -289,20 +296,20 @@ function TableOverview(props) {
     const changeDateFilters = (date, modifier, dayPickerInput) => {
         const name = dayPickerInput.props.inputProps.name
         switch (name) {
-            case 'expiryFromFilter': setFilterTypes(({ ...filterTypes, byExpiry: { from: convertToUnix(date), to: filterTypes.byExpiry.to } }))
+            case 'expiryFromFilter': setFilterTypes(({ ...filterTypes, byExpiry: { from: convertToUnix(date), to: filterTypes.byExpiry.to, isFiltered: false } }))
                 break
-            case 'expiryToFilter': setFilterTypes(({ ...filterTypes, byExpiry: { from: filterTypes.byExpiry.from, to: convertToUnix(date) } }))
+            case 'expiryToFilter': setFilterTypes(({ ...filterTypes, byExpiry: { from: filterTypes.byExpiry.from, to: convertToUnix(date), isFiltered: false } }))
                 break
-            case 'createdAtFromFilter': setFilterTypes(({ ...filterTypes, byCreatedAt: { from: convertToUnix(date), to: filterTypes.byCreatedAt.to } }))
+            case 'createdAtFromFilter': setFilterTypes(({ ...filterTypes, byCreatedAt: { from: convertToUnix(date), to: filterTypes.byCreatedAt.to, isFiltered: false } }))
                 break
-            case 'createdAtToFilter': setFilterTypes(({ ...filterTypes, byCreatedAt: { from: filterTypes.byCreatedAt.from, to: convertToUnix(date) } }))
+            case 'createdAtToFilter': setFilterTypes(({ ...filterTypes, byCreatedAt: { from: filterTypes.byCreatedAt.from, to: convertToUnix(date), isFiltered: false } }))
                 break
             default: setFilterTypes(filterTypes)
         }
     }
 
     const filterEntries = (name, value) => {
-        const filterTypesNew = updateTextfieldFilterStatus(name, value, filterTypes)
+        const filterTypesNew = updateDateOrTextfieldFilterStatus(name, value, filterTypes)
         setFilterTypes(filterTypesNew)
         //only filter on active filters
         if (cols.has(COL.TSC)) setTescsWithOccurancesNew(tescsWithOccurances.filter(tesc => applyFilteringConditions(tesc, filterTypesNew)))
@@ -361,8 +368,8 @@ function TableOverview(props) {
     }
 
     const renderFilteringDropdownForDayPickers = (title, inputPropNameFrom, inputPropNameTo, dateFrom, dateTo) => {
-        const classesDropdown = title === 'Expiry' && (filterTypes.byExpiry.from && filterTypes.byExpiry.to) ? 'icon dropdown-filters-filtered' :
-            title === 'Created At' && (filterTypes.byCreatedAt.from && filterTypes.byCreatedAt.to) ? 'icon dropdown-filters-filtered' :
+        const classesDropdown = title === 'Expiry' && ((filterTypes.byExpiry.from !== '' || filterTypes.byExpiry.to !== '') && filterTypes.byExpiry.isFiltered) ? 'icon dropdown-filters-filtered' :
+            title === 'Created At' && ((filterTypes.byCreatedAt.from !== '' || filterTypes.byCreatedAt.to !== '') && filterTypes.byCreatedAt.isFiltered) ? 'icon dropdown-filters-filtered' :
                 'icon dropdown-filters'
         return (
             <Dropdown
@@ -370,7 +377,7 @@ function TableOverview(props) {
                 icon={'angle down'}
                 simple
                 className={classesDropdown}
-                onBlur={filterEntries}>
+                onBlur={() => filterEntries(inputPropNameTo, dateTo)}>
                 <Dropdown.Menu className='dropdown__menu-filters'>
                     <Form>
                         <Form.Field><DayPickerInput
@@ -435,12 +442,7 @@ function TableOverview(props) {
     }
 
     const renderClearFiltersButton = () => {
-        const isAtLeastOneFilterUsed = Object.entries(filterTypes).some(entry =>
-            (entry[1].hasOwnProperty('isFiltered') && entry[1].isFiltered) ||
-            (entry[1].hasOwnProperty('from') && entry[1].from !== '' && entry[1].to !== '') ||
-            (entry[1].hasOwnProperty('is') && (entry[1].is || entry[1].isNot)) ||
-            (entry[1].hasOwnProperty('www') && entry[1].www))
-
+        const isAtLeastOneFilterUsed = computeAtLeastOneFilterUsed(filterTypes) 
         if (isAtLeastOneFilterUsed) return (<Button
             content='Clear filters'
             icon='remove circle'

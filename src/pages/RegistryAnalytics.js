@@ -41,12 +41,12 @@ function RegistryAnalytics() {
     const dataValidContracts = [{ 'id': 'Valid', 'value': computeValidContracts(entries, true) }, { 'id': 'Invalid', 'value': computeValidContracts(entries, false) }]
     return (
         <div>
-            <PageHeader title='Registry-wide Analytics' />
+            <PageHeader title='Registry Analytics' />
             <section style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
                 gridTemplateRows: 'auto auto',
-                gridGap: '10px',
+                gridGap: '50px',
                 height: '300px',
                 marginTop: '50px'
             }}>
