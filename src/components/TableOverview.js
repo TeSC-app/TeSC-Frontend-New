@@ -13,8 +13,8 @@ import {
     updateTextfieldFilterStatus
 } from '../utils/filters';
 
-const DEFAULT_ENTRIES_PER_PAGE = 10;
-const ENTRIES_PER_PAGE_OPTIONS = [5, 10, 15, 20, 30, 50];
+const DEFAULT_ROWS_PER_PAGE = 10;
+const ROWS_PER_PAGE_OPTIONS = [5, 10, 15, 20, 30, 50];
 
 export const COL = {
     DOMAIN: 'Domain',
@@ -48,8 +48,8 @@ function TableOverview(props) {
 
     const [tescs, setTescs] = useState(rowData);
     const [tescsWithOccurancesNew, setTescsWithOccurancesNew] = useState(tescsWithOccurances);
-    const [entriesPerPage, setEntriesPerPage] = useState(DEFAULT_ENTRIES_PER_PAGE);
-    const [totalPages, setTotalPages] = useState(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / entriesPerPage) : tescs ? Math.ceil(tescs.length / entriesPerPage) : 0);
+    const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_ROWS_PER_PAGE);
+    const [totalPages, setTotalPages] = useState(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / rowsPerPage) : tescs ? Math.ceil(tescs.length / rowsPerPage) : 0);
     const [currentPage, setCurrentPage] = useState(1);
     const [displayedEntries, setDisplayedEntries] = useState([]);
 
@@ -83,15 +83,15 @@ function TableOverview(props) {
     useEffect(() => {
         const init = async () => {
             try {
-                if (cols.has(COL.TSC)) setDisplayedEntries(account && tescsWithOccurances ? tescsWithOccurances.slice(0, entriesPerPage) : []);
-                else setDisplayedEntries(account && tescs ? tescs.slice(0, entriesPerPage) : []);
+                if (cols.has(COL.TSC)) setDisplayedEntries(account && tescsWithOccurances ? tescsWithOccurances.slice(0, rowsPerPage) : []);
+                else setDisplayedEntries(account && tescs ? tescs.slice(0, rowsPerPage) : []);
 
-                setTotalPages(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / entriesPerPage) : Math.ceil(tescs ? tescs.length / entriesPerPage : 0));
+                setTotalPages(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / rowsPerPage) : Math.ceil(tescs ? tescs.length / rowsPerPage : 0));
                 window.ethereum.on('accountsChanged', (accounts) => {
                     console.log('accounts changed');
                     const tescs = loadStorage(accounts[0]);
                     setTescs(tescs);
-                    setDisplayedEntries(tescs.slice(0, entriesPerPage));
+                    setDisplayedEntries(tescs.slice(0, rowsPerPage));
                 });
             }
             catch (error) {
@@ -99,7 +99,7 @@ function TableOverview(props) {
             }
         };
         init();
-    }, [tescs, account, web3, cols, tescsWithOccurancesNew, tescsWithOccurances, entriesPerPage]);
+    }, [tescs, account, web3, cols, tescsWithOccurancesNew, tescsWithOccurances, rowsPerPage]);
 
     const handleChangeTescs = (tesc) => {
         setTescs(loadStorage(account));
@@ -109,10 +109,10 @@ function TableOverview(props) {
         //check if there are filters applied
         setCurrentPage(activePage);
         if (!cols.has(COL.TSC)) {
-            setTotalPages(Math.ceil(tescs.length / entriesPerPage));
-            setDisplayedEntries(tescs.slice((activePage - 1) * entriesPerPage, activePage * entriesPerPage));
+            setTotalPages(Math.ceil(tescs.length / rowsPerPage));
+            setDisplayedEntries(tescs.slice((activePage - 1) * rowsPerPage, activePage * rowsPerPage));
         } else {
-            setDisplayedEntries(tescsWithOccurancesNew.slice((activePage - 1) * entriesPerPage, activePage * entriesPerPage));
+            setDisplayedEntries(tescsWithOccurancesNew.slice((activePage - 1) * rowsPerPage, activePage * rowsPerPage));
         }
     };
 
@@ -188,49 +188,49 @@ function TableOverview(props) {
     const sortEntries = (sortType) => {
         switch (sortType) {
             case 'ADDRESS':
-                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByAddress.isSortingByAddressAsc ? tescA.contractAddress - tescB.contractAddress : tescB.contractAddress - tescA.contractAddress).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByAddress.isSortingByAddressAsc ? tescA.contractAddress - tescB.contractAddress : tescB.contractAddress - tescA.contractAddress).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
                 clearSorting();
                 setSortingTypes(prevState => ({ ...prevState, isSortingByAddress: { isSortingByAddressAsc: sortingTypes.isSortingByAddress.isSortingByAddressAsc ? false : true, isSorting: true } }));
                 break;
             case 'DOMAIN':
-                if (cols.has(COL.TSC)) setDisplayedEntries(tescsWithOccurancesNew.sort((tescA, tescB) => sortingTypes.isSortingByDomain.isSortingByDomainAsc ? tescA.domain.localeCompare(tescB.domain) : tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
-                else setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByDomain.isSortingByDomainAsc ? tescA.domain.localeCompare(tescB.domain) : tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                if (cols.has(COL.TSC)) setDisplayedEntries(tescsWithOccurancesNew.sort((tescA, tescB) => sortingTypes.isSortingByDomain.isSortingByDomainAsc ? tescA.domain.localeCompare(tescB.domain) : tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
+                else setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByDomain.isSortingByDomainAsc ? tescA.domain.localeCompare(tescB.domain) : tescB.domain.localeCompare(tescA.domain)).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
                 clearSorting();
                 setSortingTypes(prevState => ({ ...prevState, isSortingByDomain: { isSortingByDomainAsc: sortingTypes.isSortingByDomain.isSortingByDomainAsc ? false : true, isSorting: true } }));
                 break;
             case 'EXPIRY':
-                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByExpiry.isSortingByExpiryAsc ? tescA.expiry.toString().localeCompare(tescB.expiry) : tescB.expiry.toString().localeCompare(tescA.expiry)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByExpiry.isSortingByExpiryAsc ? tescA.expiry.toString().localeCompare(tescB.expiry) : tescB.expiry.toString().localeCompare(tescA.expiry)).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
                 clearSorting();
                 setSortingTypes(prevState => ({ ...prevState, isSortingByExpiry: { isSortingByExpiryAsc: sortingTypes.isSortingByExpiry.isSortingByExpiryAsc ? false : true, isSorting: true } }));
                 break;
             case 'TOTAL_SC':
-                setDisplayedEntries(tescsWithOccurances.sort((tescA, tescB) => sortingTypes.isSortingByTotalSC.isSortingByTotalSCAsc ? tescA.contractCount.toString().localeCompare(tescB.contractCount) : tescB.contractCount.toString().localeCompare(tescA.contractCount)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                setDisplayedEntries(tescsWithOccurances.sort((tescA, tescB) => sortingTypes.isSortingByTotalSC.isSortingByTotalSCAsc ? tescA.contractCount.toString().localeCompare(tescB.contractCount) : tescB.contractCount.toString().localeCompare(tescA.contractCount)).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
                 clearSorting();
                 setSortingTypes(prevState => ({ ...prevState, isSortingByTotalSC: { isSortingByTotalSCAsc: sortingTypes.isSortingByTotalSC.isSortingByTotalSCAsc ? false : true, isSorting: true } }));
                 break;
             case 'VERIFIED':
-                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByVerified.isSortingByVerifiedAsc ? tescA.verified.toString().localeCompare(tescB.verified) : tescB.verified.toString().localeCompare(tescA.verified)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByVerified.isSortingByVerifiedAsc ? tescA.verified.toString().localeCompare(tescB.verified) : tescB.verified.toString().localeCompare(tescA.verified)).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
                 clearSorting();
                 setSortingTypes(prevState => ({ ...prevState, isSortingByVerified: { isSortingByVerifiedAsc: sortingTypes.isSortingByVerified.isSortingByVerifiedAsc ? false : true, isSorting: true } }));
                 break;
             case 'REGISTRY':
-                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByIsInRegistry.isSortingByIsInRegistryAsc ? tescA.isInRegistry.toString().localeCompare(tescB.isInRegistry) : tescB.isInRegistry.toString().localeCompare(tescA.isInRegistry)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByIsInRegistry.isSortingByIsInRegistryAsc ? tescA.isInRegistry.toString().localeCompare(tescB.isInRegistry) : tescB.isInRegistry.toString().localeCompare(tescA.isInRegistry)).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
                 clearSorting();
                 setSortingTypes(prevState => ({ ...prevState, isSortingByIsInRegistry: { isSortingByIsInRegistryAsc: sortingTypes.isSortingByIsInRegistry.isSortingByIsInRegistryAsc ? false : true, isSorting: true } }));
                 break;
             case 'FAVOURITES':
-                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByFavourite.isSortingByFavouriteAsc ? tescA.isFavourite.toString().localeCompare(tescB.isFavourite) : tescB.isFavourite.toString().localeCompare(tescA.isFavourite)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByFavourite.isSortingByFavouriteAsc ? tescA.isFavourite.toString().localeCompare(tescB.isFavourite) : tescB.isFavourite.toString().localeCompare(tescA.isFavourite)).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
                 clearSorting();
                 setSortingTypes(prevState => ({ ...prevState, isSortingByFavourite: { isSortingByFavouriteAsc: sortingTypes.isSortingByFavourite.isSortingByFavouriteAsc ? false : true, isSorting: true } }));
                 break;
             case 'CREATED_AT':
-                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByCreatedAt.isSortingByCreatedAtAsc ? tescA.createdAt.toString().localeCompare(tescB.createdAt) : tescB.createdAt.toString().localeCompare(tescA.createdAt)).slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                setDisplayedEntries(tescs.sort((tescA, tescB) => sortingTypes.isSortingByCreatedAt.isSortingByCreatedAtAsc ? tescA.createdAt.toString().localeCompare(tescB.createdAt) : tescB.createdAt.toString().localeCompare(tescA.createdAt)).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
                 clearSorting();
                 setSortingTypes(prevState => ({ ...prevState, isSortingByCreatedAt: { isSortingByCreatedAtAsc: sortingTypes.isSortingByCreatedAt.isSortingByCreatedAtAsc ? false : true, isSorting: true } }));
                 break;
             default:
-                setDisplayedEntries(tescs.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
-                setTescs(tescs.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+                setDisplayedEntries(tescs.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
+                setTescs(tescs.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
         }
     };
 
@@ -253,17 +253,17 @@ function TableOverview(props) {
         //dashboard table
         if (hasAllColumns(cols)) {
             const storage = loadStorage(account);
-            setDisplayedEntries(storage.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+            setDisplayedEntries(storage.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
             setTescs(storage);
         }
         //subendorsements table
         else if (!hasAllColumns(cols) && !cols.has(COL.TSC) && cols.has(COL.FAV)) {
             console.log('ROW DATA,', rowData);
-            setDisplayedEntries(rowData.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+            setDisplayedEntries(rowData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
             setTescs(rowData);
             //registry inspect initial table
         } else if (cols.has(COL.TSC)) {
-            setDisplayedEntries(tescsWithOccurances.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage));
+            setDisplayedEntries(tescsWithOccurances.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
             setTescsWithOccurancesNew(tescsWithOccurances);
         }
         //when we clear filters in registry inspect we go back to the initial table with tescs with occurances
@@ -477,7 +477,7 @@ function TableOverview(props) {
                     onClick={() => { isShowingFilters ? setIsShowingFilters(false) : setIsShowingFilters(true); }}
                 />
             </div>
-            <Table color='purple'>
+            <Table color='purple' selectable>
                 <Table.Header active='true' style={{ backgroundColor: 'purple' }}>
                     <Table.Row>
                         {cols.has(COL.ADDRESS) && <Table.HeaderCell>{
@@ -526,7 +526,7 @@ function TableOverview(props) {
                     </Table.Row>
                 </Table.Header>
                 {tescs && tescs.length > 0 && (
-                    <Table.Body>
+                    <Table.Body style={{ wordBreak: 'break-word' }}>
                         {renderRows()}
                     </Table.Body>
                 )}
@@ -542,12 +542,12 @@ function TableOverview(props) {
                         lastItem={totalPages > 8 ? { content: <Icon name='angle double right' />, icon: true } : null}
                         prevItem={{ content: <Icon name='angle left' />, icon: true }}
                         nextItem={{ content: <Icon name='angle right' />, icon: true }} />
-                    <span style={{margin: '10px'}}>Entries per page: </span>
+                    <span style={{margin: '10px'}}>Rows per page: </span>
                     <Dropdown
                         compact
                         selection
-                        options={ENTRIES_PER_PAGE_OPTIONS.map(num => ({ key: num, value: num, text: num, onClick: () => setEntriesPerPage(num) }))}
-                        value={entriesPerPage}
+                        options={ROWS_PER_PAGE_OPTIONS.map(num => ({ key: num, value: num, text: num, onClick: () => setRowsPerPage(num) }))}
+                        value={rowsPerPage}
                     />
                 </div>
                 : <> </>
