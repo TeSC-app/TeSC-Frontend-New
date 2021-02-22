@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import classNames from 'classnames';
 import { SectionSplitProps } from '../../utils/SectionProps';
 import SectionHeader from './partials/SectionHeader';
-import { Image } from 'semantic-ui-react'
-import { Link } from 'react-router-dom';
+import { Image, Button} from 'semantic-ui-react'
+import { NavLink } from 'react-router-dom';
 
 import '../../assets/scss/landingPage.scoped.scss';
 import analyticsImg from '../../assets/images/analytics.png';
@@ -145,12 +145,12 @@ const FeaturesSplit = ({
                   </h3>
                 <p className="m-0">
                   The dashboard helps you to keep track of your deployed contracts. Check the verification status, 
-                  set favourites, and use the diverse filter options!
+                  set favourites, and use the different filter options!
                   <br/><br/>
                
-                  <Link to="/dashboard">
-                    <span className="text-color-primary"><b>Go to dashboard</b></span> 📰         
-                  </Link>  
+                  <NavLink to="/dashboard">
+                    <Button content='Go to Dashboard 📰'/>
+                  </NavLink>
                 </p>
               </div>
               <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}   
@@ -169,13 +169,13 @@ const FeaturesSplit = ({
                   </h3>
                 <p className="m-0">  
                   Six easy to perform steps guide you through the endorsement and deployment of your contract.
-                  Tedious tasks, like inheriting the reference implementation or computing the signature, will be automated for you.
+                  Tedious tasks, e.g. inheriting the reference implementation or computing the signature, will be automated for you.
                   All you need is a <b>'.sol' file</b> including your contract, your <b>domain name</b>, and the <b>certificate private key</b> of your domain. 
                   <br/><br/>
-               
-                  <Link to="/tesc/new">
-                    <span className="text-color-primary"><b>Deploy</b></span> 🚀         
-                  </Link>            
+                              
+                  <NavLink to="/tesc/new">
+                    <Button content='Deploy 🚀'/>
+                  </NavLink>
                   </p>
               </div>
               <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}  
@@ -193,14 +193,14 @@ const FeaturesSplit = ({
                   Verification of TeSCs
                   </h3>
                 <p className="m-0">
-                  Before making a payment to a contract, you can verify that it belongs to the given domain. 
+                  Before making a payment to a contract, you can verify that it belongs to the expected domain. 
                   Just enter the <b>address of the contract</b> in question.<br/>
                   If you are the owner of the TeSC, you can also update it here.
                   <br/><br/>
-               
-                  <Link to="/tesc/inspect">
-                    <span className="text-color-primary"><b>Inspect</b></span> 🔍         
-                  </Link>  
+                   
+                  <NavLink to="/tesc/inspect">
+                    <Button content='Inspect 🔍'/>
+                  </NavLink>
                 </p>
               </div>
               <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}
@@ -218,12 +218,12 @@ const FeaturesSplit = ({
                   Contracts in TeSC Registry
                   </h3>
                 <p className="m-0">  
-                  Browse the TeSC registry in a convenient way. Included contracts are grouped by domain name and can be filtered with various options.
+                  Browse the TeSC registry in a convenient way. Included contracts are grouped by domain name and can be filtered in different ways.
                   <br/><br/>
-               
-                  <Link to="/registry/inspect">
-                    <span className="text-color-primary"><b>Explore</b></span> 🗺️         
-                  </Link>            
+                 
+                  <NavLink to="/registry/inspect">
+                    <Button content='Explore 🗺️'/>
+                  </NavLink>     
                   </p>
               </div>
               <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}} 
@@ -241,12 +241,14 @@ const FeaturesSplit = ({
                   Statistics for TeSC Registry
                   </h3>
                 <p className="m-0">
-                  View current numbers from the TeSC Registry, e.g. the number of deployed contracts, used flags, and domains.
+                  View statistics for the current TeSC Registry content, namely the ratio of valid contracts, 
+                  domains with the most contracts, used flags, and the expiry of contracts.
+                  The numbers are presented as bar and pie charts.
                   <br/><br/>
-               
-                  <Link to="/registry/analytics">
-                    <span className="text-color-primary"><b>Graphs and pie charts</b></span> 🥧         
-                  </Link>  
+                
+                  <NavLink to="/registry/analytics">
+                    <Button content='Bar and Pie Charts 📊'/>
+                  </NavLink>  
                 </p>
               </div>
               <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}   
@@ -257,15 +259,27 @@ const FeaturesSplit = ({
 
             <div className="split-item" style={{ alignItems: 'normal' }}>
               <div className="split-item-content center-content-mobile reveal-from-left" data-reveal-container=".split-item">
-                <div className="text-xxs text-color-primary fw-600 tt-u mb-8" style={{paddingTop:'40%'}}>
+                <div className="text-xxs text-color-primary fw-600 tt-u mb-8" style={{paddingTop:'10%'}}>
                   TeSC-CLI
                   </div>
                 <h3 className="mt-0 mb-12">
-                  Verification on Command Line
+                  TeSC on Command Line
                   </h3>
                 <p className="m-0">  
-                  The functionality of the TeSC system can also be used on the command line. 
-                  The CLI includes the verification of contracts, registration of contracts in the registry, and caching mechanisms for quicker responses.
+                  The functionality of the TeSC system can also be used on the command line. Among other, 
+                  the following functionality is available:<br/><br/>
+
+                  <ul>
+                    <li><b>tesc deploy:</b> deploy a TeSC-compliant contract</li>
+                    <li><b>tesc verify:</b> verify a TeSC-compliant contract</li> 
+                    <li><b>tesc changelog:</b> log changes of a TeSC-compliant contract</li> 
+                    <li><b>tesc update:</b> update a TeSC-compliant contract</li> 
+                    <li><b>tesc register:</b> add a TeSC to the registry</li>
+                    <li><b>tesc registry:</b> analyse all entries in the registry</li>
+                    <li><b>tesc monitor:</b> monitor all contracts in the TeSC registry and listen to new changes</li>    
+                  </ul>
+
+                  <Button as='a' href='https://github.com/TeSC-app/TeSC-api-server' content='TeSC-API on GitHub 💻'/>  
                   </p>
               </div>
               <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}} 
