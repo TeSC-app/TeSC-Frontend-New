@@ -584,10 +584,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
     
     const renderOriginalDomainInput = () => {
         return (
-            <div raised padded='very' color='purple' style={{margin: '1% 5%'}}>
+            <Segment raised padded='very' color='purple' style={{margin: '10% 15%'}}>
                 <div style={{marginBottom: '30px'}}>
                     <b style={{color: '#A333C8', fontSize: '1.28571429rem'}} >
-                        Enter Original Domain
+                        Enter Original Domain &nbsp;
                     </b>
                     <Popup
                         inverted
@@ -598,12 +598,12 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                 <Input
                     label={{ content: 'Original Domain', color: 'purple' }}
                     value={domain}
-                    placeholder='www.mysite.com'
+                    placeholder=' www.example.com'
                     onChange={e => handleEnterOriginalDomain(e.target.value)}
                     icon='world'
                     style={{marginTop: '12px', width: '100%'}}
                 />
-            </div>
+            </Segment>
         )
     }
 

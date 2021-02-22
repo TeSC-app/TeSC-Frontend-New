@@ -101,7 +101,7 @@ const App = ({ web3 }) => {
                         sidebarCollapsed={collapsed}
                     />
                     <div style={{ width: '100vw', height: '100vh' }}>
-                        <Navbar hasWalletAddress={hasWalletAddress} selectedAccount={account} />
+                        {/* <Navbar hasWalletAddress={hasWalletAddress} selectedAccount={account} /> */}
 
                         <div className="page">
                             {/* <Segment className='main-segment' raised> */}

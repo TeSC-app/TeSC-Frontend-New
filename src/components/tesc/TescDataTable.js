@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table, Checkbox } from 'semantic-ui-react';
+import { Table, Checkbox, Label } from 'semantic-ui-react';
 import moment from 'moment';
 import { FLAGS } from '../../utils/tesc';
 
@@ -21,13 +21,13 @@ const TescDataTable = ({ data }) => {
     };
 
     return (
-        <Table definition basic='very' collapsing style={{ margin: '0 auto', width:'100%', fontFamily: 'monospace' }}>
+        <Table definition basic='very' collapsing style={{ margin: '0 auto', width: '100%' }}>
             <Table.Body>
                 <Table.Row>
-                    <Table.Cell className='header-cell'>
+                    <Table.Cell className='header-cell' >
                         <b>Domain</b>
                     </Table.Cell>
-                    <Table.Cell style={{ fontSize: '1.3em', fontWeight: 'bold', color: '#a333c8', wordBreak: 'break-word'}}>{domain}</Table.Cell>
+                    <Table.Cell style={{ fontSize: '1.3em', fontWeight: 'bold', color: '#a333c8', wordBreak: 'break-word', fontFamily: 'monospace' }}>{domain}</Table.Cell>
                 </Table.Row>
                 <Table.Row>
                     <Table.Cell className='header-cell'>
@@ -36,10 +36,10 @@ const TescDataTable = ({ data }) => {
                     <Table.Cell style={{ wordBreak: 'break-all' }}>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
                 </Table.Row>
                 <Table.Row>
-                    <Table.Cell className='header-cell'>
+                    <Table.Cell className='header-cell' >
                         <b>Flags</b>
                     </Table.Cell>
-                    <Table.Cell style={{ wordBreak: 'break-all' }}>
+                    <Table.Cell style={{ wordBreak: 'break-all', fontFamily: 'monospace' }}>
                         {renderFlagCheckboxes()}
                     </Table.Cell>
                 </Table.Row>
@@ -48,15 +48,15 @@ const TescDataTable = ({ data }) => {
                         <b>Signature</b>
                     </Table.Cell>
                     <Table.Cell style={{ wordBreak: 'break-all' }}>
-                        {signature}
+                        <Label style={{ fontFamily: 'monospace', fontSize: '1.1em' }}>{signature}</Label>
                     </Table.Cell>
                 </Table.Row>
                 <Table.Row>
                     <Table.Cell className='header-cell'>
                         <b>Fingerprint</b>
                     </Table.Cell>
-                    <Table.Cell style={{ wordBreak: 'break-all' }}>
-                        {!fingerprint || parseInt(fingerprint, 16) === 0 ? 'N/A' : fingerprint}
+                    <Table.Cell style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                        {!fingerprint || parseInt(fingerprint, 16) === 0 ? 'N/A' : <Label style={{ fontFamily: 'monospace', fontSize: '1.1em' }}>fingerprint</Label>}
                     </Table.Cell>
                 </Table.Row>
             </Table.Body>
