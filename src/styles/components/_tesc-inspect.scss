@@ -1,0 +1,15 @@
+.tesc-inspect--segment {
+//   box-shadow: 0 1px 10px 0 rgba(158, 158, 158, 0.1), 0 2px 15px 0 rgba(158, 158, 158, 0.5);
+//   border-radius: 10px;
+  padding: 20px;
+  background-color: white;
+  border: 0.5px solid rgba($color: #c9c9c9, $alpha: 0.3);
+  border-top: 2px solid $purple!important;
+  
+  &:hover {
+    // box-shadow: 0 1px 10px 5px rgba(158, 158, 158, 0.5), 0 2px 15px 5px rgba(158, 158, 158, 0.5);
+      box-shadow: 0 1px 10px 0 rgba(158, 158, 158, 0.1), 0 2px 15px 0 rgba(158, 158, 158, 0.5);
+      border: 0.5px solid rgba($color: #c9c9c9, $alpha: 0.1);
+
+  }
+}

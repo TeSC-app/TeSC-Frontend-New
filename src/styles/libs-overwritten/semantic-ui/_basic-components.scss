@@ -18,3 +18,8 @@
 .ui.negative.message {
   // background-color: pink;
 }
+
+
+.ui[class*="very basic"].table:not(.sortable):not(.striped) td:first-child, .ui[class*="very basic"].table:not(.sortable):not(.striped) th {
+  padding-left: 15px;
+}

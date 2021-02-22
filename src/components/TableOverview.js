@@ -477,7 +477,7 @@ function TableOverview(props) {
                     onClick={() => { isShowingFilters ? setIsShowingFilters(false) : setIsShowingFilters(true); }}
                 />
             </div>
-            <Table color='purple' selectable>
+            <Table color='purple'>
                 <Table.Header active='true' style={{ backgroundColor: 'purple' }}>
                     <Table.Row>
                         {cols.has(COL.ADDRESS) && <Table.HeaderCell>{

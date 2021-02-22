@@ -201,7 +201,7 @@ const TeSCInspect = ({ location }) => {
                 setLoading(true);
             }
         } catch (err) {
-            toast.error(negativeMsg({
+            toast(negativeMsg({
                 header: 'Invalid smart contract address',
                 msg: err.message
             }));
@@ -254,7 +254,7 @@ const TeSCInspect = ({ location }) => {
                         <Grid.Row>
                             {!endorsers && domainFromChain && expiry && signature && flags && (
                                 <Grid.Column width={10}>
-                                    <Segment style={{ paddingBottom: '4em' }}>
+                                    <div className='tesc-inspect--segment' style={{ paddingBottom: '4em' }}>
                                         <Header as='h3' content='Contract Data' />
                                         <TescDataTable
                                             data={{ contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint }}
@@ -263,7 +263,7 @@ const TeSCInspect = ({ location }) => {
                                             {account === contractOwner && (
                                                 <Modal
                                                     closeIcon
-                                                    trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
+                                                    trigger={<Button basic primary className='button--blue' style={{ float: 'right' }}>Update TeSC</Button>}
                                                     onClose={handleCloseTescUpdateModal}
                                                     style={{ borderRadius: '20px', height: '80%', width: '75%' }}
                                                 >
@@ -312,15 +312,15 @@ const TeSCInspect = ({ location }) => {
                                             />
 
                                         </div>
-                                    </Segment>
+                                    </div>
                                 </Grid.Column>
                             )}
 
                             <Grid.Column width={6} centered='true'>
                                 {domainFromChain && signature &&
                                     (
-                                        <Card style={{ width: '100%' }}>
-                                            <Card.Content header="Verification" />
+                                        <div className='tesc-inspect--segment' style={{ width: '100%' }}>
+                                            <Header as='h3' content="Verification" />
                                             <Card.Content>
                                                 <Dimmer active={isVerificationRunning
                                                     || (!isDomainHashed && !curVerifResult)} inverted>
@@ -365,7 +365,7 @@ const TeSCInspect = ({ location }) => {
                                                     </div>
                                                 )}
                                             </Card.Content>
-                                        </Card>
+                                        </div>
                                     )
                                 }
                             </Grid.Column>
