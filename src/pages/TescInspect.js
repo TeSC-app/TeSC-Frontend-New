@@ -2,7 +2,7 @@ import axios from 'axios';
 import BitSet from 'bitset';
 import moment from 'moment';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Button, Card, Dimmer, Form, Grid, Header, Icon, Image, Input, Label, Loader, Modal, Popup, Segment } from 'semantic-ui-react';
+import { Button, Message, Dimmer, Form, Grid, Header, Icon, Image, Input, Label, Loader, Modal, Popup, Segment } from 'semantic-ui-react';
 import { toast } from 'react-toastify';
 
 import AppContext from '../appContext';
@@ -356,19 +356,40 @@ const TeSCInspect = ({ location }) => {
                                                     {
                                                         curVerifResult.verified ?
                                                             (
-                                                                <div>
-                                                                    <Icon name="checkmark" circular={true} color="green" size='big' style={{ marginTop: '10px' }} />
+                                                                <>
+                                                                    {/* <div>
+                                                                    <Icon name="checkmark" circular={true} color="green" size='big'  />
                                                                     <br />
                                                                     <Label basic color='green' size='large' style={{ marginTop: '10px' }}>{curVerifResult.message}</Label>
-                                                                </div>
+                                                                </div> */}
+                                                                    <Message positive icon style={{ marginTop: '20px', textAlign: 'left', color: 'green', boxShadow: 'none', borderRadius: '10px' }}>
+                                                                        <Icon name='check circle' color='green' />
+                                                                        <Message.Content>
+                                                                            <Message.Header style={{ color: 'green' }}>{curVerifResult.message}</Message.Header>
+                                                                            {`This contract is trustworthy. Its owner and the owner of ${isDomainHashed ? originalDomain : domainFromChain} are the same entity`}
+                                                                        </Message.Content>
+                                                                    </Message>
+
+                                                                </>
+
 
                                                             ) :
                                                             (
-                                                                <div>
+                                                                <>
+                                                                    {/* <div>
                                                                     <Icon name="warning sign" color="red" size='huge' style={{ marginTop: '10px' }} />
                                                                     <br />
                                                                     <Label basic color='red' size='large' style={{ marginTop: '10px' }}>{curVerifResult.message}</Label>
-                                                                </div>
+                                                                </div> */}
+                                                                    <Message negative icon style={{ marginTop: '20px', textAlign: 'left', color: 'red', boxShadow: 'none', borderRadius: '10px' }}>
+                                                                        <Icon name='warning sign' color='red' />
+                                                                        <Message.Content>
+                                                                            <Message.Header style={{ color: 'red' }}>{curVerifResult.message}</Message.Header>
+                                                                            {`This contract is NOT trustworhthy. Its owner and the owner of ${isDomainHashed ? curVerifResult.inputDomain : curVerifResult.domain} are different entities.`}
+                                                                        </Message.Content>
+                                                                    </Message>
+
+                                                                </>
                                                             )
                                                     }
                                                 </div>
@@ -417,7 +438,7 @@ const TeSCInspect = ({ location }) => {
                     </Segment>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 
