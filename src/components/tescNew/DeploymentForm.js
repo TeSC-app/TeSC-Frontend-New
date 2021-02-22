@@ -841,7 +841,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                                             label='Choose certificate  key'
                                             onPickFile={handlePickPrivateKey}
                                             isDisabled={!currentDomain || !expiry}
-                                            input={{fileName:privateKeyFileName, content: privateKeyPEM, acceptedFiles: ".pem, .txt, .cer, .cert, .key"}}
+                                            input={{fileName:privateKeyFileName, content: privateKeyPEM, acceptedFiles: ".pem, .txt, .key"}}
                                         />
                                     </div>
                                     <div><em>Pick the certificate private key file to automatically compute the signature</em></div>
