@@ -352,44 +352,38 @@ const TeSCInspect = ({ location }) => {
                                                 )
                                             }
                                             {curVerifResult && (
-                                                <div style={{ textAlign: 'center' }}>
+                                                <div style={{ textAlign: 'center', fontSize: '1.1em', }}>
                                                     {
                                                         curVerifResult.verified ?
                                                             (
-                                                                <>
-                                                                    {/* <div>
-                                                                    <Icon name="checkmark" circular={true} color="green" size='big'  />
+                                                                <div style={{ marginTop: '20px', background: '#FCFFF5', padding: '20px', borderRadius: '15px' }}>
+                                                                    <p style={{ color: '#21BA45', width: '75%', margin: '0 auto' }}>The contract owner and the owner of <b style={{ fontFamily: 'monospace' }}>{isDomainHashed ? curVerifResult.inputDomain : domainFromChain}</b> are the same entity.
+                                                                    </p>
                                                                     <br />
-                                                                    <Label basic color='green' size='large' style={{ marginTop: '10px' }}>{curVerifResult.message}</Label>
-                                                                </div> */}
-                                                                    <Message positive icon style={{ marginTop: '20px', textAlign: 'left', color: 'green', boxShadow: 'none', borderRadius: '10px' }}>
-                                                                        <Icon name='check circle' color='green' />
-                                                                        <Message.Content>
-                                                                            <Message.Header style={{ color: 'green' }}>{curVerifResult.message}</Message.Header>
-                                                                            {`This contract is trustworthy. Its owner and the owner of ${isDomainHashed ? originalDomain : domainFromChain} are the same entity`}
-                                                                        </Message.Content>
-                                                                    </Message>
 
-                                                                </>
+                                                                    <Icon name='check circle' color='green' size='huge' />
+                                                                    <br />
+                                                                    <br />
+                                                                    <Label basic color='green' icon style={{ fontSize: '1.1em' }}>
+                                                                        {curVerifResult.message}
+                                                                    </Label>
+
+                                                                </div>
 
 
                                                             ) :
                                                             (
-                                                                <>
-                                                                    {/* <div>
-                                                                    <Icon name="warning sign" color="red" size='huge' style={{ marginTop: '10px' }} />
+                                                                <div style={{ marginTop: '20px', background: '#FFFCFA', padding: '20px', borderRadius: '15px' }}>
+                                                                    <p style={{ color: '#DB2828', width: '75%', margin: '0 auto' }}>The contract owner and the owner of <b style={{ fontFamily: 'monospace' }}>{isDomainHashed ? curVerifResult.inputDomain : domainFromChain}</b> could NOT be verified as the same entity.
+                                                                    </p>
                                                                     <br />
-                                                                    <Label basic color='red' size='large' style={{ marginTop: '10px' }}>{curVerifResult.message}</Label>
-                                                                </div> */}
-                                                                    <Message negative icon style={{ marginTop: '20px', textAlign: 'left', color: 'red', boxShadow: 'none', borderRadius: '10px' }}>
-                                                                        <Icon name='warning sign' color='red' />
-                                                                        <Message.Content>
-                                                                            <Message.Header style={{ color: 'red' }}>{curVerifResult.message}</Message.Header>
-                                                                            {`This contract is NOT trustworhthy. Its owner and the owner of ${isDomainHashed ? curVerifResult.inputDomain : curVerifResult.domain} are different entities.`}
-                                                                        </Message.Content>
-                                                                    </Message>
-
-                                                                </>
+                                                                    <Icon name='warning sign' color='red' size='huge' />
+                                                                    <br />
+                                                                    <br />
+                                                                    <Label basic color='red' icon style={{ fontSize: '1.1em', maxWidth: '75%' }}>
+                                                                        {curVerifResult.message}
+                                                                    </Label>
+                                                                </div>
                                                             )
                                                     }
                                                 </div>
