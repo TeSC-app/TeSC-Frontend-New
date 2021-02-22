@@ -4,6 +4,7 @@ import { SectionSplitProps } from '../../utils/SectionProps';
 import SectionHeader from './partials/SectionHeader';
 import { Image, Button} from 'semantic-ui-react'
 import { NavLink } from 'react-router-dom';
+import BrowserFrame from "react-browser-frame";
 
 import '../../assets/scss/landingPage.scoped.scss';
 import analyticsImg from '../../assets/images/analytics.png';
@@ -289,10 +290,24 @@ const FeaturesSplit = ({
                     src={`clidemo/test.html`}
                     frameBorder="0"
                     allowFullScreen
-                    height="1000"
+                    height="650"
                     width="650"
                   />
               </div>
+            </div>
+
+            <div style={{ width:'100%', display: 'flex', alignItems: 'center' }}>
+            <BrowserFrame>
+              <iframe
+                title="media"
+                src={`clidemo/cliDemo2.html`}
+                frameBorder="0"
+                allowFullScreen
+                height={3000}
+                width={2000}
+                className="frame"
+              />
+              </BrowserFrame>
             </div>
           </div>
         </div>
