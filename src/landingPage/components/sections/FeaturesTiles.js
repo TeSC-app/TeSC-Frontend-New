@@ -70,7 +70,7 @@ const FeaturesTiles = ({
     >
       <div className="container">
         <div className={innerClasses}>
-          <SectionHeader data={sectionHeader} className="center-content" />
+          <SectionHeader data={sectionHeader} className="center-content " />
           <div className={tilesClasses}>
 
             <div className="tiles-item reveal-from-bottom">
