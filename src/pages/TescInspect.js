@@ -18,6 +18,9 @@ import { extractAxiosErrorMessage } from '../utils/formatError';
 import { getLocalTesc, updateTeSC, toggleFavourite } from '../utils/storage';
 import { FLAGS, hexStringToBitSet, isValidContractAddress } from '../utils/tesc';
 
+import shieldOkImg from "../static/images/shield-ok-icon.png";
+import shieldErrImg from "../static/images/shield-error-icon.png";
+
 
 const TeSCInspect = ({ location }) => {
     const { web3, account } = useContext(AppContext);
@@ -361,8 +364,9 @@ const TeSCInspect = ({ location }) => {
                                                                     </p>
                                                                     <br />
 
-                                                                    <Icon name='check circle' color='green' size='huge' />
-                                                                    <br />
+                                                                    {/* <Icon name='check circle' color='green' size='huge' /> */}
+                                                                    <Image src={shieldOkImg} size='small' style={{ margin: '0 auto' }} />
+
                                                                     <br />
                                                                     <Label basic color='green' icon style={{ fontSize: '1.1em' }}>
                                                                         {curVerifResult.message}
@@ -377,8 +381,8 @@ const TeSCInspect = ({ location }) => {
                                                                     <p style={{ color: '#DB2828', width: '75%', margin: '0 auto' }}>The contract owner and the owner of <b style={{ fontFamily: 'monospace' }}>{isDomainHashed ? curVerifResult.inputDomain : domainFromChain}</b> could NOT be verified as the same entity.
                                                                     </p>
                                                                     <br />
-                                                                    <Icon name='warning sign' color='red' size='huge' />
-                                                                    <br />
+                                                                    {/* <Icon name='warning sign' color='red' size='huge' /> */}
+                                                                    <Image src={shieldErrImg} size='small' style={{ margin: '0 auto' }} />
                                                                     <br />
                                                                     <Label basic color='red' icon style={{ fontSize: '1.1em', maxWidth: '75%' }}>
                                                                         {curVerifResult.message}
