@@ -4,6 +4,17 @@
         background-color: $blue !important;
         color: #fff !important;
         text-shadow: none;
+        box-shadow: none !important;
+    }
+}
+
+.ui.basic.blue.button,
+.ui.basic.blue.buttons .button {
+    &:hover {
+        background-color: $blue !important;
+        color: #fff !important;
+        text-shadow: none;
+        box-shadow: none !important;
     }
 }
 
@@ -14,6 +25,7 @@
         background-color: $pink !important;
         color: #fff !important;
         text-shadow: none;
+        box-shadow: none !important;
     }
 }
 
@@ -23,6 +35,8 @@
         background-color: $teal !important;
         color: #fff !important;
         text-shadow: none;
+        box-shadow: none !important;
+        font-weight: bold;
     }
 }
 
@@ -32,6 +46,7 @@
         background-color: $purple !important;
         color: #fff !important;
         text-shadow: none;
+        box-shadow: none !important;
     }
 }
 
@@ -41,5 +56,35 @@
         background-color: $red !important;
         color: #fff !important;
         text-shadow: none;
+        box-shadow: none !important;
     }
 }
+
+.ui.basic.green.button,
+.ui.basic.green.buttons .button {
+    &:hover {
+        background-color: $green !important;
+        color: #fff !important;
+        text-shadow: none;
+        box-shadow: none !important;
+    }
+}
+
+.ui.basic.positive.button,
+.ui.basic.positive.buttons .button {
+    &:hover {
+        background-color: $green !important;
+        color: #fff !important;
+        text-shadow: none;
+        box-shadow: none !important;
+    }
+}
+
+// .ui.basic.button,
+// .ui.basic.buttons .button {
+//     &:hover {
+//         background-color: #CACBCD !important;
+//         text-shadow: none;
+//         box-shadow: none !important;
+//     }
+// }

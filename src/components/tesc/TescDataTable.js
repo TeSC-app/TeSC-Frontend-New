@@ -21,7 +21,7 @@ const TescDataTable = ({ data }) => {
     };
 
     return (
-        <Table definition basic='very' collapsing style={{ margin: '0 auto', width:'100%' }}>
+        <Table definition basic='very' collapsing style={{ margin: '0 auto', width:'100%', fontFamily: 'monospace' }}>
             <Table.Body>
                 <Table.Row>
                     <Table.Cell className='header-cell'>
