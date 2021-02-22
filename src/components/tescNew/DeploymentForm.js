@@ -1047,7 +1047,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                         <Grid.Column>
                             <Grid.Row style={{ paddingBottom: '5%', margin: '0 auto' }}>
                                 <Form>
-                                    <Segment raised padded='very' color='purple'>
+                                    <Segment raised padded='very' color='purple' style={{ borderRadius: '0' }}>
                                         {getStepContent(activeStep).component}
                                     </Segment>
                                 </Form>

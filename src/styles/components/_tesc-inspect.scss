@@ -5,6 +5,10 @@
   background-color: white;
   border: 0.5px solid rgba($color: #c9c9c9, $alpha: 0.3);
   border-top: 2px solid $purple!important;
+  transition: opacity 0.8s cubic-bezier(0.39, 0.575, 0.565, 1), transform 0.8s cubic-bezier(0.39, 0.575, 0.565, 1);
+  transform: translate(10px, 10px);
+  transition-delay: 1s;
+
   
   &:hover {
     // box-shadow: 0 1px 10px 5px rgba(158, 158, 158, 0.5), 0 2px 15px 5px rgba(158, 158, 158, 0.5);
@@ -20,6 +24,8 @@
     border-radius: 0; 
     box-shadow: none;
     border: 0.5px solid rgba($color: #c9c9c9, $alpha: 0.3);
+    min-width: fit-content;
+    
 
     &:hover {
         // box-shadow: 0 1px 10px 5px rgba(158, 158, 158, 0.5), 0 2px 15px 5px rgba(158, 158, 158, 0.5);
