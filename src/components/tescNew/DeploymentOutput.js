@@ -39,7 +39,7 @@ const DeploymentOutput = ({ contractAddress, domain, costsPaid, style }) => {
                         <Grid.Column width={12}>
                             <Label tag style={{ color: 'royalblue' }}>
                                 {costsPaid.eth} <span style={{ fontSize: '0.75em' }}>ETH </span>
-                                {costsPaid.usd > 0 && `(${costsPaid.usd}`} <span style={{ fontSize: '0.75em' }}>USD</span>)
+                                {costsPaid.eur > 0 && `(${costsPaid.eur}`} <span style={{ fontSize: '0.75em' }}>USD</span>)
                             </Label>
                         </Grid.Column>
                     </Grid.Row>

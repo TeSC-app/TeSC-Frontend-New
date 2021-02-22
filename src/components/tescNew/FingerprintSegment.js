@@ -73,6 +73,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
                         claim: claim.current
                     }
                 });
+                console.log('res', res);
                 setFingerprint(res.data.fingerprint);
                 cache.current[domain.current] = res.data.fingerprint;
 
@@ -201,7 +202,7 @@ const FingerprintSegment = ({ inputs, onGetFingerprint }) => {
                             label='Choose certificate'
                             onPickFile={handlePickCert}
                             isDisabled={!sliderState}
-                            input={{ fileName: certFileName, content: certPEM, acceptedFiles: ".pem, .txt, .cer, .cert, .key" }}
+                            input={{ fileName: certFileName, content: certPEM, acceptedFiles: ".txt, .cer, .cert, .crt" }}
                         />
                     )}
                     {sliderState && fingerprint && (<span style={{ wordBreak: 'break-all' }}><b>Fingerprint: <Label>{fingerprint}</Label></b></span>)

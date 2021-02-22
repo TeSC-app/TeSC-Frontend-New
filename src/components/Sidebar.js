@@ -6,13 +6,13 @@ import { Icon, Label, Image, Button, Grid, Popup } from 'semantic-ui-react';
 
 import 'react-pro-sidebar/dist/css/styles.css';
 
-import { FaScroll, FaChartBar, FaAddressBook, FaWallet } from 'react-icons/fa';
+import { FaScroll, FaChartBar, FaAddressBook, FaWallet, FaBars } from 'react-icons/fa';
 import AppContext from '../appContext';
 import sidebarBg from '../static/images/bg1.jpg';
 import axios from 'axios'
 
 
-const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollapseSidebar }) => {
+const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollapseSidebar, sidebarCollapsed, }) => {
     const { hasWalletAddress, account, networkId } = useContext(AppContext);
     const [blockChainUrl, setBlockChainUrl] = useState('')
 
@@ -63,7 +63,7 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
     };
 
     const renderNetworkLabel = () => {
-        console.log(networkId)
+        console.log(networkId);
         let network = '';
         switch (networkId) {
             case 1:
@@ -88,7 +88,7 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
                 network = 'TeSC Test Net';
                 break;
             default:
-                network = blockChainUrl
+                network = blockChainUrl;
         }
         if (window.ethereum) {
             return network;
@@ -106,9 +106,18 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
             onToggle={handleToggleSidebar}
             className='sidebar'
         >
+            <div id='div-toggle' style={{ width: '100%' }}>
+                <FaBars
+                    size='1.5em'
+                    link
+                    onClick={handleCollapseSidebar}
+                    style={{ margin: `${collapsed ? '10px 20px' : '10px 0 5px 85%'}`, cursor: 'pointer', color: '#a333c8' }}
+                />
+            </div>
+
             <SidebarHeader>
                 <NavLink to='/'>
-                    <Image src={collapsed ? '../images/tesc-logo-notext.png' : '../images/tesc-logo.png'} size='small' style={{ margin: '20px auto', padding: `${collapsed ? '0 5px' : '0'}` }} />
+                    <Image src={collapsed ? '../images/tesc-logo-notext.png' : '../images/tesc-logo.png'} size='small' style={{ margin: '5px auto 10px auto', padding: `${collapsed ? '0 5px' : '0'}` }} />
                 </NavLink>
             </SidebarHeader>
             <SidebarContent>
@@ -129,9 +138,9 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
                         <MenuItem onClick={(e) => handlePageNavigation(e, "/registry/inspect")} >
                             Explore
                         </MenuItem>
-                        <MenuItem onClick={(e) => handlePageNavigation(e, '/registry/add')} >
+                        {/* <MenuItem onClick={(e) => handlePageNavigation(e, '/registry/add')} >
                             Add entry
-                        </MenuItem>
+                        </MenuItem> */}
                         <MenuItem onClick={(e) => handlePageNavigation(e, '/registry/analytics')} >
                             Analytics
                         </MenuItem>

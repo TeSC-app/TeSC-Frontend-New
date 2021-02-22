@@ -296,9 +296,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                             setCostsEstimated(getEthRates(estCost));
                             
                         }catch(error){
+                            console.log(error);
                             toast(negativeMsg({
                                 header: 'Unable to estimate transaction cost',
-                                msg: "You probably entered invalid constructor parameters in the first step"
+                                msg: `${error.message}`
                             }));
                         }           
                     }
@@ -313,13 +314,17 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
     const validateEndorsement = async () => {
         if(domain && expiry && signature) {
             try {
-                const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/predeploy/validate`, {
-                    params: { 
-                        domain,
-                        claim: getClaimString(), 
-                        signature
-                    }
-                });
+                const params = { 
+                    contractAddress: futureContractAddress, 
+                    domain: currentDomain,
+                    inputDomain: !!flags.get(FLAGS.DOMAIN_HASHED) ? domain : '',
+                    signature,
+                    expiry, 
+                    flags: flagsToBytes24Hex(flags),
+                    fingerprint
+                }
+
+                const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/predeploy/validate`, { params});
     
                 console.log(res.status);
             } catch (err) {
@@ -604,7 +609,8 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
 
 
     const getStepContent = (step) => {
-        switch (initInputs? step + 1 : step) {
+        const curStep = initInputs? step + 1 : step;
+        switch (curStep) {
             case 0:
                 return {
                     component: (
@@ -785,9 +791,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                             </Form.Field>
                         </>
                     ),
-                    completed: initInputs ? 
-                        (currentDomain !== initInputs.domain) || (expiry !== initInputs.expiry) || (flags.toString() !==  initInputs.flags.toString()) : 
-                        !!currentDomain && !!expiry ,
+                    completed: !!currentDomain && !!expiry,
                     reachable: initInputs && currentDomain? isMatchedOriginalDomain: true
                 };
             case 2:
@@ -837,7 +841,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                                             label='Choose certificate  key'
                                             onPickFile={handlePickPrivateKey}
                                             isDisabled={!currentDomain || !expiry}
-                                            input={{fileName:privateKeyFileName, content: privateKeyPEM, acceptedFiles: ".pem, .txt, .cer, .cert, .key"}}
+                                            input={{fileName:privateKeyFileName, content: privateKeyPEM, acceptedFiles: ".pem, .txt, .key"}}
                                         />
                                     </div>
                                     <div><em>Pick the certificate private key file to automatically compute the signature</em></div>
@@ -894,7 +898,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                             />
                         </Fragment>
                     ),
-                    completed: getStepContent(step - 2).completed && getStepContent(step - 1).completed,
+                    completed: getStepContent(step - 2).completed && getStepContent(step - 1).completed &&  activeStep >= (initInputs? 2 : 3),
                     reachable: (getStepContent(step - 2).completed && getStepContent(step - 1).completed) || getStepContent(step - 1).reachable
                 };
             case 4:
@@ -910,7 +914,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                                     <span>Cost estimation:  </span>
                                     <Label tag style={{ color: 'royalblue', }}>
                                         {costsEstimated.eth} <span style={{ fontSize: '0.75em' }}>ETH </span>
-                                        {costsEstimated.usd > 0 && `(~ ${costsEstimated.usd}`} <span style={{ fontSize: '0.75em' }}>USD</span>)
+                                        {costsEstimated.eur > 0 && `(~ ${costsEstimated.eur}`} <span style={{ fontSize: '0.75em' }}>EUR</span>)
                                     </Label>
                                 </div>
                             )}
@@ -1043,7 +1047,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                         <Grid.Column>
                             <Grid.Row style={{ paddingBottom: '5%', margin: '0 auto' }}>
                                 <Form>
-                                    <Segment raised padded='very' color='purple'>
+                                    <Segment raised padded='very' color='purple' style={{ borderRadius: '0' }}>
                                         {getStepContent(activeStep).component}
                                     </Segment>
                                 </Form>

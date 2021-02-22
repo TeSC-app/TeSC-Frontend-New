@@ -21,22 +21,22 @@ const TescDataTable = ({ data }) => {
     };
 
     return (
-        <Table basic='very' celled collapsing style={{ margin: '0 auto', width:'100%' }}>
+        <Table definition basic='very' collapsing style={{ margin: '0 auto', width:'100%', fontFamily: 'monospace' }}>
             <Table.Body>
                 <Table.Row>
-                    <Table.Cell >
+                    <Table.Cell className='header-cell'>
                         <b>Domain</b>
                     </Table.Cell>
-                    <Table.Cell style={{ wordBreak: 'break-all' }}>{domain}</Table.Cell>
+                    <Table.Cell style={{ fontSize: '1.3em', fontWeight: 'bold', color: '#a333c8', wordBreak: 'break-word'}}>{domain}</Table.Cell>
                 </Table.Row>
                 <Table.Row>
-                    <Table.Cell>
+                    <Table.Cell className='header-cell'>
                         <b>Expiry</b>
                     </Table.Cell>
                     <Table.Cell style={{ wordBreak: 'break-all' }}>{moment.unix(parseInt(expiry)).format('DD/MM/YYYY')}</Table.Cell>
                 </Table.Row>
                 <Table.Row>
-                    <Table.Cell>
+                    <Table.Cell className='header-cell'>
                         <b>Flags</b>
                     </Table.Cell>
                     <Table.Cell style={{ wordBreak: 'break-all' }}>
@@ -44,7 +44,7 @@ const TescDataTable = ({ data }) => {
                     </Table.Cell>
                 </Table.Row>
                 <Table.Row>
-                    <Table.Cell>
+                    <Table.Cell className='header-cell'>
                         <b>Signature</b>
                     </Table.Cell>
                     <Table.Cell style={{ wordBreak: 'break-all' }}>
@@ -52,7 +52,7 @@ const TescDataTable = ({ data }) => {
                     </Table.Cell>
                 </Table.Row>
                 <Table.Row>
-                    <Table.Cell>
+                    <Table.Cell className='header-cell'>
                         <b>Fingerprint</b>
                     </Table.Cell>
                     <Table.Cell style={{ wordBreak: 'break-all' }}>

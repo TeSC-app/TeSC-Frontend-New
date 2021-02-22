@@ -126,8 +126,8 @@ function TableEntry(props) {
 
 
     return (
-        <Table.Row key={contractAddress} >
-            <Table.Cell >
+        <Table.Row key={contractAddress} textAlign='center'>
+            <Table.Cell textAlign="left">
                 {!cols.has(COL.TSC) ?
                     <span>
                         {own && hasAllColumns(cols) ?
@@ -139,16 +139,16 @@ function TableEntry(props) {
                     </span> : renderDomainForRegistryInspect()
                 }
             </Table.Cell>
-            <Table.Cell textAlign='center'>{hasAllColumns(cols) ? renderDomain() : !cols.has(COL.TSC) && !hasAllColumns(cols) ? renderDomainForRegistryInspect() : renderTescContractCount()}</Table.Cell>
-            <Table.Cell textAlign='center'>{!cols.has(COL.TSC) ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
+            <Table.Cell>{hasAllColumns(cols) ? renderDomain() : !cols.has(COL.TSC) && !hasAllColumns(cols) ? renderDomainForRegistryInspect() : renderTescContractCount()}</Table.Cell>
+            <Table.Cell>{!cols.has(COL.TSC) ? moment.unix(parseInt(expiry)).format('DD/MM/YYYY') : renderPieChartForVerified()}</Table.Cell>
             {!cols.has(COL.TSC) && <TableCellVerification {...tableCellVerifProps} />}
             {cols.has(COL.REG) &&
-                <Table.Cell textAlign="center">
+                <Table.Cell >
                     <ButtonRegistryAddRemove contractAddress={contractAddress} domain={domain} isOwner={own} />
                 </Table.Cell>
             }
             {cols.has(COL.FAV) &&
-                <Table.Cell textAlign="center">
+                <Table.Cell>
                     {renderFavourites()}
                 </Table.Cell>
             }

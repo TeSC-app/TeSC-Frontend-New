@@ -2,7 +2,7 @@ import axios from 'axios';
 import BitSet from 'bitset';
 import moment from 'moment';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Button, Card, Dimmer, Form, Grid, Header, Icon, Image, Input, Label, Loader, Modal, Popup, Segment } from 'semantic-ui-react';
+import { Button, Message, Dimmer, Form, Grid, Header, Icon, Image, Input, Label, Loader, Modal, Popup, Segment } from 'semantic-ui-react';
 import { toast } from 'react-toastify';
 
 import AppContext from '../appContext';
@@ -45,7 +45,7 @@ const TeSCInspect = ({ location }) => {
 
 
     const handleToggleFavourite = () => {
-        console.log('localTesc.current', localTesc.current)
+        console.log('localTesc.current', localTesc.current);
         const updatedTesc = toggleFavourite(account, localTesc.current);
         setIsFavourite(updatedTesc ? updatedTesc.isFavourite : false);
         localTesc.current = updatedTesc;
@@ -66,13 +66,13 @@ const TeSCInspect = ({ location }) => {
         setContractOwner(contract.owner);
 
         const { subendorsements, ...rest } = contract;
-        localTesc.current = getLocalTesc(account, contract.contractAddress)
+        localTesc.current = getLocalTesc(account, contract.contractAddress);
 
-        if(localTesc.current !== null) {
-            localTesc.current = { ...(localTesc.current), ...rest};
+        if (localTesc.current !== null) {
+            localTesc.current = { ...(localTesc.current), ...rest };
         } else {
             localTesc.current = { ...rest, createdAt: moment().unix(), isFavourite: false };
-        } 
+        }
 
         if (contract.owner.toLowerCase() === account.toLowerCase()) {
             localTesc.current.own = true;
@@ -196,12 +196,12 @@ const TeSCInspect = ({ location }) => {
         e.preventDefault();
         try {
             if (isValidContractAddress(contractAddress, true)) {
-                curVerifResult ? setCurVerifResult(null) : await verifyTesc(contractAddress, originalDomain, true);
                 clearDisplayData();
                 setLoading(true);
+                curVerifResult ? setCurVerifResult(null) : await verifyTesc(contractAddress, originalDomain, true);
             }
         } catch (err) {
-            toast.error(negativeMsg({
+            toast(negativeMsg({
                 header: 'Invalid smart contract address',
                 msg: err.message
             }));
@@ -243,7 +243,7 @@ const TeSCInspect = ({ location }) => {
                 value={contractAddress}
                 label='TeSC Address'
                 onChange={handleChangeAddress}
-                placeholder='Contract address e.g. 0x123456789abcdf...'
+                placeholder='Inspect & Verify'
                 onSubmit={handleSubmitAddress}
                 icon='search'
                 validInput={true}
@@ -254,16 +254,25 @@ const TeSCInspect = ({ location }) => {
                         <Grid.Row>
                             {!endorsers && domainFromChain && expiry && signature && flags && (
                                 <Grid.Column width={10}>
-                                    <Segment style={{ paddingBottom: '4em' }}>
+                                    <div className='tesc-inspect--segment'>
                                         <Header as='h3' content='Contract Data' />
                                         <TescDataTable
                                             data={{ contractAddress, domain: domainFromChain, expiry, flags, signature, fingerprint }}
                                         />
-                                        <div style={{ marginTop: '2em' }}>
+                                        <div style={{ marginTop: '2em', width: '100%' }}>
                                             {account === contractOwner && (
                                                 <Modal
                                                     closeIcon
-                                                    trigger={<Button basic primary style={{ float: 'right' }}>Update TeSC</Button>}
+                                                    trigger={
+                                                        <Button
+                                                            icon='heart'
+                                                            basic
+                                                            color='purple'
+                                                            style={{ float: 'right', marginTop: '5px' }}
+                                                        >
+                                                            Update TeSC
+                                                        </Button>
+                                                    }
                                                     onClose={handleCloseTescUpdateModal}
                                                     style={{ borderRadius: '20px', height: '80%', width: '75%' }}
                                                 >
@@ -288,14 +297,6 @@ const TeSCInspect = ({ location }) => {
                                                 </Modal>
                                             )}
 
-                                            <ButtonRegistryAddRemove
-                                                verbose
-                                                contractAddress={contractAddress}
-                                                domain={domainFromChain}
-                                                isOwner={account === contractOwner}
-                                                style={{ float: 'left' }}
-                                            />
-
                                             <Popup inverted
                                                 content={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
                                                 trigger={
@@ -306,66 +307,97 @@ const TeSCInspect = ({ location }) => {
                                                         className={isFavourite ? "favourite" : "notFavourite"}
                                                         onClick={() => handleToggleFavourite()}
                                                         content={isFavourite ? 'Unfavourite' : 'Favourite'}
-                                                        style={{ float: 'left' }}
+                                                        style={{ marginTop: '5px' }}
                                                     />
                                                 }
                                             />
 
+                                            <ButtonRegistryAddRemove
+                                                contractAddress={contractAddress}
+                                                domain={domainFromChain}
+                                                isOwner={account === contractOwner}
+                                            />
+
                                         </div>
-                                    </Segment>
+                                    </div>
                                 </Grid.Column>
                             )}
 
                             <Grid.Column width={6} centered='true'>
                                 {domainFromChain && signature &&
                                     (
-                                        <Card style={{ width: '100%' }}>
-                                            <Card.Content header="Verification" />
-                                            <Card.Content>
-                                                <Dimmer active={isVerificationRunning
-                                                    || (!isDomainHashed && !curVerifResult)} inverted>
-                                                    <Loader content='Verifying...' />
-                                                </Dimmer>
-                                                {isDomainHashed &&
-                                                    (
-                                                        <Form onSubmit={handleSubmitOriginalDomain}>
-                                                            <Form.Field>
-                                                                <label>Original domain</label>
-                                                                <Input
-                                                                    value={originalDomain}
-                                                                    placeholder='www.mysite.com'
-                                                                    onChange={e => setOriginalDomain(e.target.value)}
-                                                                    size='large'
-                                                                    style={{ width: '100%' }}
-                                                                />
-                                                            </Form.Field>
-                                                        </Form>
-                                                    )
-                                                }
-                                                {curVerifResult && (
-                                                    <div style={{ textAlign: 'center' }}>
-                                                        {
-                                                            curVerifResult.verified ?
-                                                                (
-                                                                    <div>
-                                                                        <Icon name="checkmark" circular={true} color="green" size='big' style={{ marginTop: '10px' }} />
-                                                                        <br />
-                                                                        <Label basic color='green' size='large' style={{ marginTop: '10px' }}>{curVerifResult.message}</Label>
-                                                                    </div>
+                                        <Segment id='verif-box' padded className='tesc-inspect--segment'>
+                                            <Header as='h3' content="Verification" />
 
-                                                                ) :
-                                                                (
-                                                                    <div>
-                                                                        <Icon name="warning sign" color="red" size='huge' style={{ marginTop: '10px' }} />
-                                                                        <br />
-                                                                        <Label basic color='red' size='large' style={{ marginTop: '10px' }}>{curVerifResult.message}</Label>
-                                                                    </div>
-                                                                )
-                                                        }
-                                                    </div>
-                                                )}
-                                            </Card.Content>
-                                        </Card>
+                                            {isDomainHashed &&
+                                                (
+                                                    <Form onSubmit={handleSubmitOriginalDomain}>
+                                                        <Form.Field>
+                                                            <Input
+                                                                value={originalDomain}
+                                                                placeholder='Enter original domain name'
+                                                                onChange={e => setOriginalDomain(e.target.value)}
+                                                                size='large'
+                                                                icon='world'
+                                                                style={{ width: '100%' }}
+
+                                                                action={{
+                                                                    color: 'purple',
+                                                                    content: 'Domain',
+                                                                }}
+                                                                actionPosition='left'
+                                                            />
+                                                        </Form.Field>
+                                                    </Form>
+                                                )
+                                            }
+                                            {curVerifResult && (
+                                                <div style={{ textAlign: 'center' }}>
+                                                    {
+                                                        curVerifResult.verified ?
+                                                            (
+                                                                <>
+                                                                    {/* <div>
+                                                                    <Icon name="checkmark" circular={true} color="green" size='big'  />
+                                                                    <br />
+                                                                    <Label basic color='green' size='large' style={{ marginTop: '10px' }}>{curVerifResult.message}</Label>
+                                                                </div> */}
+                                                                    <Message positive icon style={{ marginTop: '20px', textAlign: 'left', color: 'green', boxShadow: 'none', borderRadius: '10px' }}>
+                                                                        <Icon name='check circle' color='green' />
+                                                                        <Message.Content>
+                                                                            <Message.Header style={{ color: 'green' }}>{curVerifResult.message}</Message.Header>
+                                                                            {`This contract is trustworthy. Its owner and the owner of ${isDomainHashed ? originalDomain : domainFromChain} are the same entity`}
+                                                                        </Message.Content>
+                                                                    </Message>
+
+                                                                </>
+
+
+                                                            ) :
+                                                            (
+                                                                <>
+                                                                    {/* <div>
+                                                                    <Icon name="warning sign" color="red" size='huge' style={{ marginTop: '10px' }} />
+                                                                    <br />
+                                                                    <Label basic color='red' size='large' style={{ marginTop: '10px' }}>{curVerifResult.message}</Label>
+                                                                </div> */}
+                                                                    <Message negative icon style={{ marginTop: '20px', textAlign: 'left', color: 'red', boxShadow: 'none', borderRadius: '10px' }}>
+                                                                        <Icon name='warning sign' color='red' />
+                                                                        <Message.Content>
+                                                                            <Message.Header style={{ color: 'red' }}>{curVerifResult.message}</Message.Header>
+                                                                            {`This contract is NOT trustworhthy. Its owner and the owner of ${isDomainHashed ? curVerifResult.inputDomain : curVerifResult.domain} are different entities.`}
+                                                                        </Message.Content>
+                                                                    </Message>
+
+                                                                </>
+                                                            )
+                                                    }
+                                                </div>
+                                            )}
+                                            <Dimmer active={isVerificationRunning || (!isDomainHashed && !curVerifResult)} inverted>
+                                                <Loader content='Verifying...' />
+                                            </Dimmer>
+                                        </Segment>
                                     )
                                 }
                             </Grid.Column>
@@ -396,17 +428,17 @@ const TeSCInspect = ({ location }) => {
                         />
                     </>
                 }
-                {loading &&
+                {loading && (
                     <Segment basic>
-                        <Dimmer active inverted>
-                            <Loader size='large'>Loading</Loader>
+                        <Dimmer active={loading} inverted>
+                            <Loader size='large'>Loading...</Loader>
                         </Dimmer>
 
                         <Image src='https://react.semantic-ui.com/images/wireframe/paragraph.png' />
                     </Segment>
-                }
+                )}
             </div>
-        </div>
+        </div >
     );
 };
 

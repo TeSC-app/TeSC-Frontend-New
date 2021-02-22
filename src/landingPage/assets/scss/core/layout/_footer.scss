@@ -150,6 +150,14 @@
 	}
 }
 
+.footer-copyright {
+	color: get-color(light, 4);
+
+	a {
+		color: get-color(primary, 1);
+	}
+}
+
 @include media( '<=medium' ) {
 
 	.footer-top,

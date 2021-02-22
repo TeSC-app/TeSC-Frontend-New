@@ -1,7 +1,7 @@
 import React from 'react';
 import { Menu, Icon, Label, Image, Button } from 'semantic-ui-react';
 
-const Navbar = ({ handleCollapseSidebar, sidebarCollapsed, hasWalletAddress, selectedAccount }) => {
+const Navbar = ({  hasWalletAddress, selectedAccount }) => {
 
     //if metamask is installed but not connected
     const handleConnect = () => {
@@ -19,9 +19,9 @@ const Navbar = ({ handleCollapseSidebar, sidebarCollapsed, hasWalletAddress, sel
     return (
         <div className='navbar' >
             <Menu className='navbar--menu' size='huge' style={{ borderRadius: '0px', alignItems: 'center' }}>
-                <div style={{width: 'max-content', height: 'max-content', marginLeft: '10px'}} onClick={handleCollapseSidebar}>
+                {/* <div style={{width: 'max-content', height: 'max-content', marginLeft: '10px'}} onClick={handleCollapseSidebar}>
                     <Icon name={sidebarCollapsed ? 'chevron right' :'chevron left'} size='large' link color='purple'/>
-                </div>
+                </div> */}
 
 
                 {/* <Menu.Item onClick={handleCollapseSidebar} style={{ width: "60px" }}>

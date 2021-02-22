@@ -1,13 +1,18 @@
 @import './base/settings';
 
 @import './components/app';
+@import './components/button';
 @import './components/dashboard';
 @import './components/registry';
 @import './components/sidebar';
 @import './components/navbar';
 @import './components/search-box';
 @import './components/page-header';
+@import './components/table-overview';
+@import './components/tesc-inspect';
+@import './components/tesc-data-table';
 
 @import '../../node_modules/highlight.js/styles/darcula.css';
 @import './libs-overwritten/semantic-ui/basic-components';
 @import './libs-overwritten/toastify/toastify';
+@import './libs-overwritten/pro-sidebar/pro-sidebar';

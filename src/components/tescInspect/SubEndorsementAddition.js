@@ -148,7 +148,7 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
         );
     };
     return (
-        <Segment>
+        <div className='tesc-inspect--segment'>
             <Header as='h3' content='Subendorsements' />
             <p>Contract <b>{contractAddress}</b> is endorsing <b className='main-color'>{subendorsements.size}</b> other contract{subendorsements.size === 1 ? '' : 's'}</p>
 
@@ -228,7 +228,7 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
                     {renderSubendorsements()}
                 </>
             }
-        </Segment>
+        </div>
     );
 };
 

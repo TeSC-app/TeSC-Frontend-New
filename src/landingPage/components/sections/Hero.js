@@ -89,7 +89,7 @@ const Hero = ({
               TLS-endorsed Smart Contract (<span className="text-color-primary">TeSC</span>)
             </h1>
             <div className="container-xs">
-              <p className="m-0 mb-32 reveal-from-bottom" data-reveal-delay="400">
+              <p className="m-0 mb-32 reveal-from-bottom section-subtitle" data-reveal-delay="400" >
                 Protect your ICO Smart Contracts from address replacement attacks and give your investors more trust in funding your business.
                 </p>
               <div className="reveal-from-bottom" data-reveal-delay="600">

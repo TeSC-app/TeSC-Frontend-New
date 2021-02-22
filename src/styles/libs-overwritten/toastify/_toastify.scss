@@ -63,10 +63,8 @@
 }
 
 /** Classes for the progress bar **/
-.Toastify__progress-bar {
-    opacity: 1;
-    background-color: rgba(255, 255, 255, 0.8);
-}
+// .Toastify__progress-bar {
+// }
 // .Toastify__progress-bar--animated {
 // }
 // .Toastify__progress-bar--controlled {
@@ -74,7 +72,7 @@
 // .Toastify__progress-bar--rtl {
 // }
 .Toastify__progress-bar--default {
-    background: rgba($color: $app-purple, $alpha: 0.1);
+    // background: rgba($color: $app-purple, $alpha: 0.5);
     // background: rgba(255, 255, 255, 0.8);
 }
 // .Toastify__progress-bar--dark {

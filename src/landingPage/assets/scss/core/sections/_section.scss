@@ -8,6 +8,11 @@
 	padding-bottom: $section-header--padding__mobile;
 }
 
+.section-subtitle { 
+	font-size: 1.2em;
+}
+
+
 @include media( '>medium' ) {
 
     .section-inner {
