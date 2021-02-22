@@ -126,13 +126,3 @@
 # Helpers
 --------------------------------------------------------------*/
 @import "core/base/helpers";
-
-.frame{
-	-ms-zoom: 0.75;
-        -moz-transform: scale(0.75) !important;
-        -moz-transform-origin: 0 0 !important;
-        -o-transform: scale(0.75) !important;
-        -o-transform-origin: 0 0 !important;
-        -webkit-transform: scale(0.75) !important;
-        -webkit-transform-origin: 0 0 !important;
-}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import classNames from 'classnames';
 import { SectionSplitProps } from '../../utils/SectionProps';
 import SectionHeader from './partials/SectionHeader';
-import { Image, Button} from 'semantic-ui-react'
+import { Image, Button } from 'semantic-ui-react'
 import { NavLink } from 'react-router-dom';
 import BrowserFrame from "react-browser-frame";
 
@@ -125,9 +125,9 @@ const FeaturesSplit = ({
                 </p>
                 <br />
               </div>
-              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}
+              <div className={classNames('reveal-from-bottom')} style={{ marginLeft: "auto", marginRight: "auto" }}
                 data-reveal-container=".split-item">
-                <Image src={overviewImg} size="large"/>
+                <Image src={overviewImg} size="large" />
               </div>
             </div>
           </div>
@@ -145,18 +145,18 @@ const FeaturesSplit = ({
                   Overview over your contracts
                   </h3>
                 <p className="m-0">
-                  The dashboard helps you to keep track of your deployed contracts. Check the verification status, 
+                  The dashboard helps you to keep track of your deployed contracts. Check the verification status,
                   set favourites, and use the different filter options!
-                  <br/><br/>
-               
+                  <br /><br />
+
                   <NavLink to="/dashboard">
-                    <Button content='Go to Dashboard 📰'/>
+                    <Button content='Go to Dashboard 📰' />
                   </NavLink>
                 </p>
               </div>
-              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}   
+              <div className={classNames('reveal-from-bottom')} style={{ marginLeft: "auto", marginRight: "auto" }}
                 data-reveal-container=".split-item">
-                <Image src={dashboardImg} size="large"/>
+                <Image src={dashboardImg} size="large" />
               </div>
             </div>
 
@@ -168,20 +168,20 @@ const FeaturesSplit = ({
                 <h3 className="mt-0 mb-12">
                   Guided deployment process
                   </h3>
-                <p className="m-0">  
+                <p className="m-0">
                   Six easy to perform steps guide you through the endorsement and deployment of your contract.
                   Tedious tasks, e.g. inheriting the reference implementation or computing the signature, will be automated for you.
-                  All you need is a <b>'.sol' file</b> including your contract, your <b>domain name</b>, and the <b>certificate private key</b> of your domain. 
-                  <br/><br/>
-                              
+                  All you need is a <b>'.sol' file</b> including your contract, your <b>domain name</b>, and the <b>certificate private key</b> of your domain.
+                  <br /><br />
+
                   <NavLink to="/tesc/new">
-                    <Button content='Deploy 🚀'/>
+                    <Button content='Deploy 🚀' />
                   </NavLink>
-                  </p>
+                </p>
               </div>
-              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}  
+              <div className={classNames('reveal-from-bottom')} style={{ marginLeft: "auto", marginRight: "auto" }}
                 data-reveal-container=".split-item">
-                <Image src={deployImg} size="large"/>
+                <Image src={deployImg} size="large" />
               </div>
             </div>
 
@@ -194,19 +194,19 @@ const FeaturesSplit = ({
                   Verification of TeSCs
                   </h3>
                 <p className="m-0">
-                  Before making a payment to a contract, you can verify that it belongs to the expected domain. 
-                  Just enter the <b>address of the contract</b> in question.<br/>
+                  Before making a payment to a contract, you can verify that it belongs to the expected domain.
+                  Just enter the <b>address of the contract</b> in question.<br />
                   If you are the owner of the TeSC, you can also update it here.
-                  <br/><br/>
-                   
+                  <br /><br />
+
                   <NavLink to="/tesc/inspect">
-                    <Button content='Inspect 🔍'/>
+                    <Button content='Inspect 🔍' />
                   </NavLink>
                 </p>
               </div>
-              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}
+              <div className={classNames('reveal-from-bottom')} style={{ marginLeft: "auto", marginRight: "auto" }}
                 data-reveal-container=".split-item">
-                <Image src={verifyImg} size="large"/>
+                <Image src={verifyImg} size="large" />
               </div>
             </div>
 
@@ -218,18 +218,18 @@ const FeaturesSplit = ({
                 <h3 className="mt-0 mb-12">
                   Contracts in TeSC Registry
                   </h3>
-                <p className="m-0">  
+                <p className="m-0">
                   Browse the TeSC registry in a convenient way. Included contracts are grouped by domain name and can be filtered in different ways.
-                  <br/><br/>
-                 
+                  <br /><br />
+
                   <NavLink to="/registry/inspect">
-                    <Button content='Explore 🗺️'/>
-                  </NavLink>     
-                  </p>
+                    <Button content='Explore 🗺️' />
+                  </NavLink>
+                </p>
               </div>
-              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}} 
+              <div className={classNames('reveal-from-bottom')} style={{ marginLeft: "auto", marginRight: "auto" }}
                 data-reveal-container=".split-item">
-                <Image src={exploreImg} size="large"/>
+                <Image src={exploreImg} size="large" />
               </div>
             </div>
 
@@ -242,71 +242,71 @@ const FeaturesSplit = ({
                   Statistics for TeSC Registry
                   </h3>
                 <p className="m-0">
-                  View statistics for the current TeSC Registry content, namely the ratio of valid contracts, 
+                  View statistics for the current TeSC Registry content, namely the ratio of valid contracts,
                   domains with the most contracts, used flags, and the expiry of contracts.
                   The numbers are presented as bar and pie charts.
-                  <br/><br/>
-                
+                  <br /><br />
+
                   <NavLink to="/registry/analytics">
-                    <Button content='Bar and Pie Charts 📊'/>
-                  </NavLink>  
+                    <Button content='Bar and Pie Charts 📊' />
+                  </NavLink>
                 </p>
               </div>
-              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}}   
+              <div className={classNames('reveal-from-bottom')} style={{ marginLeft: "auto", marginRight: "auto" }}
                 data-reveal-container=".split-item">
-                <Image src={analyticsImg} size="large"/>
+                <Image src={analyticsImg} size="large" />
               </div>
             </div>
 
             <div className="split-item" style={{ alignItems: 'normal' }}>
               <div className="split-item-content center-content-mobile reveal-from-left" data-reveal-container=".split-item">
-                <div className="text-xxs text-color-primary fw-600 tt-u mb-8" style={{paddingTop:'10%'}}>
+                <div className="text-xxs text-color-primary fw-600 tt-u mb-8" style={{ paddingTop: '10%' }}>
                   TeSC-CLI
                   </div>
                 <h3 className="mt-0 mb-12">
                   TeSC on Command Line
                   </h3>
-                <p className="m-0">  
-                  The functionality of the TeSC system can also be used on the command line. Among other, 
-                  the following functionality is available:<br/><br/>
+                <p className="m-0">
+                  The functionality of the TeSC system can also be used on the command line. Among other,
+                  the following functionality is available:<br /><br />
 
                   <ul>
                     <li><b>tesc deploy:</b> deploy a TeSC-compliant contract</li>
-                    <li><b>tesc verify:</b> verify a TeSC-compliant contract</li> 
-                    <li><b>tesc changelog:</b> log changes of a TeSC-compliant contract</li> 
-                    <li><b>tesc update:</b> update a TeSC-compliant contract</li> 
+                    <li><b>tesc verify:</b> verify a TeSC-compliant contract</li>
+                    <li><b>tesc changelog:</b> log changes of a TeSC-compliant contract</li>
+                    <li><b>tesc update:</b> update a TeSC-compliant contract</li>
                     <li><b>tesc register:</b> add a TeSC to the registry</li>
                     <li><b>tesc registry:</b> analyse all entries in the registry</li>
-                    <li><b>tesc monitor:</b> monitor all contracts in the TeSC registry and listen to new changes</li>    
+                    <li><b>tesc monitor:</b> monitor all contracts in the TeSC registry and listen to new changes</li>
                   </ul>
 
-                  <Button as='a' href='https://github.com/TeSC-app/TeSC-api-server' content='TeSC-API on GitHub 💻'/>  
-                  </p>
+                  <Button as='a' href='https://github.com/TeSC-app/TeSC-api-server' content='TeSC-API on GitHub 💻' />
+                </p>
               </div>
-              <div className = {classNames('reveal-from-bottom')} style={{marginLeft: "auto", marginRight: "auto"}} 
-                data-reveal-container=".split-item">               
-                  <iframe
-                    title="media"
-                    src={`clidemo/test.html`}
-                    frameBorder="0"
-                    allowFullScreen
-                    height="650"
-                    width="650"
-                  />
+              <div className={classNames('reveal-from-bottom')} style={{ marginLeft: "auto", marginRight: "auto" }}
+                data-reveal-container=".split-item">
+                <iframe
+                  title="media"
+                  src={`clidemo/test.html`}
+                  frameBorder="0"
+                  allowFullScreen
+                  height="650"
+                  width="650"
+                />
               </div>
             </div>
 
-            <div style={{ width:'100%', display: 'flex', alignItems: 'center' }}>
-            <BrowserFrame>
-              <iframe
-                title="media"
-                src={`clidemo/cliDemo2.html`}
-                frameBorder="0"
-                allowFullScreen
-                height={3000}
-                width={2000}
-                className="frame"
-              />
+            <div style={{ minWidth: '100%', alignItems: 'center' }}>
+              <BrowserFrame>
+                <div className='iframe-container'>
+                  <iframe
+                    title="media"
+                    src={`clidemo/cliDemo2.html`}
+                    frameBorder="0"
+                    allowFullScreen
+                    className="frame"
+                  />
+                </div>
               </BrowserFrame>
             </div>
           </div>
