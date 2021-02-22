@@ -51,13 +51,13 @@ export const flagsToBytes24Hex = (flagsBitVector) => {
     return web3.utils.padLeft(hex, 48);
 };
 
-export const padToBytesX = (hexNumber, x) => {
+export const padToBytesX = (hexNumber, x, prefix0x = true) => {
     let hex = (typeof (hexNumber) === 'number') ? hexNumber.toString(16) : hexNumber;
     hex = (hex.substring(0, 2) === '0x') ? hex.substring(2) : hex;
     if (hex.length < x * 2) {
         hex = '0'.repeat(x * 2 - hex.length) + hex;
     }
-    return '0x' + hex;
+    return prefix0x ? '0x' + hex : hex;
 };
 
 export const hexStringToBitSet = (hexStr) => {

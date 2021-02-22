@@ -296,9 +296,10 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                             setCostsEstimated(getEthRates(estCost));
                             
                         }catch(error){
+                            console.log(error);
                             toast(negativeMsg({
                                 header: 'Unable to estimate transaction cost',
-                                msg: "You probably entered invalid constructor parameters in the first step"
+                                msg: `${error.message}`
                             }));
                         }           
                     }
@@ -313,13 +314,17 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
     const validateEndorsement = async () => {
         if(domain && expiry && signature) {
             try {
-                const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/predeploy/validate`, {
-                    params: { 
-                        domain,
-                        claim: getClaimString(), 
-                        signature
-                    }
-                });
+                const params = { 
+                    contractAddress: futureContractAddress, 
+                    domain: currentDomain,
+                    inputDomain: !!flags.get(FLAGS.DOMAIN_HASHED) ? domain : '',
+                    signature,
+                    expiry, 
+                    flags: flagsToBytes24Hex(flags),
+                    fingerprint
+                }
+
+                const res = await axios.get(`${process.env.REACT_APP_SERVER_ADDRESS}/predeploy/validate`, { params});
     
                 console.log(res.status);
             } catch (err) {
@@ -605,8 +610,6 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
 
     const getStepContent = (step) => {
         const curStep = initInputs? step + 1 : step;
-        console.log('curStep', curStep)
-        console.log('activeStep', activeStep)
         switch (curStep) {
             case 0:
                 return {
@@ -788,9 +791,7 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                             </Form.Field>
                         </>
                     ),
-                    completed: initInputs ? 
-                        (currentDomain !== initInputs.domain) || (expiry !== initInputs.expiry) || (flags.toString() !==  initInputs.flags.toString()) : 
-                        !!currentDomain && !!expiry ,
+                    completed: !!currentDomain && !!expiry,
                     reachable: initInputs && currentDomain? isMatchedOriginalDomain: true
                 };
             case 2:
