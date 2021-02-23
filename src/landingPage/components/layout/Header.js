@@ -12,7 +12,7 @@ const propTypes = {
   hideSignin: PropTypes.bool,
   bottomOuterDivider: PropTypes.bool,
   bottomDivider: PropTypes.bool
-}
+};
 
 const defaultProps = {
   navPosition: '',
@@ -20,7 +20,7 @@ const defaultProps = {
   hideSignin: false,
   bottomOuterDivider: false,
   bottomDivider: false
-}
+};
 
 const Header = ({
   className,
@@ -46,29 +46,29 @@ const Header = ({
       document.removeEventListener('click', clickOutside);
       closeMenu();
     };
-  });  
+  });
 
   const openMenu = () => {
     document.body.classList.add('off-nav-is-active');
     nav.current.style.maxHeight = nav.current.scrollHeight + 'px';
     setIsactive(true);
-  }
+  };
 
   const closeMenu = () => {
     document.body.classList.remove('off-nav-is-active');
     nav.current && (nav.current.style.maxHeight = null);
     setIsactive(false);
-  }
+  };
 
   const keyPress = (e) => {
     isActive && e.keyCode === 27 && closeMenu();
-  }
+  };
 
   const clickOutside = (e) => {
-    if (!nav.current) return
+    if (!nav.current) return;
     if (!isActive || nav.current.contains(e.target) || e.target === hamburger.current) return;
     closeMenu();
-  }  
+  };
 
   const classes = classNames(
     'site-header',
@@ -80,7 +80,7 @@ const Header = ({
     <header
       {...props}
       className={classes}
-      // style={{background: '#1B2428'}}
+    // style={{background: '#1B2428'}}
     >
       <div className="container">
         <div className={
@@ -119,13 +119,12 @@ const Header = ({
                     </li>
                   </ul>
                   {!hideSignin &&
-                    <ul
-                      className="list-reset header-nav-right"
-                    >
+                    <ul className="list-reset header-nav-right">
                       <li>
                         <Link to="/dashboard" className="button button-primary button-wide-mobile button-sm" onClick={closeMenu}>Go to App</Link>
                       </li>
-                    </ul>}
+                    </ul>
+                  }
                 </div>
               </nav>
             </>}
@@ -133,7 +132,7 @@ const Header = ({
       </div>
     </header>
   );
-}
+};
 
 Header.propTypes = propTypes;
 Header.defaultProps = defaultProps;

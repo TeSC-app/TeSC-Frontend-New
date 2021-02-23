@@ -16,13 +16,6 @@ const Home = () => {
       <Hero className="illustration-section-01" />
       <FeaturesTiles />
       <FeaturesSplit invertMobile topDivider imageFill />    
-        <div style={{ textAlign: 'center', paddingBottom:'5%'}}>
-          <NavLink to="/dashboard">
-            <Button tag="a" color="primary" wideMobile>
-              Get started
-            </Button>
-          </NavLink>
-        </div>     
     </>
   );
 }

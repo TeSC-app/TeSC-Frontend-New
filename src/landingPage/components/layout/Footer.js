@@ -4,18 +4,20 @@ import classNames from 'classnames';
 import Logo from './partials/Logo';
 import FooterNav from './partials/FooterNav';
 import FooterSocial from './partials/FooterSocial';
+import { Link } from 'react-router-dom';
+
 
 import '../../assets/scss/landingPage.scoped.scss';
 
 const propTypes = {
   topOuterDivider: PropTypes.bool,
   topDivider: PropTypes.bool
-}
+};
 
 const defaultProps = {
   topOuterDivider: false,
   topDivider: false
-}
+};
 
 const Footer = ({
   className,
@@ -30,6 +32,7 @@ const Footer = ({
     className
   );
 
+
   return (
     <footer
       {...props}
@@ -43,6 +46,9 @@ const Footer = ({
           )}>
           <div className="footer-top space-between text-xxs">
             <Logo />
+            <div>
+              <Link to="/dashboard" className="button button-primary button-wide-mobile button-sm" style={{ marginRight: '600px', background: '#A333C8' }}>Go to App</Link>
+            </div>
             <FooterSocial />
           </div>
           <div className="footer-bottom space-between text-xxs invert-order-desktop">
@@ -53,7 +59,7 @@ const Footer = ({
       </div>
     </footer>
   );
-}
+};
 
 Footer.propTypes = propTypes;
 Footer.defaultProps = defaultProps;

@@ -148,8 +148,9 @@ const FeaturesSplit = ({
                 </p>
               <br />
               <br />
-              <NavLink to="/tesc/new">
-                <b style={{color: '#a333c8', fontSize: '1.1em'}}>Deploy</b> 🚀
+              <NavLink to="/tesc/new" className='button-link'>
+                Create & Deploy 🚀
+                {/* <Button content='Create & Deploy 🚀' /> */}
               </NavLink>
             </div>
             <div className={`${classNames('reveal-from-bottom')} split-item-image tesc-concept`} style={{ marginLeft: "auto", marginRight: "auto" }}
@@ -163,8 +164,8 @@ const FeaturesSplit = ({
           <div className="split-item" style={{ alignItems: 'normal' }}>
             <div className="split-item-content tesc-concept center-content-mobile reveal-from-left" data-reveal-container=".split-item">
               <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
-                Step 3 <span style={{fontSize: '0.85em'}}>(Optional)</span>
-                </div>
+                Step 3 <span style={{ fontSize: '0.85em' }}>(Optional)</span>
+              </div>
               <h5 className="mt-0 mb-12">
                 Website owner register TeSC to the TeSC Registry
                 </h5>
@@ -240,12 +241,12 @@ const FeaturesSplit = ({
                   </p>
               <br />
               <br />
-              {/* <div style={{border : '1px solid #a333c8', width: 'fit-content', padding: '5px', paddingLeft: '8px',borderRadius: '3px'}}> */}
-                  <NavLink to="/tesc/inspect">
-                    <b style={{color: '#a333c8', fontSize: '1.1em'}}>Inspect & Verify</b> 🔍
-                  </NavLink>
-              {/* </div> */}
-              
+              {/* <NavLink to="/tesc/inspect" style={{ border: '1px solid #a333c8', width: 'fit-content', padding: '7px', paddingLeft: '11px', borderRadius: '3px' }}> */}
+              <NavLink to="/tesc/inspect" className='button-link'>
+                Inspect & Verify 🔍
+                {/* <Button content='Inspect & Verify 🔍' /> */}
+              </NavLink>
+
             </div>
             <div className={`${classNames('reveal-from-bottom')} split-item-image tesc-concept`} style={{ marginLeft: "auto", marginRight: "auto" }}
               data-reveal-container=".split-item">
@@ -276,8 +277,9 @@ const FeaturesSplit = ({
                   set favourites, and use the different filter options!
                   <br /><br />
 
-                  <NavLink to="/dashboard">
-                    <Button content='Go to Dashboard 📰' />
+                  <NavLink to="/dashboard" className='button-link'>
+                    Go to Dashboard 📰
+                    {/* <Button content='Go to Dashboard 📰' /> */}
                   </NavLink>
                 </p>
               </div>
@@ -301,8 +303,9 @@ const FeaturesSplit = ({
                   All you need is a <b>'.sol' file</b> including your contract, your <b>domain name</b>, and the <b>certificate private key</b> of your domain.
                   <br /><br />
 
-                  <NavLink to="/tesc/new">
-                    <Button content='Deploy 🚀' />
+                  <NavLink to="/tesc/new" className='button-link'>
+                    {/* <Button content='Create & Deploy 🚀' /> */}
+                    Create & Deploy 🚀
                   </NavLink>
                 </p>
               </div>
@@ -326,8 +329,9 @@ const FeaturesSplit = ({
                   If you are the owner of the TeSC, you can also update it here.
                   <br /><br />
 
-                  <NavLink to="/tesc/inspect">
-                    <Button content='Inspect 🔍' />
+                  <NavLink to="/tesc/inspect" className='button-link'>
+                    Inspect & verify 🔍
+                    {/* <Button content='Inspect & verify 🔍' /> */}
                   </NavLink>
                 </p>
               </div>
@@ -349,8 +353,9 @@ const FeaturesSplit = ({
                   Browse the TeSC registry in a convenient way. Included contracts are grouped by domain name and can be filtered in different ways.
                   <br /><br />
 
-                  <NavLink to="/registry/inspect">
-                    <Button content='Explore 🗺️' />
+                  <NavLink to="/registry/inspect" className='button-link'>
+                    Explore 🗺️
+                    {/* <Button content='Explore 🗺️' /> */}
                   </NavLink>
                 </p>
               </div>
@@ -374,8 +379,9 @@ const FeaturesSplit = ({
                   The numbers are presented as bar and pie charts.
                   <br /><br />
 
-                  <NavLink to="/registry/analytics">
-                    <Button content='Bar and Pie Charts 📊' />
+                  <NavLink to="/registry/analytics" className='button-link'>
+                    Bar and Pie Charts 📊
+                    {/* <Button content='Bar and Pie Charts 📊' /> */}
                   </NavLink>
                 </p>
               </div>
@@ -407,7 +413,12 @@ const FeaturesSplit = ({
                     <li><b>tesc monitor:</b> monitor all contracts in the TeSC registry and listen to new changes</li>
                   </ul>
 
-                  <Button as='a' href='https://github.com/TeSC-app/TeSC-api-server' content='TeSC-API on GitHub 💻' />
+                  {/* <Button as='a' href='https://github.com/TeSC-app/TeSC-api-server' content='TeSC-API on GitHub 💻' /> */}
+
+                  <a href='https://github.com/TeSC-app/TeSC-api-server' className='button-link'>
+                    TeSC-API on GitHub 💻
+                  </a>
+
                 </p>
               </div>
               <div className={classNames('reveal-from-bottom')} style={{ marginLeft: "auto", marginRight: "auto" }}
