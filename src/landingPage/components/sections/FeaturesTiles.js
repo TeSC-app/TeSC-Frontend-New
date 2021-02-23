@@ -8,11 +8,11 @@ import '../../assets/scss/landingPage.scoped.scss';
 
 const propTypes = {
   ...SectionTilesProps.types
-}
+};
 
 const defaultProps = {
   ...SectionTilesProps.defaults
-}
+};
 const FeaturesTiles = ({
   className,
   topOuterDivider,
@@ -25,7 +25,7 @@ const FeaturesTiles = ({
   ...props
 }) => {
 
-  const [images, setImages] = useState([]) 
+  const [images, setImages] = useState([]);
 
   const outerClasses = classNames(
     'features-tiles section',
@@ -54,14 +54,14 @@ const FeaturesTiles = ({
 
   useEffect(() => {
     (async () => {
-     const imgs = []
-     for (let i = 0; i < 6; i++) {
-       imgs[i] = (await import(`./../../assets/images/feature-tile-icon-0${i+1}.svg`)).default;
-       console.log(i, imgs[i])
-     } 
-     setImages(imgs)
-   })();
- }, [])
+      const imgs = [];
+      for (let i = 0; i < 6; i++) {
+        imgs[i] = (await import(`./../../assets/images/feature-tile-icon-0${i + 1}.svg`)).default;
+        console.log(i, imgs[i]);
+      }
+      setImages(imgs);
+    })();
+  }, []);
 
   return (
     <section
@@ -78,7 +78,7 @@ const FeaturesTiles = ({
                 <div className="features-tiles-item-header">
                   <div className="features-tiles-item-image mb-16">
                     <Image
-                      src={images[0]}
+                      src={images[2]}
                       alt="Features tile icon 01"
                       width={64}
                       height={64} />
@@ -86,10 +86,10 @@ const FeaturesTiles = ({
                 </div>
                 <div className="features-tiles-item-content">
                   <h4 className="mt-0 mb-8">
-                    TLS-based Smart Contract Endorsement
+                    Well-established domains
                     </h4>
                   <p className="m-0 text-sm">
-                    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat.
+                    Don't worry about complex addresses, rely on the domain name you have known for years.
                     </p>
                 </div>
               </div>
@@ -108,10 +108,10 @@ const FeaturesTiles = ({
                 </div>
                 <div className="features-tiles-item-content">
                   <h4 className="mt-0 mb-8">
-                    On-chain Authenticated Smart Contract
+                    Proven Security
                     </h4>
                   <p className="m-0 text-sm">
-                    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat.
+                    TeSC builds upon TLS - a technology that protects over 95% of the world wide web
                     </p>
                 </div>
               </div>
@@ -122,7 +122,7 @@ const FeaturesTiles = ({
                 <div className="features-tiles-item-header">
                   <div className="features-tiles-item-image mb-16">
                     <Image
-                      src={images[2]}
+                      src={images[0]}
                       alt="Features tile icon 03"
                       width={64}
                       height={64} />
@@ -130,10 +130,10 @@ const FeaturesTiles = ({
                 </div>
                 <div className="features-tiles-item-content">
                   <h4 className="mt-0 mb-8">
-                    Off-chain Smart Contract Verification
+                    Seamless Integration
                     </h4>
                   <p className="m-0 text-sm">
-                    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat.
+                    Integration into your wallet coming soon. Interact with parties you know and trust seamlessly.
                     </p>
                 </div>
               </div>
@@ -152,11 +152,11 @@ const FeaturesTiles = ({
                 </div>
                 <div className="features-tiles-item-content">
                   <h4 className="mt-0 mb-8">
-                    TeSC Registry
+                    Advanced Monitoring
                     </h4>
                   <p className="m-0 text-sm">
-                    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat.
-                    </p>
+                    TeSC has advanced monitoring capabilities built in to detect attacks before they take place, similar to Goole's Certificate Transparency
+                  </p>
                 </div>
               </div>
             </div>
@@ -174,11 +174,11 @@ const FeaturesTiles = ({
                 </div>
                 <div className="features-tiles-item-content">
                   <h4 className="mt-0 mb-8">
-                    Robust Workflow
-                    </h4>
+                    Free of Charge
+                  </h4>
                   <p className="m-0 text-sm">
-                    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat.
-                    </p>
+                    TeSC is free of charge for the end users. Owners of Smart Contracts only have to pay Gas fees.
+                  </p>
                 </div>
               </div>
             </div>
@@ -196,11 +196,11 @@ const FeaturesTiles = ({
                 </div>
                 <div className="features-tiles-item-content">
                   <h4 className="mt-0 mb-8">
-                    Robust Workflow
-                    </h4>
+                    Developer Friendly
+                  </h4>
                   <p className="m-0 text-sm">
-                    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat.
-                    </p>
+                    Everything you need, accessible via a well documented CLI
+                  </p>
                 </div>
               </div>
             </div>
@@ -210,7 +210,7 @@ const FeaturesTiles = ({
       </div>
     </section>
   );
-}
+};
 
 FeaturesTiles.propTypes = propTypes;
 FeaturesTiles.defaultProps = defaultProps;

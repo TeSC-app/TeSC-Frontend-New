@@ -5,6 +5,8 @@ import SectionHeader from './partials/SectionHeader';
 import { Image, Button } from 'semantic-ui-react';
 import { NavLink } from 'react-router-dom';
 
+import { Label } from 'semantic-ui-react';
+
 import '../../assets/scss/landingPage.scoped.scss';
 import analyticsImg from '../../assets/images/analytics.png';
 import dashboardImg from '../../assets/images/dashboard.png';
@@ -98,7 +100,7 @@ const FeaturesSplit = ({
                   The Goal
                 </h3>
                 <p className="m-0">
-                  The concept of TLS-endorsed Smart Contract (TeSC for short) is all about filling the gap between websites on the Internet and smart contracts on the Ethereum network, thereby preventing the Address Replacement attacks. It ensures that contract addresses posted on a website are pointing smart contracts genuinely owned by the website/domain owner. Making sure that smart contract owner and website/domain owner are the same entity helps the entities that would like to send funds to the smart contract be sure that they are not transfering funds to the wrong smart contract.
+                  The concept of TLS-endorsed Smart Contract (TeSC for short) is all about filling the gap between websites on the Internet and smart contracts on the Ethereum network, thereby preventing the Address Replacement attacks. It ensures that contract addresses posted on a website are pointing to the smart contracts genuinely owned by the owner of the website/domain. Making sure that smart contract owner and website/domain owner are the same entity helps the entities that would like to send funds to the smart contract be sure that they are not transfering funds to a wrong smart contract.
                 </p>
 
                 <br />
@@ -107,7 +109,7 @@ const FeaturesSplit = ({
                   The How
                 </h3>
                 <p className="m-0">
-                  TLS-endorsed Smart Contract ultilizes TLS-certificate of the website and the asymmetric encryption to achieve the goal of binding websites and smart contracts. The data of a TeSC is signed with the private key of the TLS-certificate and the resulting Signature is stored on-chain in TeSC. A funding entity, e.g. an ICO investor, will then verify a TeSC by decrypting the Signature using the public key of the TLS-certificate retrieved from the website. The verification pocess gives a binary result: either the contract is trustworthy, i.e. the smart contract owner and the website/domain owner are the same entity, or the contract is not trustworthy since it is probably under the Address Replacement attack. Based on the the verification result, the funding entity decides whether they would transfer the funds to that smart contract or not.
+                  TLS-endorsed Smart Contract ultilizes TLS-certificate of the website and the asymmetric encryption to achieve the goal of binding websites and smart contracts. The data of a TeSC is signed with the private key of the TLS-certificate and the resulting Signature is stored on-chain in TeSC. A funding entity, e.g. an ICO investor, will then verify a TeSC by decrypting the Signature using the public key of the TLS-certificate retrieved from the website. The verification process gives a binary result: either the contract is trustworthy, i.e. the smart contract owner and the website/domain owner are the same entity, or the contract is not trustworthy since it is probably under the Address Replacement attack. Based on the the verification result, the funding entity decides whether they would transfer the funds to that smart contract or not.
                 </p>
 
               </div>
@@ -147,7 +149,7 @@ const FeaturesSplit = ({
               <br />
               <br />
               <NavLink to="/tesc/new">
-                <span className="text-color-primary"><b>Deploy</b></span> 🚀
+                <b style={{color: '#a333c8', fontSize: '1.1em'}}>Deploy</b> 🚀
               </NavLink>
             </div>
             <div className={`${classNames('reveal-from-bottom')} split-item-image tesc-concept`} style={{ marginLeft: "auto", marginRight: "auto" }}
@@ -161,10 +163,10 @@ const FeaturesSplit = ({
           <div className="split-item" style={{ alignItems: 'normal' }}>
             <div className="split-item-content tesc-concept center-content-mobile reveal-from-left" data-reveal-container=".split-item">
               <div className="text-xxs text-color-primary fw-600 tt-u mb-8">
-                Step 3
+                Step 3 <span style={{fontSize: '0.85em'}}>(Optional)</span>
                 </div>
               <h5 className="mt-0 mb-12">
-                Website owner register TeSC to the TeSC Registry (optional)
+                Website owner register TeSC to the TeSC Registry
                 </h5>
               <p className="m-0">
                 TeSC Registry is a smart contract deployed on the Ethereum network. It stores an on-chain hash table that maps TeSC addresses to website domains and therefore, acts as a reference point to lookup as well as to search for all TeSC-compliant smart contracts on the Ethereum network.
@@ -238,9 +240,12 @@ const FeaturesSplit = ({
                   </p>
               <br />
               <br />
-              <NavLink to="/tesc/inspect">
-                <span className="text-color-primary"><b>Inspect & Verify</b></span> 🔍
-              </NavLink>
+              {/* <div style={{border : '1px solid #a333c8', width: 'fit-content', padding: '5px', paddingLeft: '8px',borderRadius: '3px'}}> */}
+                  <NavLink to="/tesc/inspect">
+                    <b style={{color: '#a333c8', fontSize: '1.1em'}}>Inspect & Verify</b> 🔍
+                  </NavLink>
+              {/* </div> */}
+              
             </div>
             <div className={`${classNames('reveal-from-bottom')} split-item-image tesc-concept`} style={{ marginLeft: "auto", marginRight: "auto" }}
               data-reveal-container=".split-item">
