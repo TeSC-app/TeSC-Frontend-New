@@ -21,7 +21,7 @@ const TescDataTable = ({ data }) => {
     };
 
     return (
-        <Table definition basic='very' collapsing style={{ margin: '0 auto', width: '100%' }}>
+        <Table definition basic='very' collapsing style={{ margin: '0 auto', width: '100%', marginBottom: '20px' }}>
             <Table.Body>
                 <Table.Row>
                     <Table.Cell className='header-cell' >
@@ -56,7 +56,11 @@ const TescDataTable = ({ data }) => {
                         <b>Fingerprint</b>
                     </Table.Cell>
                     <Table.Cell style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
-                        {!fingerprint || parseInt(fingerprint, 16) === 0 ? 'N/A' : <Label style={{ fontFamily: 'monospace', fontSize: '1.1em' }}>fingerprint</Label>}
+                        {!fingerprint || parseInt(fingerprint, 16) === 0 ?
+                            'N/A' :
+                            <Label style={{ fontFamily: 'monospace', fontSize: '1.1em' }}>
+                                {fingerprint.includes('0x') ? fingerprint.substring(2).toUpperCase() : fingerprint.toUpperCase()}
+                            </Label>}
                     </Table.Cell>
                 </Table.Row>
             </Table.Body>

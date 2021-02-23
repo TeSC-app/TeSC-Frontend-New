@@ -910,11 +910,11 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                                 data={{ contractAddress, domain: currentDomain, expiry, flags, signature, fingerprint }}
                             />
                             {!!costsEstimated && !!signature && (
-                                <div style={{ float: 'right'}}>
+                                <div style={{ float: 'right', height: '1.1em'}}>
                                     <span>Cost estimation:  </span>
-                                    <Label tag style={{ color: 'royalblue', }}>
-                                        {costsEstimated.eth} <span style={{ fontSize: '0.75em' }}>ETH </span>
-                                        {costsEstimated.eur > 0 && `(~ ${costsEstimated.eur}`} <span style={{ fontSize: '0.75em' }}>EUR</span>)
+                                    <Label tag style={{ color: 'royalblue', fontSize: '0.9em'}}>
+                                        {costsEstimated.eth} <span style={{ fontSize: '0.85em' }}>ETH </span>
+                                        {costsEstimated.eur > 0 && `(~ ${costsEstimated.eur}`} <span style={{ fontSize: '0.85em' }}>EUR</span>)
                                     </Label>
                                 </div>
                             )}

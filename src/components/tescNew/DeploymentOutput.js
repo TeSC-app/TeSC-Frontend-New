@@ -37,9 +37,9 @@ const DeploymentOutput = ({ contractAddress, domain, costsPaid, style }) => {
                             <b>Cost paid:</b>
                         </Grid.Column>
                         <Grid.Column width={12}>
-                            <Label tag style={{ color: 'royalblue' }}>
-                                {costsPaid.eth} <span style={{ fontSize: '0.75em' }}>ETH </span>
-                                {costsPaid.eur > 0 && `(${costsPaid.eur}`} <span style={{ fontSize: '0.75em' }}>USD</span>)
+                            <Label tag style={{ color: 'royalblue', fontSize: '0.9em' }}>
+                                {costsPaid.eth} <span style={{ fontSize: '0.85em' }}>ETH </span>
+                                {costsPaid.eur > 0 && `(${costsPaid.eur}`} <span style={{ fontSize: '0.85em' }}>EUR</span>)
                             </Label>
                         </Grid.Column>
                     </Grid.Row>
