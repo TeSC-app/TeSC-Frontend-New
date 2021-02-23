@@ -23,6 +23,7 @@
     grid-template-columns: repeat(6, 1fr);
     grid-column-gap: 10px;
     grid-row-gap: 10px;
+    margin-left: 2rem;
 }
 
 .smart-contracts__icon {
@@ -36,8 +37,4 @@
 .domain-explore {
   width: 180px !important;
   font-weight: bold !important;
-}
-
-.popup-smart-contract {
-  cursor: pointer !important;
 }

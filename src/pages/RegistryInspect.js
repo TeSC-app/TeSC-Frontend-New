@@ -136,7 +136,7 @@ function RegistryInspect() {
             );
         } else if (loading) {
             return (
-                <Segment>
+                <Segment basic>
                     <Dimmer active={loading} inverted>
                         <Loader size='large'>Loading results</Loader>
                     </Dimmer>

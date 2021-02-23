@@ -85,7 +85,7 @@ function TableOverview(props) {
         const init = async () => {
             try {
                 
-                if (cols.has(COL.TSC)) setDisplayedEntries(account && tescsWithOccurances ? tescsWithOccurances.slice(0, rowsPerPage) : []);
+                if (cols.has(COL.TSC)) setDisplayedEntries(account && tescsWithOccurances ? tescsWithOccurancesNew.slice(0, rowsPerPage) : []);
                 else setDisplayedEntries(account && tescs ? tescs.slice(0, rowsPerPage) : []);
 
                 setTotalPages(cols.has(COL.TSC) ? Math.ceil(tescsWithOccurancesNew.length / rowsPerPage) : Math.ceil(tescs ? tescs.length / rowsPerPage : 0));
@@ -474,8 +474,8 @@ function TableOverview(props) {
             {renderSearchBox()}
             <div style={{ textAlign: 'end' }}>
                 {renderLegendForSCImages()}
-                {renderFiltersGroup()}
                 {renderClearFiltersButton()}
+                {renderFiltersGroup()}
                 <Button
                     content='Filters'
                     icon='filter'

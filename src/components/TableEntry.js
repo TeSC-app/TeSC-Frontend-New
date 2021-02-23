@@ -14,6 +14,7 @@ import { getRegistryContractInstance } from '../utils/registry';
 import TableCellVerification from './TableCellVerification';
 import PieChart from '../components/analytics/PieChart';
 import { COL, hasAllColumns } from './TableOverview';
+import { Link } from 'react-router-dom';
 
 
 function TableEntry(props) {
@@ -62,7 +63,7 @@ function TableEntry(props) {
     };
 
     const handleToggleFavourites = () => {
-        toggleFavourite(account, {...tesc, isFavourite: !isFavourite});
+        toggleFavourite(account, { ...tesc, isFavourite: !isFavourite });
         onTescChange();
         setIsFavourite(!isFavourite);
     };
@@ -115,13 +116,19 @@ function TableEntry(props) {
 
     const renderTescContractCount = () => {
         return (<div className='smart-contracts'>{tesc.contractAddresses ? tesc.contractAddresses.map((entry, index, contractAddresses) =>
-        (index <= 10 ? <Popup key={entry.contractAddress} on='click' trigger={
+        (index <= 10 ? <Popup key={entry.contractAddress} hoverable flowing trigger={
             <Image src={!entry.verified && !isSha3(domain) ? '../images/smart-contract-icon-invalid.png' : entry.verified ?
-                '../images/smart-contract-icon-valid.png' : '../images/smart-contract-icon.png'} className='smart-contracts__icon popup-smart-contract' alt='Smart Contract' size='mini' />} >
-                    <Popup.Content>
-                        <LinkTescInspect contractAddress={entry.contractAddress} />
-                    </Popup.Content>
-                    </Popup> : index === 11 ? `...and ${contractAddresses.length - index} more` : null)) : null}</div>)
+                '../images/smart-contract-icon-valid.png' : '../images/smart-contract-icon.png'}
+                className='smart-contracts__icon' alt='Smart Contract' size='mini' />} >
+            <Popup.Content>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <LinkTescInspect contractAddress={entry.contractAddress} />
+                    <Icon name='arrow alternate circle right outline' color='purple' size='large' />
+                    <a href={`https://etherscan.io/address/${entry.contractAddress}`} target='_blank' rel='noreferrer' style={{fontWeight: 'bold'}}>View on Etherscan</a>
+                    <Image src='../images/etherscan-logo.png' className='etherscan-logo' />
+                </div>
+            </Popup.Content>
+        </Popup> : index === 11 ? `...and ${contractAddresses.length - index} more` : null)) : null}</div>)
     }
 
 

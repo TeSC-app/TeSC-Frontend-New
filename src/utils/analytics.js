@@ -56,7 +56,7 @@ export const computeTopDomains = (entries) => {
             map.set(entry.domain, true);    // set any value to Map
             distinctTescsWithOccurances.push({
                 domain: entry.domain,
-                count: entry.count,
+                Count: entry.count,
                 color: colorsBar[index++]
             });
         }
@@ -67,23 +67,23 @@ export const computeTopDomains = (entries) => {
 export const checkExpirationDates = (entries) => {
     const colorsBar = ['#E8C1A0', '#F47560', '#F1E15B', '#E8A838', '#61CDBB']
     const data = [{
-        expired: 'Expired', count: entries.reduce((counter, entry_) =>
+        expired: 'Expired', Count: entries.reduce((counter, entry_) =>
             entry_.expiry < moment().unix() ? counter += 1 : counter, 0), color: colorsBar[0]
     },
     {
-        expired: '1 month', count: entries.reduce((counter, entry_) =>
+        expired: '1 month', Count: entries.reduce((counter, entry_) =>
             entry_.expiry <= moment().add(1, 'months').unix() && entry_.expiry > moment().unix() ? counter += 1 : counter, 0), color: colorsBar[1]
     },
     {
-        expired: '6 months', count: entries.reduce((counter, entry_) =>
+        expired: '6 months', Count: entries.reduce((counter, entry_) =>
             entry_.expiry <= moment().add(6, 'months').unix() && entry_.expiry > moment().add(1, 'months').unix() ? counter += 1 : counter, 0), color: colorsBar[2]
     },
     {
-        expired: '1 year', count: entries.reduce((counter, entry_) =>
+        expired: '1 year', Count: entries.reduce((counter, entry_) =>
             entry_.expiry <= moment().add(12, 'months').unix() && entry_.expiry > moment().add(6, 'months').unix() ? counter += 1 : counter, 0), color: colorsBar[3]
     },
     {
-        expired: '>1 year', count: entries.reduce((counter, entry_) =>
+        expired: '>1 year', Count: entries.reduce((counter, entry_) =>
             entry_.expiry > moment().add(12, 'months').unix() ? counter += 1 : counter, 0), color: colorsBar[4]
     }]
     return data

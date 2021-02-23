@@ -88,7 +88,7 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
                 network = 'TeSC Test Net';
                 break;
             default:
-                network = blockChainUrl;
+                network = blockChainUrl !== '' ? blockChainUrl : 'Ganache';
         }
         if (window.ethereum) {
             return network;
