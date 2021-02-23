@@ -9,5 +9,6 @@ export const getMsgFromErrorCode = ({msg, subject}) => {
 
 
 export const extractAxiosErrorMessage = ({error, subject}) => {
-    return (error.response) ? getMsgFromErrorCode({msg: error.response.data.err, subject}) : error.message;
+    console.log('extractAxiosErrorMessage error', error.response)
+    return (error.response) ? getMsgFromErrorCode({msg: error.response.data.message, subject}) : error.message;
 }

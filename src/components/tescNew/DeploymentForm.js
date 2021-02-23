@@ -380,12 +380,12 @@ const DeploymentForm = ({ initInputs, onMatchOriginalDomain, inputOriginalDomain
                     });
 
             } catch (error) {
+                console.log('handleSubmit', error);
                 toast(negativeMsg({
                     code: error.code,
                     header: 'Unable to deploy Smart Contract',
                     msg: extractAxiosErrorMessage({ error, subject: domain })
                 }));
-                console.log(error);
             }
         } else {
             toast(negativeMsg({
