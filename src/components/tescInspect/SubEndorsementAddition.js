@@ -187,7 +187,7 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
 
             {/* <Divider section style={{ width: '50%', margin: '40px auto' }} /> */}
 
-            {owner === account && verified &&
+            {owner === account &&
                 <>
                     <Divider section hidden>
                         <p style={{ fontSize: '0.8em' }}>
@@ -225,7 +225,9 @@ const SubEndorsementAddition = ({ contractAddress, verified, owner }) => {
                             <Icon name='list' /> Current Subendorsements
                         </p>
                     </Divider>
-                    {renderSubendorsements()}
+                    <div style={{ fontFamily: 'monospace', fontSize: '1.1em' }}>
+                        {renderSubendorsements()}
+                    </div>
                 </>
             }
         </div>
