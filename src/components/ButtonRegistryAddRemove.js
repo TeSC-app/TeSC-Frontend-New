@@ -76,7 +76,7 @@ const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, verbose, on
                     basic
                     color={isInRegistry ? 'red' : 'teal'}
                     onClick={() => handleRegistryAction(!isInRegistry)}
-                    content={`${isInRegistry ? 'Deregister' : 'Register'} ${verbose ? `${isInRegistry ? 'from' : 'to'} TeSC Registry` : ''}`}
+                    content={isInRegistry ? 'Deregister' : 'Register'}
                     icon={isInRegistry ? 'delete' : 'plus'}
                     style={style}
                 />

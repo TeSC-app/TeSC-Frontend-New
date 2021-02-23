@@ -47,7 +47,7 @@ const Footer = ({
           <div className="footer-top space-between text-xxs">
             <Logo />
             <div>
-              <Link to="/dashboard" className="button button-primary button-wide-mobile button-sm" style={{ marginRight: '600px', background: '#A333C8' }}>Go to App</Link>
+              <Link to="/dashboard" className="button button-primary button-wide-mobile button-sm" style={{ marginRight: '600px', background: '#A839CC' }}>Go to App</Link>
             </div>
             <FooterSocial />
           </div>
