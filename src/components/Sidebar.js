@@ -165,7 +165,7 @@ const Sidebar = ({ image, collapsed, toggled, handleToggleSidebar, handleCollaps
                     } />
                 </div>
                 <div className="sidebar-btn-wrapper" style={{ padding: '20px', paddingTop: '0' }}>
-                    <Popup content={collapsed ? renderNetworkLabel() : 'Network'} trigger={
+                    <Popup content={`${collapsed ? renderNetworkLabel() : 'Network'} (backend)`} trigger={
                         <div className="sidebar-btn" rel="noopener noreferrer" style={{ padding: `${collapsed ? '0' : '20px'}`, minWidth: '2.8em', minHeight: '2.8em', width: '230px', justifyContent: 'left' }}>
                             <Image src='../images/ethereum-logo.png' size='mini'
                                 style={{ marginRight: `${collapsed ? '0' : '5px'}`, display: `${collapsed ? 'inline-block' : 'block'}` }}

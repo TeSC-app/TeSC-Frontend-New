@@ -15,7 +15,7 @@ import {
 } from '../utils/conversionRate';
 
 const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, verbose, onClick, style }) => {
-    const { web3, handleBlockScreen, hasAccountChanged } = useContext(AppContext);
+    const { web3, account, handleBlockScreen, hasAccountChanged } = useContext(AppContext);
 
     const [isInRegistry, setIsInRegistry] = useState(false);
     const [costsEstimatedRegistryAction, setCostsEstimatedRegistryAction] = useState(0);
@@ -40,7 +40,7 @@ const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, verbose, on
 
     useEffect(() => {
         const runEffect = async () => {
-            if (!hasAccountChanged && !loading) {
+            if (!hasAccountChanged && !loading && account) {
                 const cost = await estimateRegistryActionCost(isInRegistry, { web3, contractAddress, domain });
                 setCostsEstimatedRegistryAction(getEthRates(cost));
             }
@@ -85,16 +85,16 @@ const ButtonRegistryAddRemove = ({ contractAddress, domain, isOwner, verbose, on
     ) : (
             <Popup
                 inverted
-                content={`This contract is ${isInRegistry ? '' : 'not'} registered in the registry`}
+                content={`This contract is ${isInRegistry ? '' : 'not'} registered in TesC Registry`}
                 trigger={
-                    <span style={{ ...style, marginRight: '20px' }}>
+                    <span style={{ ...style, marginLeft: '20px' }}>
                         <Icon
                             circular
                             name={isInRegistry ? 'checkmark' : 'delete'}
                             color={isInRegistry ? 'green' : 'red'}
                             
                         />
-                        {verbose && <b>{isInRegistry ? 'Registered in the registry' : 'Not registered in the registry'}</b>}
+                        {verbose && <b>{isInRegistry ? 'Currently registered in TeSC Registry' : 'Not registered in TeSC Registry'}</b>}
                     </span>
                 }
             />
