@@ -65,6 +65,7 @@ const updateLocalStorage = (account, tesc, op = UPDATE) => {
     if (foundAt < 0 && op === CREATE) {
         tescs.push(tesc);
     } else if (op === DELETE) {
+        console.log('deleting ', tesc);
         tescs.splice(foundAt, 1);
     } else if (op === UPDATE) {
         tescs[foundAt] = tesc;
@@ -72,7 +73,6 @@ const updateLocalStorage = (account, tesc, op = UPDATE) => {
         console.log('Wrong operator!');
     }
     localStorage.setItem(account, JSON.stringify(tescs));
-    if (op === DELETE) return null;
     return tesc;
 };
 
@@ -85,12 +85,7 @@ export const toggleFavourite = (account, tesc, cb = undefined) => {
     let updatedTesc;
     if (found) {
         localTesc.isFavourite = !localTesc.isFavourite;
-        if (!localTesc.isFavourite && !localTesc.own) {
-            console.log('deleting ', contractAddress);
-            updateLocalStorage(account, localTesc, DELETE);
-        } else {
-            updatedTesc = updateLocalStorage(account, localTesc, UPDATE);
-        }
+        updatedTesc = updateLocalStorage(account, localTesc, !localTesc.isFavourite && !localTesc.own ? DELETE : UPDATE);
     } else {
         updatedTesc = updateLocalStorage(account, { ...tesc, isFavourite: true, createdAt: moment().unix() }, CREATE);
     }
